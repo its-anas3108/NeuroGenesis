@@ -1,0 +1,26 @@
+# Environment
+.venv/
+venv/
+
+# Python / Pycache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Data and Atlases
+dataset/OASIS/*.tar
+dataset/OASIS/*.nii.gz
+dataset/nilearn_data/
+
+# Output directories & Large data files
+outputs/
+*.nii
+*.nii.gz
+*.npy
+*.log
+
+# OS & IDE Files
+.DS_Store
+.vscode/
+.idea/

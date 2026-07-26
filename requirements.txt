@@ -1,0 +1,30 @@
+# ================================================================
+# NeuroGenesis Phase 1 — Python Dependencies
+# ================================================================
+# Install with: pip install -r requirements.txt
+
+# --- Core Scientific Stack ---
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.11.0
+
+# --- Medical Imaging ---
+nibabel>=5.0.0           # NIfTI I/O
+SimpleITK>=2.3.0         # N4 bias correction, anisotropic diffusion, resampling
+nilearn>=0.10.0          # Atlas-based ROI extraction, brain masking
+
+# --- Image Processing ---
+scikit-image>=0.21.0     # Marching cubes (surface area), CLAHE
+opencv-python>=4.8.0     # Image operations
+
+# --- Graph Analysis ---
+networkx>=3.1            # Brain connectivity graph
+
+# --- Visualization ---
+matplotlib>=3.7.0        # All plotting
+
+# --- Progress & Logging ---
+tqdm>=4.66.0             # Progress bars
+
+# --- Utilities ---
+Pillow>=10.0.0           # Image I/O

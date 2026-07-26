@@ -1,0 +1,6 @@
+# Place your OASIS .nii or .nii.gz MRI files in this directory.
+# The pipeline will recursively scan this folder.
+# Example expected structure:
+#   dataset/OASIS/OAS1_0001_MR1/mri/orig/001.mgz  (FreeSurfer)
+#   dataset/OASIS/sub-OAS1_0001/anat/sub-OAS1_0001_T1w.nii.gz  (BIDS)
+#   dataset/OASIS/OAS1_0001_MR1.nii.gz  (flat)
