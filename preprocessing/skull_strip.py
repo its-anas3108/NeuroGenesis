@@ -108,10 +108,13 @@ class SkullStripper:
             return masked, mask
 
         # ── Try Nilearn first ──────────────────────────────────────────────
-        masked, mask = self._strip_with_nilearn(data, patient_id)
+        masked, mask = self._strip_with_nilearn(data, patient_id, affine)
 
-        if masked is None:
-            logger.info("[SkullStripper] Nilearn unavailable — using SimpleITK fallback.")
+        if masked is None or np.count_nonzero(masked) == 0:
+            if masked is not None and np.count_nonzero(masked) == 0:
+                logger.warning(f"[SkullStripper] Nilearn produced 0 non-zero masked voxels for {patient_id} — trying SimpleITK fallback.")
+            else:
+                logger.info("[SkullStripper] Nilearn unavailable — using SimpleITK fallback.")
             masked, mask = self._strip_with_sitk(data)
 
         if masked is None:
@@ -168,28 +171,28 @@ class SkullStripper:
         self,
         data:       np.ndarray,
         patient_id: str,
+        affine:     Optional[np.ndarray] = None,
     ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """
         Attempt skull stripping using Nilearn's brain masking utilities.
 
         Uses ``nilearn.masking.compute_brain_mask`` on a temporary NIfTI
-        image. Falls back gracefully if nilearn is not installed.
+        image with the subject's real spatial affine.
 
         Args:
             data       : Float32 array (X, Y, Z).
             patient_id : For log messages.
+            affine     : Real spatial affine matrix.
 
         Returns:
             Tuple of (masked_data, mask) or (None, None) on failure.
         """
         try:
             from nilearn import masking as nlm
-            from nilearn.image import new_img_like
-            import tempfile, os
 
-            # Build a temporary NIfTI for nilearn
-            affine_eye = np.eye(4)
-            tmp_img = nib.Nifti1Image(data, affine_eye)
+            # Use real subject affine if provided, otherwise identity
+            img_affine = affine if (affine is not None and affine.shape == (4, 4)) else np.eye(4)
+            tmp_img = nib.Nifti1Image(data, img_affine)
 
             brain_mask = nlm.compute_brain_mask(tmp_img, threshold=0.2)
             mask_data = brain_mask.get_fdata().astype(np.float32)
@@ -203,6 +206,13 @@ class SkullStripper:
                 return None, None
 
             masked = (data * mask_data).astype(np.float32)
+
+            if np.count_nonzero(masked) == 0:
+                logger.warning(
+                    f"[SkullStripper] Nilearn mask resulted in 0 non-zero voxels for {patient_id}."
+                )
+                return None, None
+
             logger.debug(
                 f"[SkullStripper] Nilearn: {int(mask_data.sum())} brain voxels "
                 f"({mask_data.mean()*100:.1f}% of volume) for {patient_id}"

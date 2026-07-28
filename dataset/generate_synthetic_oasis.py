@@ -1,8 +1,23 @@
 """
-NeuroGenesis — Synthetic OASIS Data Generator
-===============================================
+NeuroGenesis — Synthetic OASIS Data Generator  [TESTING UTILITY ONLY]
+=======================================================================
 Script: dataset/generate_synthetic_oasis.py
 Author: NeuroGenesis Research Team
+
+*** STATUS: INACTIVE IN PRODUCTION ***
+---------------------------------------
+This script is NO LONGER invoked by main.py during normal execution.
+
+main.py now uses the real OASIS-1 dataset via:
+    dataset/oasis1_loader.py   (dataset_mode = "oasis1")
+
+This file is kept as a standalone development / testing utility ONLY.
+To switch back to synthetic data for testing, set in main.py CONFIG:
+    "dataset_mode": "synthetic"
+
+To manually generate synthetic test files, run directly:
+    python dataset/generate_synthetic_oasis.py --num_subjects 2
+-----------------------------------------------------------------------
 
 Description:
     Generates synthetic 3D NIfTI (.nii.gz) T1-weighted brain MRI scans for

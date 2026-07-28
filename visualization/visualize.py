@@ -541,3 +541,232 @@ class NeuroGenesisVisualizer:
 
         ax.set_title("Connectivity Graph", color=ACCENT_BLUE,
                      fontsize=10, fontweight="bold")
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Steps 7, 8, 9 — Anatomical ROI Overlays & Multi-Plane Views
+    # ──────────────────────────────────────────────────────────────────────────
+
+    def plot_individual_roi_overlays(
+        self,
+        data:       np.ndarray,
+        masks:      Dict[str, np.ndarray],
+        patient_id: str,
+        subj_dir:   Optional[Path] = None,
+    ) -> Dict[str, str]:
+        """
+        Step 7: Generate separate publication-quality labelled images for each ROI.
+
+        Outputs:
+            broca_area_overlay.png
+            wernicke_area_overlay.png
+            insula_overlay.png
+            inferior_frontal_gyrus_overlay.png
+            superior_temporal_gyrus_overlay.png
+        """
+        import matplotlib
+        out_dir = Path(subj_dir) if subj_dir else self.output_dir
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        colors_map = {
+            "Broca_Area":               "#ff4d4d",  # Red
+            "Wernicke_Area":            "#3399ff",  # Blue
+            "Insula":                   "#33cc33",  # Green
+            "Inferior_Frontal_Gyrus":   "#ff9933",  # Orange
+            "Superior_Temporal_Gyrus":  "#cc66ff",  # Purple
+        }
+
+        filename_map = {
+            "Broca_Area":               "broca_area_overlay.png",
+            "Wernicke_Area":            "wernicke_area_overlay.png",
+            "Insula":                   "insula_overlay.png",
+            "Inferior_Frontal_Gyrus":   "inferior_frontal_gyrus_overlay.png",
+            "Superior_Temporal_Gyrus":  "superior_temporal_gyrus_overlay.png",
+        }
+
+        saved_paths = {}
+
+        for roi_name, mask in masks.items():
+            if roi_name not in filename_map:
+                continue
+
+            fname = filename_map[roi_name]
+            hex_col = colors_map.get(roi_name, ACCENT_BLUE)
+            rgb = matplotlib.colors.to_rgb(hex_col)
+
+            # Find slice with maximum ROI area
+            if mask.sum() > 0:
+                slice_sums = mask.sum(axis=(0, 1))
+                cz = int(np.argmax(slice_sums))
+            else:
+                cz = data.shape[2] // 2
+
+            fig, ax = plt.subplots(figsize=(8, 8), facecolor=BG_COLOR)
+            mri_sl = np.rot90(data[:, :, cz])
+            mask_sl = np.rot90(mask[:, :, cz])
+
+            ax.imshow(mri_sl, cmap="bone", aspect="auto")
+
+            if mask_sl.any():
+                overlay = np.zeros((*mask_sl.shape, 4), dtype=np.float32)
+                overlay[mask_sl > 0] = [*rgb, 0.6]
+                ax.imshow(overlay, aspect="auto")
+                # Contour boundary
+                ax.contour(mask_sl > 0, colors=[hex_col], linewidths=1.5)
+
+            display_title = f"{patient_id} │ {roi_name.replace('_', ' ')}\nAxial Slice {cz} │ Orientation: Axial"
+            ax.set_title(display_title, color=hex_col, fontsize=13, fontweight="bold", pad=12)
+            ax.axis("off")
+
+            # Annotation box
+            n_vox = int(mask.sum())
+            annot_text = f"ROI: {roi_name.replace('_', ' ')}\nVoxels: {n_vox}\nSlice: {cz} (Axial)" if n_vox > 0 else f"ROI: {roi_name}\nNo Voxels Detected"
+            ax.text(0.03, 0.03, annot_text, transform=ax.transAxes,
+                    color="white", fontsize=9, fontfamily="monospace",
+                    bbox=dict(boxstyle="round,pad=0.5", facecolor=PANEL_COLOR, edgecolor=hex_col, alpha=0.85))
+
+            plt.tight_layout()
+            out_path = out_dir / fname
+            fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor=BG_COLOR, edgecolor="none")
+            plt.close(fig)
+
+            saved_paths[roi_name] = str(out_path)
+            logger.info(f"[Visualizer] Individual ROI overlay saved → {out_path}")
+
+        return saved_paths
+
+    def plot_combined_speech_network_overlay(
+        self,
+        data:       np.ndarray,
+        masks:      Dict[str, np.ndarray],
+        patient_id: str,
+        subj_dir:   Optional[Path] = None,
+    ) -> str:
+        """
+        Step 8: Generate speech_network_overlay.png combining all 5 ROIs simultaneously.
+
+        Colours:
+            Broca → Red
+            Wernicke → Blue
+            Insula → Green
+            IFG → Orange
+            STG → Purple
+        """
+        import matplotlib
+        out_dir = Path(subj_dir) if subj_dir else self.output_dir
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        colors_map = {
+            "Broca_Area":               "#ff4d4d",  # Red
+            "Wernicke_Area":            "#3399ff",  # Blue
+            "Insula":                   "#33cc33",  # Green
+            "Inferior_Frontal_Gyrus":   "#ff9933",  # Orange
+            "Superior_Temporal_Gyrus":  "#cc66ff",  # Purple
+        }
+
+        # Select axial slice with maximum total speech ROI voxels
+        total_mask = sum(masks.values()) if masks else np.zeros_like(data)
+        if total_mask.sum() > 0:
+            cz = int(np.argmax(total_mask.sum(axis=(0, 1))))
+        else:
+            cz = data.shape[2] // 2
+
+        fig, ax = plt.subplots(figsize=(10, 10), facecolor=BG_COLOR)
+        mri_sl = np.rot90(data[:, :, cz])
+        ax.imshow(mri_sl, cmap="bone", aspect="auto")
+
+        legend_patches = []
+        for roi_name, mask in masks.items():
+            hex_col = colors_map.get(roi_name, ACCENT_BLUE)
+            rgb = matplotlib.colors.to_rgb(hex_col)
+            mask_sl = np.rot90(mask[:, :, cz])
+
+            if mask_sl.any():
+                overlay = np.zeros((*mask_sl.shape, 4), dtype=np.float32)
+                overlay[mask_sl > 0] = [*rgb, 0.55]
+                ax.imshow(overlay, aspect="auto")
+                ax.contour(mask_sl > 0, colors=[hex_col], linewidths=1.2)
+
+            patch = mpatches.Patch(color=hex_col, label=f"{roi_name.replace('_', ' ')} ({int(mask.sum())} vox)")
+            legend_patches.append(patch)
+
+        ax.set_title(
+            f"NeuroGenesis │ Complete Speech Network Overlay\nPatient: {patient_id} │ Axial Slice {cz}",
+            color="white", fontsize=14, fontweight="bold", pad=12
+        )
+        ax.axis("off")
+        ax.legend(handles=legend_patches, loc="upper right", facecolor=PANEL_COLOR,
+                  edgecolor=BORDER_COLOR, labelcolor=TEXT_WHITE, fontsize=9)
+
+        plt.tight_layout()
+        out_path = out_dir / "speech_network_overlay.png"
+        fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor=BG_COLOR, edgecolor="none")
+        plt.close(fig)
+
+        logger.info(f"[Visualizer] Combined speech network overlay → {out_path}")
+        return str(out_path)
+
+    def plot_speech_network_multiview(
+        self,
+        data:       np.ndarray,
+        masks:      Dict[str, np.ndarray],
+        patient_id: str,
+        subj_dir:   Optional[Path] = None,
+    ) -> str:
+        """
+        Step 9: Generate speech_network_multiview.png displaying Axial, Coronal, and Sagittal views.
+        """
+        import matplotlib
+        out_dir = Path(subj_dir) if subj_dir else self.output_dir
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        colors_map = {
+            "Broca_Area":               "#ff4d4d",  # Red
+            "Wernicke_Area":            "#3399ff",  # Blue
+            "Insula":                   "#33cc33",  # Green
+            "Inferior_Frontal_Gyrus":   "#ff9933",  # Orange
+            "Superior_Temporal_Gyrus":  "#cc66ff",  # Purple
+        }
+
+        cx, cy, cz = [s // 2 for s in data.shape]
+
+        fig, axes = plt.subplots(1, 3, figsize=(18, 6), facecolor=BG_COLOR)
+
+        plane_data = [
+            (np.rot90(data[cx, :, :]), f"Sagittal View (x={cx})", 0, cx),
+            (np.rot90(data[:, cy, :]), f"Coronal View (y={cy})", 1, cy),
+            (np.rot90(data[:, :, cz]), f"Axial View (z={cz})", 2, cz),
+        ]
+
+        for ax, (sl_mri, title, plane_axis, idx) in zip(axes, plane_data):
+            ax.imshow(sl_mri, cmap="bone", aspect="auto")
+
+            for roi_name, mask in masks.items():
+                hex_col = colors_map.get(roi_name, ACCENT_BLUE)
+                rgb = matplotlib.colors.to_rgb(hex_col)
+
+                if plane_axis == 0:
+                    sl_mask = np.rot90(mask[idx, :, :])
+                elif plane_axis == 1:
+                    sl_mask = np.rot90(mask[:, idx, :])
+                else:
+                    sl_mask = np.rot90(mask[:, :, idx])
+
+                if sl_mask.any():
+                    overlay = np.zeros((*sl_mask.shape, 4), dtype=np.float32)
+                    overlay[sl_mask > 0] = [*rgb, 0.55]
+                    ax.imshow(overlay, aspect="auto")
+
+            ax.set_title(title, color=ACCENT_BLUE, fontsize=11, fontweight="bold", pad=8)
+            ax.axis("off")
+
+        fig.suptitle(
+            f"NeuroGenesis │ Multi-View Speech Network Visualisation │ Patient: {patient_id}",
+            color="white", fontsize=14, fontweight="bold", y=1.02
+        )
+        plt.tight_layout()
+        out_path = out_dir / "speech_network_multiview.png"
+        fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor=BG_COLOR, edgecolor="none")
+        plt.close(fig)
+
+        logger.info(f"[Visualizer] Multi-view speech network saved → {out_path}")
+        return str(out_path)

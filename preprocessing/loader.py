@@ -53,8 +53,8 @@ class MRILoader:
         metadata_df  : Pandas DataFrame of all subject metadata.
     """
 
-    #: File extensions that are considered valid NIfTI files
-    SUPPORTED_EXTENSIONS: List[str] = [".nii.gz", ".nii"]
+    #: File extensions that are considered valid NIfTI/Analyze files
+    SUPPORTED_EXTENSIONS: List[str] = [".nii.gz", ".nii", ".hdr", ".img"]
 
     def __init__(self, dataset_dir: Path, output_dir: Path) -> None:
         """
@@ -461,17 +461,22 @@ class MRILoader:
         """
         Derive a clean patient ID string from a file path.
 
-        Strips .nii and .nii.gz extensions, then returns the bare filename.
+        Strips extensions and matches OASIS-1 patient ID patterns (e.g. OAS1_0001_MR1).
 
         Args:
-            filepath : Path to NIfTI file.
+            filepath : Path to NIfTI / Analyze file.
 
         Returns:
             Patient ID string.
         """
+        import re
         name = filepath.name
-        for ext in [".nii.gz", ".nii"]:
-            if name.endswith(ext):
+        match = re.search(r"(OAS1_\d{4}_MR\d+)", name, re.IGNORECASE)
+        if match:
+            return match.group(1).upper()
+
+        for ext in [".nii.gz", ".nii", ".hdr", ".img"]:
+            if name.lower().endswith(ext):
                 return name[: -len(ext)]
         return name
 

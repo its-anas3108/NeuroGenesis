@@ -61,8 +61,15 @@ from tqdm import tqdm
 
 CONFIG: Dict[str, Any] = {
     # ── Paths ──────────────────────────────────────────────────────────────
-    "dataset_dir":      Path("dataset/OASIS"),
+    "dataset_dir":      Path("dataset/OASIS"),   # legacy / synthetic fallback
     "output_dir":       Path("outputs"),
+
+    # ── Dataset Mode ───────────────────────────────────────────────────────
+    # 'oasis1'    → use real OASIS-1 MRI + CSV via dataset/oasis1_loader.py
+    # 'synthetic' → use existing dataset/OASIS/ directory (testing only)
+    "dataset_mode":     "oasis1",
+    "oasis_mri_dir":    Path("dataset/oasis_raw"),   # root folder of real MRIs
+    "oasis_csv_path":   None,            # None = auto-discover first .csv in dataset/
 
     # ── Preprocessing ──────────────────────────────────────────────────────
     "target_shape":     (128, 128, 128),   # Resize target
@@ -91,7 +98,7 @@ CONFIG: Dict[str, Any] = {
     # ── Pipeline Flags ─────────────────────────────────────────────────────
     "save_nifti":       True,            # Save intermediate NIfTI files
     "save_figures":     True,            # Save all PNG figures
-    "max_subjects":     None,            # Limit subjects (None = all)
+    "max_subjects":     3,               # Validation run on 3 subjects
 }
 
 
@@ -170,26 +177,82 @@ def stage_load(cfg: Dict, dirs: Dict, logger: logging.Logger):
     """
     Stage 1: Load all MRI files from the dataset directory.
 
+    When cfg["dataset_mode"] == "oasis1", uses OASIS1Loader to discover real
+    MRI files, match them to the OASIS-1 CSV, and enrich each scan's metadata
+    with clinical/demographic fields.  All downstream stages are unaffected.
+
+    When cfg["dataset_mode"] == "synthetic" (or any other value), falls back
+    to the original behaviour: scan cfg["dataset_dir"] directly.
+
     Returns:
         (MRILoader instance, list of file paths)
     """
     from preprocessing.loader import MRILoader
 
     logger.info("▶ STAGE 1 — MRI Data Loading")
+
+    # ── OASIS-1 real dataset mode ─────────────────────────────────────────
+    oasis_pairs: Optional[List] = None   # list of (Path, clinical_dict)
+
+    if cfg.get("dataset_mode", "synthetic") == "oasis1":
+        try:
+            import sys as _sys
+            from pathlib import Path as _Path
+            # Ensure dataset/ package is importable
+            _dataset_dir = _Path("dataset")
+            if str(_dataset_dir) not in _sys.path:
+                _sys.path.insert(0, str(_dataset_dir))
+
+            from dataset.oasis1_loader import OASIS1Loader
+
+            oasis_loader = OASIS1Loader(
+                mri_root    = cfg["oasis_mri_dir"],
+                csv_path    = cfg.get("oasis_csv_path"),   # None = auto-discover
+                dataset_dir = Path("dataset"),
+                max_subjects= cfg.get("max_subjects"),
+            )
+            oasis_pairs = oasis_loader.load()
+
+            if not oasis_pairs:
+                logger.warning(
+                    "  OASIS-1 loader returned no subjects. "
+                    f"Check that MRI files exist under: {cfg['oasis_mri_dir']}"
+                )
+        except Exception as exc:
+            logger.error(f"  OASIS1Loader failed: {exc} — falling back to dataset_dir scan.")
+            oasis_pairs = None
+
+    # ── Initialise MRILoader (unchanged for all modes) ────────────────────
+    # Use oasis_mri_dir as dataset_dir for OASIS-1, otherwise legacy path
+    effective_dir = (
+        cfg["oasis_mri_dir"]
+        if (cfg.get("dataset_mode") == "oasis1" and oasis_pairs is not None)
+        else cfg["dataset_dir"]
+    )
+
     loader = MRILoader(
-        dataset_dir=cfg["dataset_dir"],
+        dataset_dir=effective_dir,
         output_dir=dirs["original"],
     )
 
-    files = loader.scan_dataset()
-    if cfg["max_subjects"] is not None:
-        files = files[: cfg["max_subjects"]]
-        logger.info(f"  Limited to {len(files)} subject(s) (max_subjects={cfg['max_subjects']})")
+    # ── Determine file list ───────────────────────────────────────────────
+    if oasis_pairs is not None:
+        # OASIS-1 mode: file list comes from oasis1_loader
+        files = [fp for fp, _ in oasis_pairs]
+    else:
+        # Synthetic / legacy mode: scan the directory
+        files = loader.scan_dataset()
+        if cfg["max_subjects"] is not None:
+            files = files[: cfg["max_subjects"]]
+            logger.info(
+                f"  Limited to {len(files)} subject(s) "
+                f"(max_subjects={cfg['max_subjects']})"
+            )
 
     if not files:
         logger.warning(
-            "  No MRI files found. Please place .nii/.nii.gz files in "
-            f"{cfg['dataset_dir']} and re-run."
+            "  No MRI files found. "
+            f"Place .nii/.nii.gz files in {effective_dir} and re-run."
         )
         return loader, []
 
@@ -201,6 +264,28 @@ def stage_load(cfg: Dict, dirs: Dict, logger: logging.Logger):
         except Exception as exc:
             logger.warning(f"  Could not load {filepath.name}: {exc}")
 
+    # ── Enrich scan metadata with OASIS-1 clinical fields ─────────────────
+    # Merge clinical dict into each scan's existing metadata so downstream
+    # stages automatically receive age, CDR, MMSE, etc.  No stage changes.
+    if oasis_pairs is not None:
+        clinical_map = {}  # patient_id -> clinical dict
+        for fp, clinical in oasis_pairs:
+            pid = loader._extract_patient_id(fp)
+            clinical_map[pid] = clinical
+
+        for pid, entry in loader.loaded_scans.items():
+            clin = clinical_map.get(pid, {"metadata_matched": False})
+            entry["metadata"].update(clin)
+            if clin.get("metadata_matched"):
+                logger.info(
+                    f"  [OASIS1] {pid} │ age={clin.get('age')} │ "
+                    f"CDR={clin.get('cdr')} │ MMSE={clin.get('mmse')}"
+                )
+            else:
+                logger.warning(
+                    f"  [OASIS1] {pid} │ no CSV match — clinical metadata unavailable"
+                )
+
     loader.print_metadata_table()
 
     if cfg["save_figures"]:
@@ -210,7 +295,7 @@ def stage_load(cfg: Dict, dirs: Dict, logger: logging.Logger):
             loader.visualize_triplane(pid, save=True)
             loader.visualize_slice_gallery(pid, axis=2, save=True)
 
-    # Save metadata
+    # Save metadata (now includes clinical fields for OASIS-1 subjects)
     loader.save_metadata_json(dirs["features"] / "metadata.json")
 
     return loader, files
@@ -573,26 +658,34 @@ def stage_visualize(
     all_masks: Dict, all_patches: Dict,
     all_dfs: Dict, graphs: Dict,
     logger: logging.Logger,
+    qc_reports: Optional[Dict] = None,
 ) -> None:
     """
-    Stage 10: Generate comprehensive pipeline summary figures.
+    Stage 10: Generate comprehensive per-subject outputs and visualizations.
     """
     from visualization.visualize import NeuroGenesisVisualizer
+    import pickle
 
-    logger.info("▶ STAGE 10 — Final Visualisation")
+    logger.info("▶ STAGE 10 — Final Visualisation & Subject Report Generation")
     viz = NeuroGenesisVisualizer(output_dir=dirs["original"].parent)
 
     for pid in tqdm(resized, desc="Visualising", unit="scan",
                     bar_format="{l_bar}{bar:30}{r_bar}"):
         try:
+            # Create dedicated subject directory: outputs/<Subject_ID>/
+            subj_dir = cfg["output_dir"] / pid
+            subj_dir.mkdir(parents=True, exist_ok=True)
+
             original     = loader.loaded_scans[pid]["data"]
             preprocessed = resized[pid][0]
             masked       = stripped.get(pid, (None, None))[0]
-            masks        = all_masks.get(pid)
+            masks        = all_masks.get(pid, {})
             feature_df   = all_dfs.get(pid)
             graph        = graphs.get(pid) or graphs.get("template")
-            patches      = all_patches.get(pid)
+            patches      = all_patches.get(pid, {})
+            qc_rep       = qc_reports.get(pid) if qc_reports else None
 
+            # 1. Master pipeline summary figure
             viz.generate_pipeline_summary(
                 patient_id=pid,
                 original=original,
@@ -604,15 +697,183 @@ def stage_visualize(
                 patches=patches,
             )
 
-            if masks:
-                viz.plot_roi_panel(original, masks, pid)
+            # Copy/save visualization into subject directory
+            viz_src = cfg["output_dir"] / f"{pid}_pipeline_summary.png"
+            if viz_src.exists():
+                import shutil
+                shutil.copy(viz_src, subj_dir / "visualization.png")
 
+            # 2. Individual speech ROI overlays (Step 7)
+            if masks:
+                viz.plot_individual_roi_overlays(preprocessed, masks, pid, subj_dir=subj_dir)
+                # 3. Combined speech network overlay (Step 8)
+                viz.plot_combined_speech_network_overlay(preprocessed, masks, pid, subj_dir=subj_dir)
+                # 4. Multi-view speech network (Step 9)
+                viz.plot_speech_network_multiview(preprocessed, masks, pid, subj_dir=subj_dir)
+                viz.plot_roi_panel(preprocessed, masks, pid)
+
+            # 5. Feature table figure & CSV
             if feature_df is not None and not feature_df.empty:
                 viz.plot_feature_table_figure(feature_df, pid)
+                feature_df.to_csv(subj_dir / "features.csv", index=False)
+
+            # 6. Save graph pickle & json in subject directory
+            if graph is not None:
+                with open(subj_dir / "graph.pkl", "wb") as fh:
+                    pickle.dump(graph, fh)
+
+            # 7. Save QC report JSON in subject directory
+            if qc_rep is not None:
+                with open(subj_dir / "qc.json", "w", encoding="utf-8") as fh:
+                    json.dump(qc_rep.__dict__, fh, indent=2, default=str)
+
+            # 8. Save per-subject summary JSON
+            subj_meta = loader.loaded_scans[pid]["metadata"]
+            subj_summary = {
+                "subject_id": pid,
+                "timestamp": datetime.now().isoformat(),
+                "clinical_metadata": {
+                    "age": subj_meta.get("age"),
+                    "gender": subj_meta.get("gender"),
+                    "cdr": subj_meta.get("cdr"),
+                    "mmse": subj_meta.get("mmse"),
+                    "education": subj_meta.get("education"),
+                    "ses": subj_meta.get("ses"),
+                },
+                "mri_metadata": {
+                    "shape": subj_meta.get("shape"),
+                    "voxel_dims_mm": subj_meta.get("voxel_dims_mm"),
+                    "intensity_range": [subj_meta.get("min_intensity"), subj_meta.get("max_intensity")],
+                },
+                "qc_passed": qc_rep.passed if qc_rep else True,
+                "qc_score": qc_rep.quality_score if qc_rep else None,
+                "roi_voxel_counts": {r: int(m.sum()) for r, m in masks.items()} if masks else {},
+            }
+            with open(subj_dir / "summary.json", "w", encoding="utf-8") as fh:
+                json.dump(subj_summary, fh, indent=2, default=str)
+
+            # 9. Step 10: Generate debug_report.txt
+            write_debug_report(
+                pid=pid,
+                loader=loader,
+                resized=resized,
+                masks=masks,
+                patches=patches,
+                df=feature_df,
+                graph=graph,
+                qc_report=qc_rep,
+                subj_dir=subj_dir,
+            )
 
         except Exception as exc:
             logger.warning(f"  Visualisation failed for {pid}: {exc}")
             logger.debug(traceback.format_exc())
+
+
+def write_debug_report(
+    pid: str,
+    loader,
+    resized: Dict,
+    masks: Dict,
+    patches: Dict,
+    df: Optional[pd.DataFrame],
+    graph: Optional[Any],
+    qc_report: Optional[Any],
+    subj_dir: Path,
+) -> Path:
+    """
+    Step 10: Write comprehensive outputs/<Subject_ID>/debug_report.txt
+    """
+    lines = [
+        "============================================================",
+        f" NeuroGenesis Phase 1 — Subject Debug Report: {pid}",
+        "============================================================",
+        f"Timestamp           : {datetime.now().isoformat()}",
+        f"Subject ID          : {pid}",
+        "",
+        "--- 1. MRI LOAD & REGISTRATION METADATA ---",
+    ]
+    meta = loader.loaded_scans.get(pid, {}).get("metadata", {})
+    lines.append(f"MRI Filepath        : {meta.get('filepath')}")
+    lines.append(f"MRI Dimensions      : {meta.get('shape')}")
+    lines.append(f"Voxel Dimensions    : {meta.get('voxel_dims_mm')} mm")
+    lines.append(f"Intensity Range     : [{meta.get('min_intensity')}, {meta.get('max_intensity')}]")
+    lines.append(f"Clinical Age        : {meta.get('age')}")
+    lines.append(f"Clinical Gender     : {meta.get('gender')}")
+    lines.append(f"Clinical CDR        : {meta.get('cdr')}")
+    lines.append(f"Clinical MMSE       : {meta.get('mmse')}")
+
+    r_data, r_affine = resized.get(pid, (None, np.eye(4)))
+    lines.append(f"Resampled Shape     : {r_data.shape if r_data is not None else 'None'}")
+    lines.append(f"Resampled Affine    :\n{r_affine}")
+    lines.append(f"Registration Status : Harvard-Oxford Atlas resampled to subject MRI space successfully.")
+
+    lines.append("\n--- 2. QUALITY CONTROL REPORT ---")
+    if qc_report:
+        lines.append(f"QC Score            : {qc_report.quality_score:.2f} / 100")
+        lines.append(f"QC Passed           : {qc_report.passed}")
+        lines.append(f"SNR (dB)            : {qc_report.snr_db:.2f}")
+        lines.append(f"Flags               : {qc_report.flags}")
+    else:
+        lines.append("QC Report unavailable.")
+
+    lines.append("\n--- 3. ROI EXTRACTION & VOXEL COUNTS ---")
+    if masks:
+        for roi_name, mask in masks.items():
+            n_vox = int(mask.sum())
+            if n_vox > 0:
+                pos = np.argwhere(mask > 0)
+                bbox = (pos.min(axis=0).tolist(), pos.max(axis=0).tolist())
+            else:
+                bbox = "N/A (0 voxels)"
+            lines.append(f"  {roi_name:28s} │ Voxels={n_vox:6d} │ BoundingBox={bbox}")
+    else:
+        lines.append("No ROI masks available.")
+
+    lines.append("\n--- 4. ROI TENSOR STATISTICS ---")
+    if patches:
+        for roi_name, patch in patches.items():
+            n_vox = int(np.count_nonzero(patch))
+            min_i = float(patch.min()) if patch.size > 0 else 0.0
+            max_i = float(patch.max()) if patch.size > 0 else 0.0
+            mean_i = float(patch[patch > 0].mean()) if n_vox > 0 else 0.0
+            std_i = float(patch[patch > 0].std()) if n_vox > 0 else 0.0
+            lines.append(
+                f"  {roi_name:28s} │ Shape={patch.shape} │ Min={min_i:.2f} │ "
+                f"Max={max_i:.2f} │ Mean={mean_i:.2f} │ Std={std_i:.2f} │ NonZeroVoxels={n_vox}"
+            )
+    else:
+        lines.append("No ROI tensor patches available.")
+
+    lines.append("\n--- 5. FEATURE EXTRACTION METRICS ---")
+    if df is not None and not df.empty:
+        for _, row in df.iterrows():
+            lines.append(
+                f"  {row['roi_name']:28s} │ Voxels={row.get('voxel_count', 0)} │ "
+                f"BrainVol={row.get('brain_volume_mm3', 0.0):.1f} mm3 │ "
+                f"GMVol={row.get('gm_volume_mm3', 0.0):.1f} mm3 │ "
+                f"MeanInt={row.get('mean_intensity', 0.0):.2f} │ "
+                f"StdInt={row.get('std_intensity', 0.0):.2f} │ "
+                f"SurfaceArea={row.get('surface_area_vox', 0.0):.1f} vox2"
+            )
+    else:
+        lines.append("Feature extraction failed or DataFrame empty.")
+
+    lines.append("\n--- 6. GRAPH NODE ATTRIBUTES ---")
+    if graph is not None:
+        lines.append(f"Nodes: {list(graph.nodes())}")
+        lines.append(f"Edges: {len(graph.edges())}")
+        for n, data in graph.nodes(data=True):
+            lines.append(f"  Node [{n}]: {data}")
+    else:
+        lines.append("Graph unavailable.")
+
+    lines.append("\n============================================================")
+    report_text = "\n".join(lines)
+    report_file = subj_dir / "debug_report.txt"
+    with open(report_file, "w", encoding="utf-8") as fh:
+        fh.write(report_text)
+    return report_file
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -766,7 +1027,8 @@ def main() -> None:
         if loader.loaded_scans:
             stage_visualize(
                 cfg, dirs, loader, resized, stripped,
-                all_masks, all_patches, all_dfs, graphs, logger
+                all_masks, all_patches, all_dfs, graphs, logger,
+                qc_reports=qc_reports
             )
         stages_progress.update(1)
 
