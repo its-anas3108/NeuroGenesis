@@ -11,12 +11,15 @@ __pycache__/
 # Data and Atlases
 dataset/OASIS/*.tar
 dataset/OASIS/*.nii.gz
+dataset/OASIS/disc*/
 dataset/nilearn_data/
 
 # Output directories & Large data files
 outputs/
 *.nii
 *.nii.gz
+*.hdr
+*.img
 *.npy
 *.log
 

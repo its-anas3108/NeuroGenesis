@@ -68,7 +68,7 @@ CONFIG: Dict[str, Any] = {
     # 'oasis1'    → use real OASIS-1 MRI + CSV via dataset/oasis1_loader.py
     # 'synthetic' → use existing dataset/OASIS/ directory (testing only)
     "dataset_mode":     "oasis1",
-    "oasis_mri_dir":    Path("dataset/oasis_raw"),   # root folder of real MRIs
+    "oasis_mri_dir":    Path("dataset/OASIS"),     # root folder with real MRI files
     "oasis_csv_path":   None,            # None = auto-discover first .csv in dataset/
 
     # ── Preprocessing ──────────────────────────────────────────────────────
@@ -98,7 +98,8 @@ CONFIG: Dict[str, Any] = {
     # ── Pipeline Flags ─────────────────────────────────────────────────────
     "save_nifti":       True,            # Save intermediate NIfTI files
     "save_figures":     True,            # Save all PNG figures
-    "max_subjects":     3,               # Validation run on 3 subjects
+    "max_subjects":     10,              # Process 10 subjects (31 available)
+
 }
 
 
@@ -876,9 +877,35 @@ def write_debug_report(
     return report_file
 
 
+def stage_neuropropx(cfg: Dict, dirs: Dict, loader, graphs: Dict, all_dfs: Dict, logger: logging.Logger):
+    """
+    Stage 9.5: NeuroProp-X Core Engine Execution
+    Generates DRHE, Disease State Matrix S, Node Embeddings Z, Propagation Readiness Matrix R, and Graph Memory.
+    """
+    import sys
+    from pathlib import Path
+    root_path = Path(__file__).resolve().parent
+    if str(root_path) not in sys.path:
+        sys.path.insert(0, str(root_path))
+
+    from backend.modules.neuropropx.engine import NeuroPropXEngine
+
+    logger.info("▶ STAGE 9.5 — NeuroProp-X Core Engine Execution")
+    engine = NeuroPropXEngine(output_dir=cfg["output_dir"])
+
+    for pid in loader.loaded_scans.keys():
+        if pid in graphs and pid in all_dfs:
+            G = graphs[pid]
+            df = all_dfs[pid]
+            scan_info = loader.loaded_scans.get(pid, {})
+            meta = scan_info.get("metadata", {})
+            engine.process(G=G, features_df=df, subject_id=pid, metadata=meta)
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Pipeline summary
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def print_pipeline_summary(
     cfg: Dict,
@@ -1023,6 +1050,9 @@ def main() -> None:
         graphs = stage_graph(cfg, dirs, all_dfs, logger)
         stages_progress.update(1)
 
+        # Stage 9.5: NeuroProp-X Core Engine (DRHE, DSV Node Embeddings, Propagation Readiness)
+        stage_neuropropx(cfg, dirs, loader, graphs, all_dfs, logger)
+
         # Stage 10: Final visualisation
         if loader.loaded_scans:
             stage_visualize(
@@ -1031,6 +1061,7 @@ def main() -> None:
                 qc_reports=qc_reports
             )
         stages_progress.update(1)
+
 
     except KeyboardInterrupt:
         logger.warning("\n  Pipeline interrupted by user.")

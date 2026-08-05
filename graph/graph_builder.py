@@ -285,27 +285,46 @@ class BrainConnectivityGraph:
                     bbox=dict(boxstyle="round,pad=0.15", fc="#21262d",
                               ec="#30363d", alpha=0.8))
 
-        # ── Draw nodes ────────────────────────────────────────────────────
+        # ── Draw nodes — size & saturation driven by per-subject health scores ──
         for node_id in SPEECH_NODES:
             x, y = pos[node_id]
-            color = NODE_METADATA[node_id]["color"]
+            base_color = NODE_METADATA[node_id]["color"]
             label = NODE_METADATA[node_id]["label"]
 
-            # Node circle
-            circle = plt.Circle((x, y), 0.45, color=color, alpha=0.9,
-                                 zorder=5, linewidth=2,
-                                 fill=True)
+            node_data = G.nodes.get(node_id, {})
+            h_score = float(node_data.get("health_score", 75.0))
+            vol = float(node_data.get("feat_brain_volume_mm3", node_data.get("volume", 25000.0)))
+
+            # Node radius scales with regional volume (bigger = more tissue preserved)
+            vol_norm = np.clip(vol / 35000.0, 0.3, 1.0)
+            radius = 0.30 + 0.28 * vol_norm
+
+            # Health score drives alpha (dimmer = more atrophied)
+            alpha = float(np.clip(0.45 + 0.55 * (h_score / 100.0), 0.45, 1.0))
+
+            # Ring width scales with health score
+            ring_lw = 1.0 + 3.0 * (h_score / 100.0)
+
+            circle = plt.Circle((x, y), radius, color=base_color, alpha=alpha,
+                                 zorder=5, linewidth=2, fill=True)
             ax.add_patch(circle)
 
-            # Outer ring
-            ring = plt.Circle((x, y), 0.52, color=color, alpha=0.35,
-                               zorder=4, fill=False, linewidth=2)
+            ring = plt.Circle((x, y), radius + 0.10, color=base_color,
+                               alpha=alpha * 0.4, zorder=4, fill=False,
+                               linewidth=ring_lw)
             ax.add_patch(ring)
 
-            # Node label
             ax.text(x, y, label, ha="center", va="center",
                     color="white", fontsize=9, fontweight="bold",
                     zorder=6, multialignment="center")
+
+            # Health score badge below node
+            badge_color = "#22c55e" if h_score >= 75 else ("#f59e0b" if h_score >= 50 else "#ef4444")
+            ax.text(x, y - radius - 0.18, f"H={h_score:.1f}",
+                    ha="center", va="top", color=badge_color,
+                    fontsize=7, fontweight="bold", zorder=7,
+                    bbox=dict(boxstyle="round,pad=0.12", fc="#0d1117", ec=badge_color, alpha=0.85))
+
 
         # ── Colorbar (edge weight) ────────────────────────────────────────
         sm = plt.cm.ScalarMappable(

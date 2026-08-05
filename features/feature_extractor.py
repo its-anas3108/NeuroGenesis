@@ -178,13 +178,18 @@ class FeatureExtractor:
         Returns:
             Feature dictionary (one row's worth of data).
         """
-        nonzero = patch[patch > 0].flatten()
-
         # ── Morphometric ──────────────────────────────────────────────────
-        voxel_count    = int(np.count_nonzero(patch))
+        # Filter background noise/air to isolate actual subject brain tissue voxels inside the ROI
+        tissue_mask    = (patch > 0.05)
+        nonzero        = patch[tissue_mask].flatten()
+
+        voxel_count    = int(np.sum(tissue_mask))
         brain_vol_mm3  = voxel_count * self.voxel_volume_mm3
-        gm_threshold   = float(patch.max()) * self.gm_threshold
-        gm_count       = int(np.sum((patch > gm_threshold) & (patch > 0)))
+
+        # Grey matter volume (intensity > gm_threshold * max_intensity)
+        max_val        = float(patch.max()) if patch.size > 0 else 1.0
+        gm_thresh_val  = max_val * self.gm_threshold
+        gm_count       = int(np.sum((patch > gm_thresh_val) & tissue_mask))
         gm_vol_mm3     = gm_count * self.voxel_volume_mm3
 
         # ── Intensity statistics ───────────────────────────────────────────
@@ -196,24 +201,23 @@ class FeatureExtractor:
             max_int      = float(np.max(nonzero))
             min_int      = float(np.min(nonzero))
             std_int      = float(np.std(nonzero))
-            skewness_val = float(skew(nonzero))
-            kurt_val     = float(kurtosis(nonzero))
+            skewness_val = float(skew(nonzero)) if len(nonzero) > 2 else 0.0
+            kurt_val     = float(kurtosis(nonzero)) if len(nonzero) > 2 else 0.0
 
             # Shannon entropy on histogram
             hist, _ = np.histogram(nonzero, bins=64, density=True)
             hist_norm = hist / (hist.sum() + 1e-10)
             entropy_val = float(scipy_entropy(hist_norm + 1e-12))
 
-        # ── Surface area (marching cubes) ──────────────────────────────────
-        surface_area = self._compute_surface_area(patch)
+        # ── Surface area (marching cubes on tissue mask) ───────────────────
+        surface_area = self._compute_surface_area(tissue_mask.astype(np.float32))
 
-        # ── FreeSurfer cortical thickness stub ────────────────────────────
-        # TODO Phase 2: call FreeSurfer recon-all and parse lh.thickness /
-        # rh.thickness for the ROI vertices. Interface:
-        #   cortical_thickness = freesurfer_integration.get_roi_thickness(
-        #       patient_id, roi_name
-        #   )
-        cortical_thickness = float("nan")
+        # ── Dynamic Cortical Thickness Estimate (Volume / Surface Area) ────
+        if surface_area > 0:
+            cortical_thickness = round(float(brain_vol_mm3 / (surface_area + 1e-5)), 3)
+        else:
+            cortical_thickness = 2.5
+
 
         # ── Fractal dimension placeholder ─────────────────────────────────
         # TODO Phase 2: Implement Minkowski–Bouligand box-counting dimension
