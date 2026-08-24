@@ -1,6 +1,39 @@
 """
-NeuroGenesis Phase 1 — Main Pipeline Orchestrator
-===================================================
+NeuroGenesis Phase 1 — legacy imaging + visualization orchestrator
+=================================================================
+
+.. note::
+
+   **`run.py` is the active orchestrator.** This script is retained because it
+   drives the preserved Phase-1 imaging and visualization path end to end,
+   including the publication figures from ``visualization/visualize.py`` that
+   ``run.py --mode preprocess`` does not yet reproduce.
+
+   What it does *not* do any more: the former "Stage 9.5" invoked the
+   pre-refactor NeuroProp-X engine, the closed-form atrophy extrapolation, the
+   Digital Twin and the synthetic-SHAP XAI module. Those consumed hard-coded
+   speech-assessment scores that OASIS-1 does not contain and produced numbers
+   with no learnable parameters behind them, so the stage has been removed
+   rather than repointed. The active, trainable equivalents are:
+
+   ===========================  ==================================================
+   NeuroProp-X                  ``modules/m06_neuropropx``
+   Graph classification         ``modules/m06_graph_learning``
+   Stage propensity             ``modules/m07_stage_tgt``
+   Explainable AI               ``modules/m08_xai``
+   Reports                      ``modules/m11_report``
+   ===========================  ==================================================
+
+   Equivalent modern invocations::
+
+       python run.py --mode preprocess      # M1-M8
+       python run.py --mode train_full      # model training
+       python run.py --mode report          # subject reports
+
+   See ``MIGRATION_PLAN.md`` for the full disposition of every legacy file.
+
+Original description
+--------------------
 Author : NeuroGenesis Research Team
 Version: 1.0.0 (Phase 1 — Preprocessing)
 Date   : 2024
@@ -135,7 +168,7 @@ def setup_logging(output_dir: Path) -> logging.Logger:
 
     logger = logging.getLogger("NeuroGenesis")
     logger.info("=" * 80)
-    logger.info("  NeuroGenesis Phase 1 — Preprocessing Pipeline")
+    logger.info("  NeuroGenesis - legacy Phase-1 imaging pipeline")
     logger.info(f"  Start time : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info(f"  Log file   : {log_path}")
     logger.info("=" * 80)
@@ -877,106 +910,20 @@ def write_debug_report(
     return report_file
 
 
-def stage_neuropropx(cfg: Dict, dirs: Dict, loader, graphs: Dict, all_dfs: Dict, logger: logging.Logger):
-    """
-    Stage 9.5: NeuroProp-X Core Engine Execution
-    Generates DRHE, Disease State Matrix S, Node Embeddings Z, Propagation Readiness Matrix R, and Graph Memory.
-    """
-    import sys
-    from pathlib import Path
-    root_path = Path(__file__).resolve().parent
-    if str(root_path) not in sys.path:
-        sys.path.insert(0, str(root_path))
-
-    import importlib
-    NeuroPropXEngine = importlib.import_module("backend.modules.06_neuropropx.engine").NeuroPropXEngine
-    TemporalGraphTransformer = importlib.import_module("backend.modules.06_neuropropx.temporal_transformer").TemporalGraphTransformer
-    PatientDigitalTwin = importlib.import_module("backend.modules.07_digital_twin.digital_twin").PatientDigitalTwin
-    ExplainableAIEngine = importlib.import_module("backend.modules.08_xai.explainable_ai").ExplainableAIEngine
-    ClinicalReportGenerator = importlib.import_module("backend.modules.09_report.clinical_report").ClinicalReportGenerator
-    OASIS3LongitudinalManager = importlib.import_module("backend.modules.01_dataset.oasis3_manager").OASIS3LongitudinalManager
-    SpeechAssessmentScores = importlib.import_module("backend.modules.01_dataset.oasis3_manager").SpeechAssessmentScores
-
-    logger.info("▶ STAGE 9.5 — NeuroProp-X Framework, TGT, Digital Twin & XAI Execution")
-    
-    oasis3_mgr = OASIS3LongitudinalManager(dataset_dir=cfg["dataset_dir"])
-    npx_engine = NeuroPropXEngine(output_dir=cfg["output_dir"])
-    tgt_engine = TemporalGraphTransformer(output_dir=cfg["output_dir"])
-    xai_engine = ExplainableAIEngine(output_dir=cfg["output_dir"])
-    report_gen = ClinicalReportGenerator(output_dir=cfg["output_dir"])
-
-    target_pids = list(loader.loaded_scans.keys()) if loader.loaded_scans else ["OAS1_0001_MR1", "OAS1_0002_MR1"]
-
-    for pid in target_pids:
-        G = graphs.get(pid, graphs.get("template"))
-        if G is None:
-            continue
-        df = all_dfs.get(pid, pd.DataFrame())
-        scan_info = loader.loaded_scans.get(pid, {})
-        meta = scan_info.get("metadata", {"mmse": 27.0, "cdr": 0.5})
-
-        # 1. NeuroProp-X Framework (DRVE, ANPE, TDM, PRR)
-        speech_score_obj = SpeechAssessmentScores(88.0, 86.0, 84.0, 87.0, 86.25)
-        speech_scores_dict = {"overall_speech_index": speech_score_obj.overall_speech_index}
-
-        drve_scores = npx_engine.compute_drve(G, speech_scores_dict)
-        anpe_matrix = npx_engine.compute_anpe(G, drve_scores)
-        prr_graph = npx_engine.compute_prr(G, anpe_matrix)
-        npx_res = npx_engine.process(G=G, features_df=df, subject_id=pid, metadata=meta)
-
-        # 2. Temporal Graph Transformer (TGT) Atrophy Forecast
-        rois = sorted(list(G.nodes()))
-        cur_vols = {r: G.nodes[r].get("volume", 12000.0) for r in rois}
-        adj_mat = npx_res["propagation_readiness_matrix"]
-
-        tgt_pred = tgt_engine.forecast_future_atrophy(
-            subject_id=pid,
-            rois=rois,
-            current_volumes=cur_vols,
-            vulnerability_scores=drve_scores,
-            adjacency_matrix=adj_mat,
-            time_horizon_years=1.0,
-            clinical_speech_score=speech_score_obj.overall_speech_index
-        )
-
-        # 3. Patient Digital Twin Framework
-        dtwin = PatientDigitalTwin(subject_id=pid, output_dir=cfg["output_dir"])
-        dtwin.initialize_or_update(
-            visit_id=f"{pid}_T0",
-            age=meta.get("age", 72.0),
-            mmse=meta.get("mmse", 27.0),
-            cdr=meta.get("cdr", 0.5),
-            overall_speech_score=speech_score_obj.overall_speech_index,
-            regional_volumes=cur_vols,
-            vulnerability_scores=drve_scores,
-            connectivity_matrix=adj_mat
-        )
-        sim_res = dtwin.run_intervention_simulation(therapy_efficacy_pct=30.0, forecast_years=2.0)
-
-        # 4. Explainable AI (SHAP & Attention Maps)
-        xai_res = xai_engine.analyze_model_decisions(
-            subject_id=pid,
-            features_df=df,
-            vulnerability_scores=drve_scores,
-            attention_matrix=tgt_pred.temporal_attention_weights,
-            speech_score=speech_score_obj.overall_speech_index
-        )
-
-        # 5. Clinical Diagnostic Report Generation
-        report_path = report_gen.generate_report(
-            subject_id=pid,
-            patient_metadata=meta,
-            health_scores=npx_res["health_scores"],
-            vulnerability_scores=drve_scores,
-            tgt_prediction=tgt_pred,
-            digital_twin_sim=sim_res,
-            xai_result=xai_res
-        )
-        logger.info(f"Generated complete clinical report: {report_path}")
-
-
 # ──────────────────────────────────────────────────────────────────────────────
-# Pipeline summary
+# `stage_neuropropx` removed in the stage-aware refactor.
+#
+# It called the pre-refactor NeuroProp-X engine, the closed-form atrophy
+# extrapolation mislabelled a "Temporal Graph Transformer", the Digital Twin and
+# the XAI module whose own comment read "Synthetic SHAP value generation". Its
+# inputs included `SpeechAssessmentScores(88.0, 86.0, 84.0, 87.0, 86.25)` -
+# fabricated speech scores that OASIS-1 does not measure.
+#
+# The trainable replacements live in `modules/m06_neuropropx`,
+# `modules/m06_graph_learning`, `modules/m07_stage_tgt`, `modules/m08_xai` and
+# `modules/m11_report`, and are driven by `run.py`. The original code is
+# preserved in git history and archived under
+# `modules/m12_future_extensions/_legacy_backend/`.
 # ──────────────────────────────────────────────────────────────────────────────
 
 
@@ -1063,7 +1010,8 @@ def main() -> None:
 
     # ── Stages ──────────────────────────────────────────────────────────────
     print("\n" + "═" * 70)
-    print("  NeuroGenesis Phase 1 — Starting Pipeline")
+    print("  NeuroGenesis - legacy Phase-1 imaging pipeline")
+    print("  (run.py is the active orchestrator; see the module docstring)")
     print("═" * 70 + "\n")
 
     stages_progress = tqdm(
@@ -1123,8 +1071,11 @@ def main() -> None:
         graphs = stage_graph(cfg, dirs, all_dfs, logger)
         stages_progress.update(1)
 
-        # Stage 9.5: NeuroProp-X Core Engine (DRHE, DSV Node Embeddings, Propagation Readiness)
-        stage_neuropropx(cfg, dirs, loader, graphs, all_dfs, logger)
+        # Stage 9.5 removed. It invoked the pre-refactor NeuroProp-X engine,
+        # the legacy atrophy extrapolation, the Digital Twin and the
+        # synthetic-SHAP XAI module on hard-coded speech-assessment scores that
+        # OASIS-1 does not contain. Use `python run.py --mode train_full` and
+        # `--mode report` for the trainable replacements.
 
         # Stage 10: Final visualisation
         if loader.loaded_scans:
