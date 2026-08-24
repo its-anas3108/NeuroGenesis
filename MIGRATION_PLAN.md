@@ -186,86 +186,106 @@ Each step is verified before the next begins (Section 36).
 
 ## 7. Completion status
 
-Refactor complete. Recorded here so the plan documents what was actually
-achieved rather than only what was intended.
+Refactor complete, and the outstanding environment blockers have since been
+cleared. Recorded here so the plan documents what was actually achieved.
 
 ### Validation checkpoints (Section 35)
 
-Run with `python tools/validate_checkpoints.py --outputs outputs_smoke`.
+    python tools/validate_checkpoints.py --outputs outputs_imaging         --mri-dir dataset/OASIS_synthetic
 
 | # | Checkpoint | Result |
 |---|---|---|
-| 1 | MRI -> preprocessing -> 5 ROIs -> features -> graph | **BLOCKED** — `nibabel`, `SimpleITK`, `nilearn`, `scikit-image` absent; `dataset/OASIS/` empty |
-| 2 | graph -> NeuroProp-X -> G* | **PASS** — `X*=(B,5,147)`, `A*=(B,5,5)`, `P=(B,5,5)` |
-| 3 | 3D CNN -> five ROI embeddings | **PASS** — `(1,5,128)`, 78,736 params, 6 traced stages, deterministic |
-| 4 | G* -> SAEG-GATv2 -> CN/MCI/AD | **PASS** — `Z_G=(B,128)`, edge gate active |
-| 5 | Fusion of CNN + graph | **PASS** — `Z_3D(128) + Z_G(128) -> Z_F(256) -> Z_H(64)` |
-| 6 | Stage-TGT propensity, no longitudinal data | **PASS** — 4 tokens; AD reference correctly reports `null` |
-| 7 | ROI ranking and stability | **PASS** — weights renormalise when a signal is absent |
-| 8 | Attribution and attention explanations | **PASS** — permutation backend correctly *not* labelled SHAP |
-| 9 | Ablation ladder A0-A7 | **PASS** — 8 variants; paired Wilcoxon comparison |
-| 10 | Dashboard renders all M1-M19 | **BLOCKED** — `streamlit`/`starlette` conflict. All 22 pages verified against a stubbed Streamlit on both a populated and an empty outputs tree; the data layer and all 23 module rows pass |
+| 1 | MRI -> preprocessing -> 5 ROIs -> features -> graph | **PASS** — full imaging chain on phantom volumes |
+| 2 | graph -> NeuroProp-X -> G* | **PASS** — `X*=(B,5,147)`, `A*`, `P` |
+| 3 | 3D CNN -> five ROI embeddings | **PASS** — `(1,5,128)`, 78,736 params, deterministic |
+| 4 | G* -> SAEG-GATv2 -> CN/MCI/AD | **PASS** — edge gate active |
+| 5 | Fusion of CNN + graph | **PASS** — `Z_3D(128)+Z_G(128) -> Z_F(256) -> Z_H(64)` |
+| 6 | Stage-TGT propensity, no longitudinal data | **PASS** — AD reference correctly `null` |
+| 7 | ROI ranking and stability | **PASS** |
+| 8 | Attribution and attention explanations | **PASS** — genuine Kernel SHAP |
+| 9 | Ablation ladder A0-A7 | **PASS** |
+| 10 | Dashboard renders all M1-M19 | **PASS** — Streamlit serves, health endpoint 200 |
 
-**8 PASS, 2 BLOCKED, 0 FAIL.** Both blocks are absent environment packages, not
-code defects. A blocked checkpoint is never reported as a pass.
+**10 PASS, 0 BLOCKED, 0 FAIL.**
+
+On the smoke-patch tree (`--outputs outputs_smoke`) checkpoint 1 correctly
+reports BLOCKED, because that tree is generated from the ROI-patch stage onward
+and has no imaging of its own.
 
 ### Invariant tests
 
-`python tests/test_invariants.py` — **24/24 pass**, covering subject-wise split
-integrity with two sessions per subject, train-only scaler fitting, train-only
-class weights, undefined-vs-zero metric handling, CI clamping, report language
-discipline, figure-title discipline, attribution labelling, FDR monotonicity,
-ROI-order and checkpoint guards, ablation shape invariance, edge-gate/ANP
-coupling, gradient reachability, propensity bounds and anchoring, legacy-import
-quarantine, config validation, run-state integrity, and the real OASIS-1 label
-counts (135/70/30).
+`python tests/test_invariants.py` — **27/27 pass**.
 
-### Defects found and fixed during the refactor
+### Environment blockers: cleared
 
-Each was found by running the code, not by inspection:
+| Blocker | Resolution |
+|---|---|
+| `nibabel`, `SimpleITK`, `nilearn`, `scikit-image` absent | Installed. M1-M8 now execute. |
+| `streamlit` / `starlette` conflict | Resolved by upgrading `starlette` to >= 1.6 and `anyio` to >= 4. Streamlit 1.60 imports and serves. |
+| `shap` absent | Installed. Attribution now uses genuine Kernel SHAP. |
+| `xgboost` absent | Installed. |
+| No MRI in `dataset/OASIS/` | **Still outstanding.** Phantom volumes in `dataset/OASIS_synthetic/` exercise the code path; real OASIS-1 T1s are still required for any result. |
 
-1. **`SAEGGATv2.out_dim` disagreed with the actual output width.** The
-   head-combination bookkeeping assumed an averaging layer emits
-   `hidden // heads`; it emits `hidden`. Fixed in both the proposed encoder and
-   the baselines.
-2. **The prototype temperature was a dead parameter.** No loss term consumed the
-   prototype similarities, so a trainable temperature had no gradient path. Made
-   a buffer, with the reason documented.
-3. **The AD-associated propensity was inverted.** The CN-to-AD axis projection is
-   sensitive to a common-mode offset of the representation cloud; on a trained
-   model it returned 0.87 for CN and 0.69 for AD. Replaced with the
-   offset-invariant ratio `d_CN / (d_CN + d_AD)`; the projection is retained as a
-   geometry diagnostic.
-4. **The prototype losses were scale-suppressed.** `L_proto` and `L_order` divide
-   by `d_model`, so the initial weights (0.10 / 0.05) left prototypes ~8.5 from
-   their own class centroids while being only ~5.1 apart. Raised to 1.00 / 0.50.
-5. **Model selection could pick an epoch with untrained stage geometry.**
-   Validation balanced accuracy saturated at epoch 4 while `L_order` was still
-   1.88. Added a tie-break that prefers better geometry only when the monitored
-   metric is *equal*, so nothing is traded away. Best epoch moved 4 -> 24 and the
-   CN < MCI < AD ordering became satisfied.
-6. **Permutation attribution tried to allocate 24 GB.** It re-ran the 3D CNN for
-   all 700 perturbed rows. The CNN embedding is constant during morphometric
-   attribution, so it is now computed once per subject and the forward passes are
-   chunked.
-7. **The report language guard rejected its own disclaimers.** A substring ban on
-   "conversion probability" also caught "not a validated conversion probability".
-   Made negation-aware, with sentence-boundary scoping so a negation in a prior
-   sentence cannot license the next assertion.
-8. **Confidence intervals exceeded 1.0.** A normal approximation on a bounded
-   metric produced a macro-F1 upper bound of 1.047. Now clamped, with
-   `ci_clamped` recorded and surfaced in Table 9.
-9. **`LogisticRegression(multi_class=...)`** was removed in scikit-learn 1.8.
-10. **M9-M11.4 reported `NOT_STARTED` despite executing.** They run inside one
-    forward pass; their state is now recorded from the produced tensors.
+> **Environment side effect.** Upgrading `starlette` broke the pin of a
+> pre-existing standalone `fastapi 0.104.1` (it requires `starlette < 0.28`).
+> `fastapi` still imports and nothing depends on it (`pip show fastapi` lists no
+> `Required-by`), but `pip check` reports the conflict. Restore with
+> `pip install "starlette>=0.27,<0.28"` if that fastapi install matters, at the
+> cost of the dashboard.
 
-### Blockers still outstanding
+### Defects found and fixed
 
-| Blocker | Effect | Resolution |
-|---|---|---|
-| No MRI under `dataset/OASIS/` | Checkpoint 1 blocked; no real metric can be produced | Place OASIS-1 T1 volumes there |
-| `nibabel`, `SimpleITK`, `nilearn`, `scikit-image` absent | M1-M8 importable but not executable | `pip install -r requirements.txt` |
-| `streamlit` / `starlette` conflict | Dashboard verified but not launchable here | `pip install --upgrade 'streamlit>=1.40' 'starlette>=0.40'` |
-| `shap` absent | Attribution uses the permutation backend, labelled as such | `pip install shap` |
-| `xgboost` absent | Gradient-boosting baseline substituted, labelled as such | `pip install xgboost` |
-| AD n=30 | Binds every claim; single-split estimates not reportable | Inherent to OASIS-1 |
+Each was found by running the code, not by inspection.
+
+**Found during the original refactor:**
+
+1. `SAEGGATv2.out_dim` disagreed with the actual output width.
+2. The prototype temperature was a dead parameter.
+3. The AD-associated propensity was inverted by a common-mode offset; replaced
+   with the offset-invariant `d_CN / (d_CN + d_AD)`.
+4. `L_proto` and `L_order` were scale-suppressed by the `d_model` normalisation.
+5. Model selection could pick an epoch with untrained stage geometry; added a
+   tie-break that never trades classification for geometry.
+6. Permutation attribution tried to allocate 24 GB by re-running the 3D CNN per
+   perturbed row.
+7. The report language guard rejected its own disclaimers.
+8. Confidence intervals exceeded 1.0 on bounded metrics.
+9. `LogisticRegression(multi_class=)` was removed in scikit-learn 1.8.
+10. M9-M11.4 reported `NOT_STARTED` despite executing.
+
+**Found once the imaging stack could actually run:**
+
+11. **Six wrong call signatures in the M1-M7 wrappers.** They were written
+    against assumed APIs and had never been executable. `SkullStripper.strip`
+    needs the affine; `MRIResizer.resample` needs the affine and returns
+    `(volume, new_affine)`; `normalize_wm_peak` returns `(volume, wm_peak)`;
+    `ROIExtractor` takes `data_dir`, not `atlas_dir`; `ArtifactDetector` takes
+    the QC threshold.
+12. **The resampled affine was discarded.** M5 replaces the voxel-to-world
+    mapping, and M6 was being handed the original. The atlas would have been
+    registered to the wrong grid while every shape and intensity check still
+    looked correct.
+13. **`ROICropper.extract_all` stacks patches in dict-insertion order and
+    zero-fills a failed ROI.** Both are unacceptable: the tensor axis must
+    follow `ROI_ORDER`, and a blank patch labelled with a subject's stage
+    corrupts training invisibly. The wrapper now crops each ROI individually in
+    canonical order and records failures instead of filling them.
+14. **The 201 unassessed OASIS-1 sessions were reported as "unmapped CDR
+    values".** `Series.map` does not preserve `None` — pandas converts it to
+    `float('nan')` — so the identity check missed every one and emitted a
+    misleading data-quality warning. Labels were correct; the diagnostic was not.
+15. **Training split the full 235-session cohort rather than the processed
+    subset**, so splits contained sessions with no features. Added
+    `Context.trainable_cohort()`.
+16. **A phantom-MRI outputs tree carried no synthetic marker.** Its artifacts
+    come out of the real imaging pipeline, so nothing about them reveals the
+    source. Added `modules/common/provenance.py`, stamped at preprocessing time
+    and read by the dashboard, reports and figures.
+17. **The report named the wrong synthetic source**, describing phantom-MRI runs
+    as fabricated patches from the other generator.
+
+### Outstanding
+
+Only one, and it is not fixable from here: **`dataset/OASIS/` contains no real
+MRI.** Every metric produced so far describes a synthetic generator. Place real
+OASIS-1 T1 volumes there and re-run `--mode preprocess` to obtain results.

@@ -84,14 +84,21 @@ class DashboardState:
 
     @property
     def smoke_marker(self) -> Optional[Dict[str, Any]]:
-        """Return the synthetic-data marker, or ``None`` for a real tree."""
-        return _read_json(self.outputs / "SMOKE_TEST.json")
+        """Return synthetic-data provenance, or ``None`` for a real tree.
+
+        Delegates to :func:`modules.common.provenance.detect_provenance`
+        so the dashboard cannot disagree with the report generator about
+        whether a tree is synthetic.
+        """
+        from modules.common.provenance import detect_provenance
+
+        provenance = detect_provenance(self.outputs, self.cfg.paths.mri_dir)
+        return provenance.to_dict() if provenance.is_synthetic else None
 
     @property
     def is_synthetic(self) -> bool:
-        """True when every number in this tree came from synthetic input."""
-        marker = self.smoke_marker
-        return bool(marker and marker.get("is_smoke_test"))
+        """True when any number in this tree derives from generated data."""
+        return self.smoke_marker is not None
 
     def exists(self) -> bool:
         """True if the outputs root exists at all."""

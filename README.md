@@ -226,18 +226,41 @@ python run.py --mode report --patient_id OAS1_0028_MR1
 
 ### Validating the code path without MRI data
 
-If `dataset/OASIS/` is empty, the model and analysis code can still be exercised end-to-end on clearly-labelled synthetic artifacts:
+If `dataset/OASIS/` is empty, the pipeline can still be exercised end-to-end on clearly-labelled synthetic data. Two generators exist, covering different halves of the pipeline.
+
+**Phantom MRI — exercises the imaging chain (M1–M8):**
+
+```bash
+python tools/make_synthetic_mri.py --out dataset/OASIS_synthetic --n 9
+python run.py --mode preprocess --config config_imaging.json   # M1-M8 for real
+python run.py --mode train_full --config config_imaging.json
+python run.py --mode report     --config config_imaging.json --patient_id OAS1_0028_MR1
+```
+
+Writes NIfTI volumes with a proper MNI-centred affine, named after **real** OASIS-1 session IDs so the labels and cohort machinery are genuine. The real preprocessing, Harvard-Oxford registration and feature extraction then run on them.
+
+**Fabricated ROI patches — skips imaging, exercises the model (M9–M19):**
 
 ```bash
 python tools/make_smoke_artifacts.py --out outputs_smoke --n-subjects 60
 python tools/smoke_train.py --variant A7 --epochs 30
 python run.py --mode statistics --outputs outputs_smoke
-python run.py --mode ablation  --outputs outputs_smoke --repeats 3 --epochs 8
-python run.py --mode report    --outputs outputs_smoke --patient_id OAS1_0028_MR1
-python run.py --mode dashboard --outputs outputs_smoke
+python run.py --mode ablation   --outputs outputs_smoke --repeats 3 --epochs 8
+python run.py --mode dashboard  --outputs outputs_smoke
 ```
 
-> The generator writes a `SMOKE_TEST.json` marker into the output root. Every consumer — dashboard, report generator, figures, results tables — checks for it and stamps a **"SYNTHETIC SMOKE-TEST DATA — NOT A RESEARCH RESULT"** banner on anything it renders. Metrics measured on these artifacts describe the synthetic generator, not Alzheimer's disease.
+Faster, since it needs no imaging stack.
+
+> **Provenance is tracked and cannot be lost.** `modules/common/provenance.py` detects both generators — one marks the outputs tree, the other marks the dataset — and `--mode preprocess` stamps the provenance into the outputs tree. Every consumer (dashboard, report, figures, tables) reads it and renders the correct banner: **"SYNTHETIC PHANTOM MRI"** or **"SYNTHETIC SMOKE-TEST DATA"**, never generic. The phantom-MRI case matters most: its artifacts come out of the real imaging pipeline, so nothing about them reveals the source. Metrics from either describe a generator, not Alzheimer's disease.
+
+### Validation
+
+```bash
+python tools/validate_checkpoints.py --outputs outputs_imaging --mri-dir dataset/OASIS_synthetic
+python tests/test_invariants.py
+```
+
+The Section 35 checkpoints report **PASS / FAIL / BLOCKED**; a checkpoint blocked by a missing package or absent data is never reported as a pass.
 
 ---
 

@@ -256,14 +256,10 @@ def is_smoke_output(out_root: Path) -> Optional[Dict[str, object]]:
     Returns:
         The manifest, or ``None`` if the tree is not marked as a smoke test.
     """
-    marker = Path(out_root) / MARKER_NAME
-    if not marker.exists():
-        return None
-    try:
-        return json.loads(marker.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        # A marker that cannot be parsed still means "this tree is synthetic".
-        return {"is_smoke_test": True, "warning": "unparseable smoke-test marker"}
+    from modules.common.provenance import detect_provenance
+
+    provenance = detect_provenance(Path(out_root))
+    return provenance.to_dict() if provenance.is_synthetic else None
 
 
 def main() -> int:

@@ -466,6 +466,8 @@ def main() -> int:
         description="Run the Section 35 validation checkpoints."
     )
     parser.add_argument("--outputs", type=Path, default=Path("outputs_smoke"))
+    parser.add_argument("--mri-dir", type=Path,
+                        help="Override the MRI directory checkpoint 1 scans.")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -474,6 +476,8 @@ def main() -> int:
 
     cfg = NeuroGenesisConfig()
     cfg.paths.outputs_dir = args.outputs
+    if args.mri_dir:
+        cfg.paths.mri_dir = args.mri_dir
     harness = Harness(outputs=args.outputs, cfg=cfg)
 
     print("=" * 78)

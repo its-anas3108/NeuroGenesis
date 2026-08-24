@@ -503,6 +503,126 @@ def test_patch_tensor_refuses_to_zero_fill_a_missing_roi() -> None:
     raise AssertionError("a missing ROI patch should have been rejected")
 
 
+def test_synthetic_provenance_is_detected_from_either_generator() -> None:
+    """Phantom MRI must be detected even though its outputs look real.
+
+    The smoke-artifact generator marks the outputs tree, so it is easy to spot.
+    The phantom-MRI generator marks only the *dataset*, and its artifacts come
+    out of the real imaging pipeline, so an outputs tree built from it is
+    indistinguishable from a genuine run unless the dataset marker is followed.
+    """
+    from modules.common.provenance import (
+        PROVENANCE_MARKER,
+        SMOKE_MARKER,
+        SYNTHETIC_MRI_MARKER,
+        detect_provenance,
+        stamp_outputs,
+    )
+
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        outputs, dataset = root / "outputs", root / "data"
+        outputs.mkdir()
+        dataset.mkdir()
+
+        # Unmarked on both sides: real.
+        assert not detect_provenance(outputs, dataset).is_synthetic
+
+        # Marked dataset only: still synthetic, and named correctly.
+        (dataset / SYNTHETIC_MRI_MARKER).write_text(
+            json.dumps({"is_synthetic_mri": True, "warning": "phantom"}),
+            encoding="utf-8",
+        )
+        provenance = detect_provenance(outputs, dataset)
+        assert provenance.is_synthetic
+        assert provenance.kind == "synthetic_mri"
+        assert "PHANTOM" in provenance.banner
+
+        # Stamping copies it into the outputs tree, so a later consumer that
+        # only sees the outputs directory still finds it.
+        stamped = stamp_outputs(outputs, dataset)
+        assert stamped is not None and (outputs / PROVENANCE_MARKER).exists()
+        assert detect_provenance(outputs).kind == "synthetic_mri"
+
+    with tempfile.TemporaryDirectory() as directory:
+        outputs = Path(directory)
+        (outputs / SMOKE_MARKER).write_text(
+            json.dumps({"is_smoke_test": True, "warning": "patches"}),
+            encoding="utf-8",
+        )
+        provenance = detect_provenance(outputs)
+        assert provenance.kind == "synthetic_patches"
+        assert "SMOKE-TEST" in provenance.banner
+
+    with tempfile.TemporaryDirectory() as directory:
+        # An unparseable marker must never be upgraded to "real".
+        outputs = Path(directory)
+        (outputs / SMOKE_MARKER).write_text("{ not json", encoding="utf-8")
+        assert detect_provenance(outputs).is_synthetic
+
+
+def test_report_names_the_correct_synthetic_source() -> None:
+    """A phantom-MRI report must not claim its data came from fake patches."""
+    from modules.m11_report.report import ReportGenerator, ReportInputs
+
+    generator = ReportGenerator(Path(tempfile.gettempdir()))
+
+    phantom = generator.build_markdown(ReportInputs(
+        subject_id="S1",
+        smoke_marker={"kind": "synthetic_mri",
+                      "banner": "SYNTHETIC PHANTOM MRI - NOT A RESEARCH RESULT"},
+    ))
+    assert "PHANTOM MRI" in phantom
+    assert "make_synthetic_mri.py" in phantom
+    assert "make_smoke_artifacts.py" not in phantom
+
+    patches = generator.build_markdown(ReportInputs(
+        subject_id="S2",
+        smoke_marker={"kind": "synthetic_patches",
+                      "banner": "SYNTHETIC SMOKE-TEST DATA - NOT A RESEARCH RESULT"},
+    ))
+    assert "make_smoke_artifacts.py" in patches
+    assert "make_synthetic_mri.py" not in patches
+
+    real = generator.build_markdown(ReportInputs(subject_id="S3"))
+    assert "SYNTHETIC" not in real
+    assert "OASIS-1 (real)" in real
+
+
+def test_missing_cdr_is_not_reported_as_an_unmapped_value() -> None:
+    """An unassessed session is an exclusion, not a data-quality problem.
+
+    Regression test. ``Series.map`` does not preserve ``None``: on a float
+    column pandas converts it to ``float('nan')``, so an identity check against
+    ``None`` misclassified all 201 unassessed OASIS-1 sessions as carrying
+    unmapped CDR values and emitted a misleading warning.
+    """
+    from modules.m01_dataset import map_labels
+
+    frame = pd.DataFrame({
+        "ID": [f"OAS1_{i:04d}_MR1" for i in range(6)],
+        "CDR": [0.0, 0.5, 1.0, np.nan, np.nan, np.nan],
+        "Age": [70, 72, 74, 25, 28, 31],
+    })
+    _, report = map_labels(frame)
+    assert report.n_missing_cdr == 3, report.n_missing_cdr
+    assert report.n_unmapped_cdr == 0, report.n_unmapped_cdr
+    assert report.unmapped_cdr_values == [], report.unmapped_cdr_values
+    # The small-sample warning is expected on a 6-row fixture; only the
+    # unmapped-value warning must be absent.
+    assert not any("outside the configured mapping" in w
+                   for w in report.warnings), report.warnings
+
+    # A genuinely unmapped value must still be caught and named.
+    frame.loc[2, "CDR"] = 3.5
+    _, strict = map_labels(
+        frame, cdr_to_stage={"0.0": "CN", "0.5": "MCI", "1.0": "AD"}
+    )
+    assert strict.n_unmapped_cdr == 1
+    assert strict.unmapped_cdr_values == [3.5]
+    assert any("outside the configured mapping" in w for w in strict.warnings)
+
+
 def test_real_oasis_label_mapping_matches_the_metadata() -> None:
     """The documented CN/MCI/AD counts must match the shipped CSV."""
     csv = _ROOT / "dataset" / "oasis_cross-sectional.csv"

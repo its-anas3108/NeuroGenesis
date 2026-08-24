@@ -31,3 +31,10 @@ outputs_smoke/
 .DS_Store
 .vscode/
 .idea/
+
+# Generated artifact trees and synthetic data
+outputs_imaging/
+dataset/OASIS_synthetic/
+config_imaging.json
+*_run.log
+streamlit_boot.log

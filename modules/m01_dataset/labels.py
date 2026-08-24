@@ -152,6 +152,23 @@ def _cdr_key(value: Any) -> Optional[str]:
         return None
 
 
+def _is_missing_key(value: Any) -> bool:
+    """Return whether a mapped CDR key represents "no assessment".
+
+    This cannot be a plain ``value is None`` test. ``Series.map`` does not
+    preserve ``None``: on a float64 column pandas infers a ``str``/object result
+    dtype and converts the returned ``None`` into ``float('nan')``. An identity
+    check against ``None`` therefore misses every unassessed session and
+    misreports all 201 of them as carrying an *unmapped* CDR value, which reads
+    as a data problem rather than as the documented exclusion it is.
+    """
+    if value is None:
+        return True
+    if isinstance(value, float) and math.isnan(value):
+        return True
+    return False
+
+
 def extract_subject_id(session_id: str) -> str:
     """Strip the OASIS session suffix to obtain the subject identifier.
 
@@ -232,21 +249,29 @@ def map_labels(
 
     stages: List[Optional[str]] = []
     unmapped: set = set()
+    n_missing = 0
     for key in keys:
-        if key is None:
+        if _is_missing_key(key):
+            n_missing += 1
             stages.append("CN" if missing_cdr_policy == "cn" else None)
         elif key in mapping:
             stages.append(mapping[key])
         else:
             stages.append(None)
-            unmapped.add(float(key))
+            try:
+                unmapped.add(float(key))
+            except (TypeError, ValueError):
+                # An unparseable key is still an unmapped value; record it as
+                # text rather than dropping the fact that it occurred.
+                unmapped.add(str(key))
 
     df["stage"] = stages
-    report.n_missing_cdr = int(keys.isna().sum())
-    report.n_unmapped_cdr = int(
-        sum(1 for k, s in zip(keys, stages) if k is not None and s is None)
-    )
-    report.unmapped_cdr_values = sorted(unmapped)
+    report.n_missing_cdr = n_missing
+    report.n_unmapped_cdr = int(sum(
+        1 for k, s in zip(keys, stages)
+        if not _is_missing_key(k) and s is None
+    ))
+    report.unmapped_cdr_values = sorted(unmapped, key=str)
 
     if report.n_unmapped_cdr:
         report.warnings.append(

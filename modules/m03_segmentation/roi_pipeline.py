@@ -166,6 +166,9 @@ class ROIPipeline:
         cfg: Preprocessing configuration (atlas name, patch size, context pad).
         outputs_root: Root outputs directory.
         tracker: Optional run-state tracker for M6-M7.
+        atlas_dir: Nilearn atlas cache directory. Forwarded to the
+            extractor's ``data_dir`` so the atlas is downloaded once into
+            the project rather than into the user's home directory.
     """
 
     def __init__(
@@ -173,10 +176,13 @@ class ROIPipeline:
         cfg: Optional[PreprocessConfig] = None,
         outputs_root: Path = Path("outputs"),
         tracker: Optional[RunStateTracker] = None,
+        atlas_dir: Optional[Path] = None,
     ) -> None:
         self.cfg = cfg or PreprocessConfig()
         self.outputs_root = Path(outputs_root)
         self.tracker = tracker
+        #: Nilearn atlas cache. Passed to the extractor as `data_dir`.
+        self.atlas_dir = Path(atlas_dir) if atlas_dir else None
 
     def _stage(self, code: str, subject_id: str):
         """Return a tracker stage context, or a no-op when untracked."""
@@ -226,15 +232,17 @@ class ROIPipeline:
             # ── M6: atlas ROI localization ────────────────────────────────
             with self._stage("M6", subject_id) as record:
                 extractor = ROIExtractor(
-                    output_dir=roi_dir, atlas_name=self.cfg.atlas_name,
-                    atlas_dir=self.cfg.__dict__.get("atlas_dir"),
-                ) if "atlas_dir" in self.cfg.__dict__ else ROIExtractor(
-                    output_dir=roi_dir, atlas_name=self.cfg.atlas_name,
+                    output_dir=roi_dir,
+                    atlas_name=self.cfg.atlas_name,
+                    data_dir=self.atlas_dir,
                 )
-                masks = extractor.extract_all(volume, affine, subject_id)
+                masks = extractor.extract_all(
+                    volume, affine, subject_id, save=self.cfg.save_nifti
+                )
                 if record is not None:
                     record.record_metric("atlas", self.cfg.atlas_name)
                     record.record_metric("n_rois", len(masks))
+                    record.record_metric("roi_names", sorted(masks))
 
             voxel_volume = float(abs(np.linalg.det(affine[:3, :3]))) or 1.0
 
@@ -276,15 +284,40 @@ class ROIPipeline:
                     output_dir=patch_dir,
                     patch_size=self.cfg.patch_size,
                     context_pad=self.cfg.context_pad,
+                    tensor_dir=patch_dir,
                 )
-                patches = cropper.extract_all(volume, masks, subject_id)
-                by_name = {roi: entry for entry in result.rois
-                           for roi in [entry.roi_name]}
-                for roi, patch in patches.items():
-                    if roi in by_name:
-                        by_name[roi].patch_shape = list(
-                            np.asarray(patch).shape
+                # `ROICropper.extract_all` stacks patches in `masks.keys()`
+                # order and silently substitutes zeros for an ROI it fails on.
+                # Both are unacceptable here: the tensor axis must follow
+                # ROI_ORDER, and a blank patch labelled with the subject's stage
+                # would corrupt training invisibly. So each ROI is cropped
+                # individually, in canonical order, and a failure is recorded
+                # rather than filled in.
+                patches: Dict[str, np.ndarray] = {}
+                by_name = {entry.roi_name: entry for entry in result.rois}
+                for roi in ROI_ORDER:
+                    mask = masks.get(roi)
+                    if mask is None:
+                        result.warnings.append(
+                            f"{roi}: no atlas mask, so no patch was extracted."
                         )
+                        continue
+                    try:
+                        patch, meta = cropper.extract_single(
+                            volume, np.asarray(mask), roi, subject_id
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        result.warnings.append(
+                            f"{roi}: patch extraction failed ({exc})."
+                        )
+                        if roi in by_name:
+                            by_name[roi].note = f"patch extraction failed: {exc}"
+                        continue
+                    patches[roi] = np.asarray(patch, dtype=np.float32)
+                    if roi in by_name:
+                        by_name[roi].patch_shape = list(patches[roi].shape)
+                        if isinstance(meta, dict) and meta.get("bbox"):
+                            by_name[roi].note = f"bbox={meta['bbox']}"
 
                 path, tensor = save_patch_tensor(
                     patches, patch_dir, subject_id, self.cfg.patch_size
@@ -293,6 +326,7 @@ class ROIPipeline:
                 result.tensor_shape = list(tensor.shape)
                 if record is not None:
                     record.record_metric("tensor_shape", list(tensor.shape))
+                    record.record_metric("roi_order", list(ROI_ORDER))
                     record.record_artifact("roi_tensor", path)
 
             if result.n_empty:

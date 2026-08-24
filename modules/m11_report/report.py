@@ -111,6 +111,16 @@ def _is_negated(lowered: str, position: int) -> bool:
     return any(cue in window for cue in NEGATION_CUES)
 
 
+def _provenance_label(marker: Optional[Dict[str, Any]]) -> str:
+    """Return a short human label for the data provenance."""
+    if not marker:
+        return "OASIS-1 (real)"
+    return {
+        "synthetic_mri": "SYNTHETIC phantom MRI",
+        "synthetic_patches": "SYNTHETIC ROI patches (smoke test)",
+    }.get(marker.get("kind", ""), "SYNTHETIC")
+
+
 def validate_language(text: str) -> List[str]:
     """Scan report text for prohibited clinical phrasing.
 
@@ -215,17 +225,36 @@ class ReportGenerator:
         """Title, provenance banner and identification."""
         lines: List[str] = []
         if data.smoke_marker:
-            lines += [
-                "> # SYNTHETIC SMOKE-TEST DATA",
-                "> ",
-                "> **This report was generated from synthetic artifacts, not "
-                "from real MRI.** The ROI patches behind every number below are "
-                "parametric blobs produced by `tools/make_smoke_artifacts.py`. "
-                "Nothing in this document describes a real person or a real "
-                "finding. It exists to demonstrate that the reporting pipeline "
-                "runs end to end.",
-                "",
-            ]
+            # The wording must match which generator produced the data. The
+            # phantom-MRI case needs naming precisely: its artifacts come out of
+            # the real imaging pipeline, so calling them "fabricated patches"
+            # would understate how convincingly real they look.
+            kind = data.smoke_marker.get("kind", "synthetic_patches")
+            banner = data.smoke_marker.get(
+                "banner", "SYNTHETIC DATA - NOT A RESEARCH RESULT"
+            )
+            if kind == "synthetic_mri":
+                detail = (
+                    "> **This report was generated from synthetic phantom MRI, "
+                    "not from a real scan.** The volumes behind every number "
+                    "below are parametric ellipsoids produced by "
+                    "`tools/make_synthetic_mri.py`. They were processed by the "
+                    "real preprocessing, atlas-registration and "
+                    "feature-extraction chain, so these artifacts look exactly "
+                    "like those of a genuine run, which is precisely why this "
+                    "banner exists. Nothing in this document describes a real "
+                    "person or a real finding."
+                )
+            else:
+                detail = (
+                    "> **This report was generated from synthetic artifacts, "
+                    "not from real MRI.** The ROI patches behind every number "
+                    "below are parametric blobs produced by "
+                    "`tools/make_smoke_artifacts.py`; the imaging pipeline was "
+                    "skipped entirely. Nothing in this document describes a "
+                    "real person or a real finding."
+                )
+            lines += [f"> # {banner}", "> ", detail, ""]
         lines += [
             "# NeuroGenesis subject report",
             "",
@@ -238,8 +267,7 @@ class ReportGenerator:
             f"| Subject ID | `{data.subject_id}` |",
             f"| Generated | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} |",
             f"| Experiment | `{data.experiment_id or 'not recorded'}` |",
-            f"| Data provenance | "
-            f"{'SYNTHETIC (smoke test)' if data.smoke_marker else 'OASIS-1'} |",
+            f"| Data provenance | {_provenance_label(data.smoke_marker)} |",
             "",
         ]
         return lines
@@ -632,8 +660,13 @@ class ReportGenerator:
         if data.smoke_marker:
             limitations.insert(
                 0,
-                "**This particular report was generated from synthetic "
-                "smoke-test data.** Nothing in it describes a real subject.",
+                "**This particular report was generated from "
+                + ("synthetic phantom MRI processed by the real imaging "
+                   "pipeline"
+                   if data.smoke_marker.get("kind") == "synthetic_mri"
+                   else "fabricated ROI patches, with imaging skipped")
+                + ".** Nothing in it describes a real subject, and no number "
+                "in it is a research result.",
             )
         for item in limitations:
             lines.append(f"- {item}")
@@ -689,7 +722,8 @@ class ReportGenerator:
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "experiment_id": data.experiment_id,
             "data_provenance": (
-                "synthetic_smoke_test" if data.smoke_marker else "oasis1"
+                data.smoke_marker.get("kind", "synthetic")
+                if data.smoke_marker else "oasis1"
             ),
             "is_synthetic": bool(data.smoke_marker),
             "current_stage": data.current_stage,
@@ -737,9 +771,12 @@ class ReportGenerator:
         """
         banner = ""
         if data.smoke_marker:
+            text = data.smoke_marker.get(
+                "banner", "SYNTHETIC DATA - NOT A RESEARCH RESULT"
+            )
             banner = (
-                '<div class="banner">SYNTHETIC SMOKE-TEST DATA &mdash; '
-                "NOT A RESEARCH RESULT AND NOT ABOUT A REAL SUBJECT</div>"
+                f'<div class="banner">{text} &mdash; '
+                "NOT ABOUT A REAL SUBJECT</div>"
             )
         escaped = (
             markdown_text.replace("&", "&amp;")

@@ -93,11 +93,21 @@ class Context:
 
     @property
     def smoke_marker(self) -> Optional[Dict[str, Any]]:
-        """Return the synthetic-data marker if this outputs tree is a smoke test."""
-        if self._smoke is None:
-            from tools.make_smoke_artifacts import is_smoke_output
+        """Return synthetic-data provenance, or ``None`` for a real tree.
 
-            self._smoke = is_smoke_output(self.outputs) or {}
+        Checks both generators: fabricated ROI patches stamped into the
+        outputs tree, and phantom MRI stamped into the dataset directory.
+        The second is the one that would otherwise slip through, because
+        its artifacts come out of the real imaging pipeline.
+        """
+        if self._smoke is None:
+            from modules.common.provenance import detect_provenance
+
+            provenance = detect_provenance(
+                self.outputs, self.cfg.paths.mri_dir
+            )
+            self._smoke = provenance.to_dict() if provenance.is_synthetic \
+                else {}
         return self._smoke or None
 
     @property
@@ -158,6 +168,66 @@ class Context:
         self._features = pd.read_csv(self.features_path)
         return self._features
 
+    def trainable_cohort(self, require_patches: bool = False) -> pd.DataFrame:
+        """Return the cohort restricted to sessions that can actually be used.
+
+        A session is trainable only if the feature table has rows for it. The
+        full labelled cohort is larger than the processed subset whenever
+        preprocessing has been run on a subset, or whenever some subjects failed
+        preprocessing. Splitting the full cohort in that situation produces
+        splits whose sessions have no features, and the failure surfaces much
+        later as an opaque lookup error.
+
+        Args:
+            require_patches: Also require a cached ROI patch tensor, which the
+                variants with a 3D CNN branch need.
+
+        Returns:
+            The filtered cohort, in the original order.
+
+        Raises:
+            ValueError: If fewer than two sessions per stage remain, since a
+                stratified train/val/test split is then impossible.
+        """
+        from modules.m06_spatial_encoder.patch_dataset import patch_tensor_path
+
+        cohort = self.cohort()
+        features = self.features()
+        available = set(features["session_id"].astype(str))
+
+        usable = cohort[cohort["session_id"].astype(str).isin(available)]
+        if require_patches:
+            usable = usable[usable["session_id"].astype(str).map(
+                lambda s: patch_tensor_path(self.outputs, s).exists()
+            )]
+
+        dropped = len(cohort) - len(usable)
+        if dropped:
+            logger.info(
+                "Restricting the cohort to processed sessions: %d of %d "
+                "labelled session(s) have extracted features%s.",
+                len(usable), len(cohort),
+                " and ROI patches" if require_patches else "",
+            )
+            print(
+                f"\nNOTE: {len(usable)} of {len(cohort)} labelled session(s) "
+                f"have been processed; the remaining {dropped} are excluded "
+                "from the split. Run `--mode preprocess` on the full dataset "
+                "to use all of them."
+            )
+
+        counts = {
+            stage: int((usable["stage"] == stage).sum())
+            for stage in STAGE_ORDER
+        }
+        if min(counts.values()) < 2:
+            raise ValueError(
+                f"Too few processed sessions for a stratified split: {counts}. "
+                "Each stage needs at least 2. Process more subjects with "
+                "`--mode preprocess`."
+            )
+        return usable.reset_index(drop=True)
+
     def stamp(self, mode: str, seed_report: Any) -> None:
         """Write the config snapshot and seed report for reproducibility."""
         experiment = self.outputs / "experiments" / self.cfg.paths.experiment_id
@@ -184,7 +254,7 @@ class Context:
             raw, train_session_ids=split.train_sessions
         )
         table = scaler.transform(scaler.add_atrophy_index(raw))
-        cohort = self.cohort()
+        cohort = self.trainable_cohort()
 
         def make(sessions: List[str]) -> ROIPatchDataset:
             array, _ = scaler.to_tensor_array(table, sessions)
@@ -211,6 +281,17 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
     )
 
     log_banner(logger, "M1-M8  Preprocessing, ROI extraction, features")
+
+    # Stamp synthetic provenance into the outputs tree before anything is
+    # written. A run over phantom MRI otherwise produces artifacts that are
+    # indistinguishable from a real run.
+    from modules.common.provenance import stamp_outputs
+
+    stamped = stamp_outputs(ctx.outputs, ctx.cfg.paths.mri_dir)
+    if stamped is not None:
+        print(f"\nProvenance stamped: {stamped}")
+        print(f"  {ctx.smoke_marker.get('warning', '')}\n")
+
     cohort = ctx.cohort()
 
     imaging = check_imaging_dependencies()
@@ -249,7 +330,10 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
     preprocessor = PreprocessingPipeline(
         ctx.cfg.preprocess, ctx.outputs, ctx.tracker
     )
-    roi_pipeline = ROIPipeline(ctx.cfg.preprocess, ctx.outputs, ctx.tracker)
+    roi_pipeline = ROIPipeline(
+        ctx.cfg.preprocess, ctx.outputs, ctx.tracker,
+        atlas_dir=ctx.cfg.paths.atlas_dir,
+    )
     extractor = MorphometricFeatureExtractor(
         ctx.outputs / "features" / "workdir",
         gm_threshold=ctx.cfg.preprocess.gm_threshold,
@@ -272,7 +356,14 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
 
         image = nib.load(pre.final_path)
         volume = np.asarray(image.get_fdata(), dtype=np.float32)
-        seg, patches = roi_pipeline.run(subject_id, volume, image.affine)
+        # Use the resampled affine recorded by M5. Reading it back off the saved
+        # file works too, but the recorded value is the authoritative one and
+        # makes the dependency explicit.
+        affine = (
+            np.asarray(pre.final_affine) if pre.final_affine is not None
+            else image.affine
+        )
+        seg, patches = roi_pipeline.run(subject_id, volume, affine)
         seg.save(ctx.outputs / "roi" / subject_id)
         if not seg.succeeded:
             failures.append({"subject": subject_id, "stage": "roi",
@@ -379,7 +470,10 @@ def _train(ctx: Context, variant: str, epochs: Optional[int],
     from modules.model import build_model
     from modules.training import Trainer
 
-    cohort = ctx.cohort()
+    model_probe = build_model(
+        len(FEATURE_ORDER), ctx.cfg, variant, list(FEATURE_ORDER)
+    )
+    cohort = ctx.trainable_cohort(require_patches=model_probe.spec.use_cnn)
     features = ctx.features()
 
     split = make_subject_split(
@@ -404,9 +498,7 @@ def _train(ctx: Context, variant: str, epochs: Optional[int],
         features, train_session_ids=split.train_sessions
     )
     scaler.save(ctx.scaler_path)
-    model = build_model(
-        len(FEATURE_ORDER), ctx.cfg, variant, list(FEATURE_ORDER)
-    )
+    model = model_probe
     use_cnn = model.spec.use_cnn if use_cnn_override is None else use_cnn_override
     train_ds, val_ds, test_ds = ctx.build_datasets(split, use_cnn)
 
@@ -441,7 +533,7 @@ def _train(ctx: Context, variant: str, epochs: Optional[int],
               f"(geometry tie-breaks: {result.n_geometry_tie_breaks})")
 
     evaluation = trainer.evaluate(make_loader(test_ds, ctx.cfg.train.batch_size))
-    banner = ("SYNTHETIC SMOKE-TEST DATA - NOT A RESEARCH RESULT"
+    banner = (ctx.smoke_marker.get("banner", "SYNTHETIC DATA")
               if ctx.smoke_marker else "TEST-SPLIT METRICS")
     print(f"\n=== {banner} ===")
     print(evaluation["metrics"].summary())
@@ -482,7 +574,9 @@ def mode_ablation(ctx: Context, args: argparse.Namespace) -> int:
     from modules.training.baselines import BaselineStudy
 
     log_banner(logger, "M18  Ablation and baseline study")
-    cohort = ctx.cohort()
+    # The ladder includes CNN variants, so every session needs a patch
+    # tensor as well as features.
+    cohort = ctx.trainable_cohort(require_patches=True)
     features = ctx.features()
 
     study = AblationStudy(
@@ -502,7 +596,7 @@ def mode_ablation(ctx: Context, args: argparse.Namespace) -> int:
             for name, path in written.items():
                 record.record_artifact(name, path)
 
-    banner = ("SYNTHETIC SMOKE-TEST DATA - NOT A RESEARCH RESULT"
+    banner = (ctx.smoke_marker.get("banner", "SYNTHETIC DATA")
               if ctx.smoke_marker else "ABLATION RESULTS")
     print(f"\n=== {banner} ===")
     print("\nTABLE 4  NeuroProp-X ablation")
@@ -565,11 +659,13 @@ def mode_evaluate(ctx: Context, args: argparse.Namespace) -> int:
 
     split = SplitManifest.load(ctx.split_path)
     model = NeuroGenesisModel.load_checkpoint(checkpoint)
+    # Evaluation reuses the recorded split, so the cohort filter only needs
+    # to make the feature lookup succeed for those sessions.
     _, _, test_ds = ctx.build_datasets(split, model.spec.use_cnn)
     trainer = Trainer(model, ctx.cfg)
     evaluation = trainer.evaluate(make_loader(test_ds, ctx.cfg.train.batch_size))
 
-    banner = ("SYNTHETIC SMOKE-TEST DATA - NOT A RESEARCH RESULT"
+    banner = (ctx.smoke_marker.get("banner", "SYNTHETIC DATA")
               if ctx.smoke_marker else "TEST-SPLIT METRICS")
     print(f"\n=== {banner} ===")
     print(evaluation["metrics"].summary())
@@ -623,7 +719,7 @@ def mode_xai(ctx: Context, args: argparse.Namespace) -> int:
         scaler_path=ctx.scaler_path, split_path=ctx.split_path,
         smoke_marker=ctx.smoke_marker,
     )
-    cohort = ctx.cohort()
+    cohort = ctx.trainable_cohort()
     sessions = [args.patient_id] if args.patient_id else [
         str(s) for s in cohort["session_id"]
     ]
@@ -724,7 +820,7 @@ def mode_report(ctx: Context, args: argparse.Namespace) -> int:
         extra["ablation_caveats"] = AblationStudy.caveats()
     extra["checkpoint_path"] = ctx.checkpoint_path(variant).as_posix()
 
-    cohort = ctx.cohort()
+    cohort = ctx.trainable_cohort()
     sessions = [args.patient_id] if args.patient_id else [
         str(s) for s in cohort["session_id"]
     ]

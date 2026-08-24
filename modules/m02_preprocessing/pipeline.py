@@ -134,6 +134,11 @@ class SubjectPreprocessingResult:
     #: Final standardised volume path.
     final_path: Optional[str] = None
     brain_mask_path: Optional[str] = None
+    #: Affine of the final standardised volume. M6 needs the **resampled**
+    #: affine, not the original one, or the atlas is registered to the wrong grid.
+    final_affine: Optional[List[List[float]]] = None
+    #: White-matter peak found by KDE normalization, for the dashboard.
+    wm_peak: Optional[float] = None
     #: Voxel counts before and after skull stripping.
     brain_voxels_before: Optional[int] = None
     brain_voxels_after: Optional[int] = None
@@ -152,6 +157,8 @@ class SubjectPreprocessingResult:
             "stages": [s.to_dict() for s in self.stages],
             "final_path": self.final_path,
             "brain_mask_path": self.brain_mask_path,
+            "final_affine": self.final_affine,
+            "wm_peak": self.wm_peak,
             "brain_voxels_before": self.brain_voxels_before,
             "brain_voxels_after": self.brain_voxels_after,
             "error": self.error,
@@ -256,6 +263,12 @@ class PreprocessingPipeline:
                 )
                 scan = loader.load_single(Path(mri_path))
                 volume = np.asarray(scan["data"], dtype=np.float32)
+                # The affine is carried through every stage: skull
+                # stripping, resampling and atlas registration all need it,
+                # and resampling replaces it.
+                affine = np.asarray(
+                    scan.get("affine", np.eye(4)), dtype=np.float64
+                )
                 result.metadata = {
                     k: v for k, v in scan.get("metadata", {}).items()
                     if k != "data"
@@ -263,11 +276,15 @@ class PreprocessingPipeline:
                 result.metadata.update(self._describe(volume))
                 if record is not None:
                     record.record_metric("shape", list(volume.shape))
+                    record.record_metric("affine", affine.tolist())
                     record.record_artifact("source", Path(mri_path))
 
             # ── M2: quality control ───────────────────────────────────────
             with self._stage("M2", subject_id) as record:
-                detector = ArtifactDetector(output_dir=processed_dir)
+                detector = ArtifactDetector(
+                    output_dir=processed_dir,
+                    min_quality_score=self.cfg.min_quality_score,
+                )
                 report = detector.run_qc(volume, subject_id)
                 result.qc = {
                     k: v for k, v in vars(report).items()
@@ -308,28 +325,35 @@ class PreprocessingPipeline:
                     aniso_conductance=self.cfg.aniso_conductance,
                     clahe_clip_limit=self.cfg.clahe_clip_limit,
                 )
+                # normalize_wm_peak returns (volume, wm_peak); the others
+                # return a bare volume. The flag records which is which so
+                # the tuple is unpacked rather than stored as a volume.
                 chain = (
                     ("n4_bias_corrected", "N4 bias field correction",
-                     normalizer.apply_n4_bias_correction),
+                     normalizer.apply_n4_bias_correction, False),
                     ("wm_normalized", "White-matter KDE peak normalization",
-                     normalizer.normalize_wm_peak),
+                     normalizer.normalize_wm_peak, True),
                     ("clahe", "CLAHE adaptive histogram equalization",
-                     normalizer.apply_clahe),
+                     normalizer.apply_clahe, False),
                     ("anisotropic_diffusion",
                      "Perona-Malik edge-preserving denoising",
-                     normalizer.apply_anisotropic_diffusion),
+                     normalizer.apply_anisotropic_diffusion, False),
                     ("intensity_normalized", "Min-max intensity normalization",
-                     normalizer.normalize_minmax),
+                     normalizer.normalize_minmax, False),
                 )
                 current = volume
                 result.stages.append(StageArtifact(
                     name="original", description="Loaded T1 volume",
                     **self._describe(current),
                 ))
-                for name, description, function in chain:
+                for name, description, function, returns_tuple in chain:
                     t0 = time.perf_counter()
                     try:
-                        current = np.asarray(function(current), dtype=np.float32)
+                        produced = function(current)
+                        if returns_tuple:
+                            produced, extra = produced
+                            result.wm_peak = float(extra)
+                        current = np.asarray(produced, dtype=np.float32)
                         artifact = StageArtifact(
                             name=name, description=description,
                             seconds=round(time.perf_counter() - t0, 3),
@@ -360,8 +384,17 @@ class PreprocessingPipeline:
                 stripper = SkullStripper(
                     output_dir=processed_dir, morph_radius=self.cfg.morph_radius
                 )
-                stripped, mask = stripper.strip(current, subject_id)
+                stripped, mask = stripper.strip(
+                    current, subject_id, affine, save=self.cfg.save_nifti
+                )
                 current = np.asarray(stripped, dtype=np.float32)
+                if self.cfg.save_nifti:
+                    mask_path = self._save_volume(
+                        np.asarray(mask, dtype=np.float32), processed_dir,
+                        f"{subject_id}_brain_mask", affine,
+                    )
+                    if mask_path is not None:
+                        result.brain_mask_path = mask_path.as_posix()
                 result.brain_voxels_after = int(np.count_nonzero(current > 1e-6))
                 result.stages.append(StageArtifact(
                     name="skull_stripped", description="Brain extraction",
@@ -384,9 +417,15 @@ class PreprocessingPipeline:
                     interpolator=self.cfg.interpolator,
                 )
                 original_shape = current.shape
-                current = np.asarray(
-                    resizer.resample(current, subject_id), dtype=np.float32
+                resampled, new_affine = resizer.resample(
+                    current, affine, subject_id, save=self.cfg.save_nifti
                 )
+                current = np.asarray(resampled, dtype=np.float32)
+                # Resampling replaces the affine. Everything downstream,
+                # most importantly the atlas registration in M6, must use
+                # the new one or the ROI masks land on the wrong grid.
+                affine = np.asarray(new_affine, dtype=np.float64)
+                result.final_affine = affine.tolist()
                 result.stages.append(StageArtifact(
                     name="standardized",
                     description=f"Resampled to {self.cfg.target_shape}",
@@ -395,10 +434,13 @@ class PreprocessingPipeline:
                 if record is not None:
                     record.record_metric("shape_before", list(original_shape))
                     record.record_metric("shape_after", list(current.shape))
+                    record.record_metric("affine_after", affine.tolist())
 
             if self.cfg.save_nifti:
-                path = self._save_volume(current, processed_dir,
-                                         f"{subject_id}_standardized")
+                path = self._save_volume(
+                    current, processed_dir, f"{subject_id}_standardized",
+                    affine,
+                )
                 result.final_path = path.as_posix() if path else None
 
             result.succeeded = True
@@ -410,13 +452,14 @@ class PreprocessingPipeline:
             return result
 
     @staticmethod
-    def _save_volume(volume: np.ndarray, out_dir: Path,
-                     name: str) -> Optional[Path]:
-        """Write a volume as ``.nii.gz`` with an identity affine.
+    def _save_volume(volume: np.ndarray, out_dir: Path, name: str,
+                     affine: Optional[np.ndarray] = None) -> Optional[Path]:
+        """Write a volume as ``.nii.gz`` with the affine that describes it.
 
-        The identity affine is a deliberate simplification: at this point the
-        volume has been resampled onto a common grid, so the original affine no
-        longer describes it and carrying it forward would be wrong. Returns
+        The affine is passed in rather than defaulted to identity. After
+        resampling the voxel-to-world mapping has genuinely changed, and writing
+        identity here would silently mis-register the volume against the atlas in
+        M6 while every shape and intensity check still looked correct. Returns
         ``None`` rather than raising if nibabel is unavailable.
         """
         try:
@@ -426,7 +469,8 @@ class PreprocessingPipeline:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         path = out_dir / f"{name}.nii.gz"
-        nib.save(nib.Nifti1Image(volume.astype(np.float32), np.eye(4)), path)
+        matrix = np.eye(4) if affine is None else np.asarray(affine)
+        nib.save(nib.Nifti1Image(volume.astype(np.float32), matrix), path)
         return path
 
 
