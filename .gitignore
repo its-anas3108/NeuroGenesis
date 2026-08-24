@@ -2,28 +2,32 @@
 .venv/
 venv/
 
-# Python / Pycache
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.pytest_cache/
 
-# Data and Atlases
+# Data and atlases
 dataset/OASIS/*.tar
+dataset/OASIS/*.nii
 dataset/OASIS/*.nii.gz
 dataset/OASIS/disc*/
 dataset/nilearn_data/
 
-# Output directories & Large data files
+# Generated outputs
 outputs/
+outputs_smoke/
 *.nii
 *.nii.gz
 *.hdr
 *.img
 *.npy
+*.pt
 *.log
 
-# OS & IDE Files
+# OS / IDE
 .DS_Store
 .vscode/
 .idea/

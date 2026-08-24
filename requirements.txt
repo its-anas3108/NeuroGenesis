@@ -1,32 +1,66 @@
-# ================================================================
-# NeuroGenesis Phase 1 — Python Dependencies
-# ================================================================
-# Install with: pip install -r requirements.txt
+# ==============================================================================
+# NeuroGenesis — Stage-Aware Speech-Network NeuroAI Framework
+# ==============================================================================
+# Install everything:
+#     pip install -r requirements.txt
+#
+# The framework is layered so that a partial install still runs a useful
+# subset. Each group below states what is lost without it.
+# ==============================================================================
 
-# --- Core Scientific Stack ---
+# --- Core scientific stack (required by everything) ---------------------------
 numpy>=1.24.0
 pandas>=2.0.0
-scipy>=1.11.0
+scipy>=1.11.0                # statistical tests, effect sizes, KDE
 
-# --- Medical Imaging ---
-nibabel>=5.0.0           # NIfTI I/O
-SimpleITK>=2.3.0         # N4 bias correction, anisotropic diffusion, resampling
-nilearn>=0.10.0          # Atlas-based ROI extraction, brain masking
+# --- Deep learning (required for the model, training, XAI) --------------------
+# Graph learning is implemented in dense pure PyTorch. torch_geometric is
+# deliberately NOT a dependency: every graph here has five nodes and a dense
+# 5x5 adjacency, so sparse message-passing machinery would add a heavy,
+# version-fragile dependency without benefit, while dense tensors keep the
+# attention and edge-gate matrices directly inspectable for the dashboard.
+torch>=2.0.0
 
-# --- Image Processing ---
-scikit-image>=0.21.0     # Marching cubes (surface area), CLAHE
-opencv-python>=4.8.0     # Image operations
+# --- Machine-learning baselines ----------------------------------------------
+# Without scikit-learn the classical baselines (logistic regression, gradient
+# boosting, random forest, MLP) are skipped and reported as unavailable.
+scikit-learn>=1.3.0
 
-# --- Graph Analysis ---
-networkx>=3.1            # Brain connectivity graph
+# --- Medical imaging (required for M1-M7: the imaging half of the pipeline) ---
+# Without these, the cohort and labels still load and the model/training/XAI/
+# statistics/dashboard paths still run on cached artifacts, but no MRI can be
+# read, preprocessed, atlas-localized or cropped into ROI patches.
+nibabel>=5.0.0               # NIfTI I/O
+SimpleITK>=2.3.0             # N4 bias correction, anisotropic diffusion, resampling
+nilearn>=0.10.0              # Harvard-Oxford atlas, brain masking
+scikit-image>=0.21.0         # CLAHE, marching-cubes surface area
 
-# --- Visualization ---
-matplotlib>=3.7.0        # All plotting
-streamlit>=1.28.0         # Interactive Medical AI Dashboard
+# --- Visualisation -----------------------------------------------------------
+matplotlib>=3.7.0
 
+# --- Dashboard ---------------------------------------------------------------
+# starlette is pinned alongside streamlit because streamlit >= 1.28 imports
+# `DEFAULT_EXCLUDED_CONTENT_TYPES` from starlette.middleware.gzip, which older
+# starlette releases do not export. An unpinned install can produce a streamlit
+# that imports successfully at the package level but raises when the server
+# starts.
+streamlit>=1.40.0
+starlette>=0.40.0
+tabulate>=0.9.0              # DataFrame.to_markdown() in the report generator
 
-# --- Progress & Logging ---
-tqdm>=4.66.0             # Progress bars
+# --- Utilities ---------------------------------------------------------------
+PyYAML>=6.0                  # YAML configs (JSON works without it)
+tqdm>=4.66.0
+Pillow>=10.0.0
 
-# --- Utilities ---
-Pillow>=10.0.0           # Image I/O
+# ==============================================================================
+# Optional
+# ==============================================================================
+# shap        Kernel SHAP attribution. Without it, attribution falls back to
+#             exact single-feature replacement, reported as `permutation` and
+#             never labelled SHAP.
+# xgboost     Gradient-boosting baseline. Without it, scikit-learn's
+#             GradientBoostingClassifier is substituted and labelled as such.
+#
+# shap>=0.44.0
+# xgboost>=2.0.0
