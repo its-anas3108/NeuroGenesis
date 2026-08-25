@@ -333,12 +333,23 @@ class InferencePipeline:
                          float(npx.propagation_score.max())],
                     )
             with stage("M11.4") as record:
+                # Persist G* and all its components (Section 25). Without this
+                # the vulnerability vector, adjacency triple, propagation matrix
+                # and enriched node features exist only inside the report JSON,
+                # and the dashboard's NeuroProp-X panel has no arrays to load.
+                from modules.m06_neuropropx import save_neuropropx_output
+
+                written = save_neuropropx_output(
+                    npx, self.outputs_root, subject_id, batch_index=0
+                )
                 if record is not None:
                     record.record_metric(
                         "component_slices",
                         {k: list(v)
                          for k, v in npx.sagr.component_slices.items()},
                     )
+                    for name, path in written.items():
+                        record.record_artifact(name, path)
         elif tracker is not None:
             reason = "This model variant does not include NeuroProp-X."
             for code in ("M11", "M11.1", "M11.2", "M11.3", "M11.4"):
