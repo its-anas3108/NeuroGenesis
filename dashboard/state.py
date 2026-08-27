@@ -282,6 +282,39 @@ class DashboardState:
 
     # ── Analysis ──────────────────────────────────────────────────────────
 
+    # ── OASIS-1 dataset integrity ─────────────────────────────────────────
+
+    def dataset_validation(self) -> Optional[Dict[str, Any]]:
+        """Return the OASIS-1 validation report."""
+        return _read_json(
+            self.outputs / "dataset_validation" / "oasis1_validation_report.json"
+        )
+
+    def dataset_summary(self) -> Optional[pd.DataFrame]:
+        """Return the per-session OASIS-1 dataset summary."""
+        return _read_csv(
+            self.outputs / "dataset_validation" / "oasis1_dataset_summary.csv"
+        )
+
+    def dataset_provenance(self) -> Optional[Dict[str, Any]]:
+        """Return the recorded OASIS-1 provenance block."""
+        return _read_json(
+            self.outputs / "dataset_validation" / "oasis1_provenance.json"
+        )
+
+    def integrity_report(self) -> Optional[Dict[str, Any]]:
+        """Return the pre-training dataset integrity report."""
+        return _read_json(
+            self.outputs / "dataset_validation" / "dataset_integrity_report.json"
+        )
+
+    def split_csvs(self) -> Dict[str, Optional[pd.DataFrame]]:
+        """Return the three per-split CSVs required by Section 9."""
+        return {
+            split: _read_csv(self.outputs / "splits" / f"oasis1_{split}.csv")
+            for split in ("train", "val", "test")
+        }
+
     def statistics(self) -> Optional[Dict[str, Any]]:
         """Return the stage-wise statistics report."""
         return _read_json(

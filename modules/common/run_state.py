@@ -39,6 +39,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 
 from modules.common.logging_utils import get_logger
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -251,7 +252,7 @@ class RunStateTracker:
             "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
             "stages": {code: asdict(rec) for code, rec in records.items()},
         }
-        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        path.write_text(json.dumps(json_safe(payload), indent=2), encoding="utf-8")
         return path
 
     # ── Access ────────────────────────────────────────────────────────────

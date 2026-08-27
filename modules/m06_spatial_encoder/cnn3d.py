@@ -46,6 +46,7 @@ import torch.nn.functional as F
 from modules.common.config import SpatialEncoderConfig
 from modules.common.logging_utils import get_logger
 from modules.common.roi_constants import N_ROI, ROI_ORDER
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -459,7 +460,7 @@ def save_embeddings(
         "layer_trace": [t.to_dict() for t in output.trace],
     }
     json_path = out_dir / f"{subject_id}_cnn_embeddings.json"
-    json_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    json_path.write_text(json.dumps(json_safe(summary), indent=2), encoding="utf-8")
 
     return {"embeddings_npy": npy_path, "summary_json": json_path}
 

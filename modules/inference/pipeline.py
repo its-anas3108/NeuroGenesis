@@ -51,6 +51,7 @@ from modules.m08_xai import (
 )
 from modules.m11_report.report import ReportGenerator, ReportInputs
 from modules.model import ModelOutput, NeuroGenesisModel
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -67,7 +68,7 @@ class InferenceResult:
 
     def to_json(self) -> str:
         """Return the machine-readable record as indented JSON."""
-        return json.dumps(self.record, indent=2)
+        return json.dumps(json_safe(self.record), indent=2)
 
 
 class InferencePipeline:
@@ -96,8 +97,10 @@ class InferencePipeline:
         cfg: Optional[NeuroGenesisConfig] = None,
         train_session_ids: Optional[List[str]] = None,
         smoke_marker: Optional[Dict[str, Any]] = None,
+        dataset_provenance: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.model = model.eval()
+        self.dataset_provenance = dataset_provenance
         self.scaler = scaler
         self.cohort = cohort
         self.outputs_root = Path(outputs_root)
@@ -504,6 +507,7 @@ class InferencePipeline:
             attribution_notes=attribution.notes if attribution else None,
             node_importance=graph_expl.node_importance or None,
             top_edges=graph_expl.top_edges(5) or None,
+            dataset_provenance=self.dataset_provenance,
             model_summary=self.model.summary(),
             config_snapshot=self.cfg.to_dict(),
             experiment_id=self.cfg.paths.experiment_id,
@@ -561,6 +565,7 @@ def load_inference_pipeline(
     scaler_path: Optional[Path] = None,
     split_path: Optional[Path] = None,
     smoke_marker: Optional[Dict[str, Any]] = None,
+    dataset_provenance: Optional[Dict[str, Any]] = None,
 ) -> InferencePipeline:
     """Assemble an inference pipeline from persisted artifacts.
 
@@ -622,6 +627,7 @@ def load_inference_pipeline(
         cfg=cfg,
         train_session_ids=train_sessions,
         smoke_marker=smoke_marker,
+        dataset_provenance=dataset_provenance,
     )
 
 

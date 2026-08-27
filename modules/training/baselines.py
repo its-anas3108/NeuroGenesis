@@ -52,6 +52,7 @@ from modules.training.metrics import (
     aggregate_metrics,
     compute_metrics,
 )
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -359,7 +360,7 @@ class BaselineStudy:
             "failures": list(self.failures),
         }
         path = out_dir / "baseline_results.json"
-        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        path.write_text(json.dumps(json_safe(payload), indent=2), encoding="utf-8")
         written["results_json"] = path
 
         table = self.table()

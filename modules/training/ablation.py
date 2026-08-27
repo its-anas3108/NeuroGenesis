@@ -60,6 +60,7 @@ from modules.training.metrics import (
     compute_metrics,
 )
 from modules.training.trainer import Trainer
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -603,7 +604,7 @@ class AblationStudy:
             "failures": list(self.failures),
         }
         path = out_dir / "ablation_results.json"
-        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        path.write_text(json.dumps(json_safe(payload), indent=2), encoding="utf-8")
         written["results_json"] = path
 
         for name, frame in (

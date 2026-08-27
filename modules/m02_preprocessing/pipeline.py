@@ -37,6 +37,7 @@ import numpy as np
 from modules.common.config import PreprocessConfig
 from modules.common.logging_utils import get_logger
 from modules.common.run_state import RunStateTracker
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -170,7 +171,7 @@ class SubjectPreprocessingResult:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         path = out_dir / f"{self.subject_id}_preprocessing.json"
-        path.write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
+        path.write_text(json.dumps(json_safe(self.to_dict()), indent=2), encoding="utf-8")
         return path
 
 
@@ -262,7 +263,36 @@ class PreprocessingPipeline:
                     dataset_dir=Path(mri_path).parent, output_dir=processed_dir
                 )
                 scan = loader.load_single(Path(mri_path))
-                volume = np.asarray(scan["data"], dtype=np.float32)
+                volume = np.asarray(scan["data"])
+
+                # ── OASIS-1 format adaptation ─────────────────────────────
+                # The only change this refactor makes outside the data layer,
+                # and it is forced by two measured properties of the real files.
+                #
+                # 1. OASIS-1 T88 Analyze volumes load as (176, 208, 176, 1).
+                #    Every downstream stage expects 3-D. Only a *trailing* axis
+                #    of extent 1 is dropped; a genuinely 4-D volume is rejected
+                #    rather than silently collapsed, because collapsing one
+                #    would discard real data without any later stage noticing.
+                # 2. The data is big-endian int16 (`>i2`). SimpleITK operations
+                #    and torch tensors need native-endian float32; `astype`
+                #    resolves both the width and the byte order.
+                if volume.ndim == 4 and volume.shape[3] == 1:
+                    result.warnings.append(
+                        f"input volume was {volume.shape}; the trailing "
+                        "singleton axis was squeezed to 3-D (OASIS-1 Analyze "
+                        "packaging)"
+                    )
+                    volume = volume[..., 0]
+                elif volume.ndim != 3:
+                    raise ValueError(
+                        f"{mri_path}: expected a 3-D volume, or 4-D with a "
+                        f"trailing singleton axis; got shape {volume.shape}. "
+                        "This volume is not usable and the subject is excluded "
+                        "rather than reshaped."
+                    )
+                original_dtype = str(volume.dtype)
+                volume = np.ascontiguousarray(volume, dtype=np.float32)
                 # The affine is carried through every stage: skull
                 # stripping, resampling and atlas registration all need it,
                 # and resampling replaces it.
@@ -274,6 +304,9 @@ class PreprocessingPipeline:
                     if k != "data"
                 }
                 result.metadata.update(self._describe(volume))
+                # Set after the reassignment above, which would otherwise
+                # discard it.
+                result.metadata["source_dtype"] = original_dtype
                 if record is not None:
                     record.record_metric("shape", list(volume.shape))
                     record.record_metric("affine", affine.tolist())
@@ -407,6 +440,18 @@ class PreprocessingPipeline:
                         "brain_fraction",
                         result.brain_voxels_after
                         / max(result.brain_voxels_before, 1),
+                    )
+                    record.note(
+                        "The Nilearn backend uses compute_brain_mask, which derives "
+                        "the mask from an MNI template via the image affine rather "
+                        "than from voxel intensities. On atlas-registered input "
+                        "such as OASIS-1 T88, every subject shares a shape and "
+                        "affine and therefore receives an identical mask. The "
+                        "voxel counts above describe that template envelope and "
+                        "are NOT a subject-specific brain volume. Regional "
+                        "morphometry is unaffected: it is measured inside the "
+                        "ROI patches by intensity threshold, and was verified to "
+                        "vary across subjects."
                     )
 
             # ── M5: spatial standardization ───────────────────────────────

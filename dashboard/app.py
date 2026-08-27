@@ -95,6 +95,259 @@ def parse_args() -> argparse.Namespace:
 # Page: overview and pipeline tracker (Section 40)
 # ──────────────────────────────────────────────────────────────────────────────
 
+def page_dataset_integrity(state: DashboardState, subject: Optional[str]) -> None:
+    """Dataset Integrity page (Sections 7, 21).
+
+    The first thing a reviewer should look at. States which dataset produced
+    everything else in the tree, whether synthetic data is disabled, and whether
+    every integrity check passed. If a check fails the page says so in red and
+    reports that training is disabled.
+    """
+    page_title(
+        "Dataset integrity",
+        "Provenance and validation of the data behind every other page.",
+    )
+
+    validation = state.dataset_validation()
+    provenance = state.dataset_provenance()
+    integrity = state.integrity_report()
+    synthetic = state.smoke_marker
+
+    # ── Dataset banner (Section 7) ────────────────────────────────────────
+    dataset = (provenance or {}).get("dataset_source") \
+        or (validation or {}).get("dataset_source")
+    source = (provenance or {}).get("source_description") \
+        or (validation or {}).get("source_description")
+
+    if synthetic:
+        st.markdown(
+            f'<div class="ng-banner ng-danger">DATASET: '
+            f'{synthetic.get("banner", "SYNTHETIC DATA")}<br>'
+            "<span style='font-weight:400;font-size:.85rem'>This tree was NOT "
+            "produced from the real OASIS-1 dataset. Nothing on any page is a "
+            "research result.</span></div>",
+            unsafe_allow_html=True,
+        )
+    elif dataset:
+        st.markdown(
+            '<div class="ng-banner" style="background:#dafbe1;border:1px solid '
+            '#4ac26b;color:#116329">'
+            f"DATASET: {dataset} &nbsp;|&nbsp; DATA MODE: REAL DATA "
+            "&nbsp;|&nbsp; SYNTHETIC DATA: DISABLED</div>",
+            unsafe_allow_html=True,
+        )
+        st.caption(f"SOURCE: {source}")
+    else:
+        st.markdown(
+            '<div class="ng-banner ng-warn">OASIS-1 NOT DETECTED &mdash; run '
+            "<code>python run.py --mode validate_dataset --oasis1-root &lt;path&gt;"
+            "</code></div>",
+            unsafe_allow_html=True,
+        )
+
+    if validation is None:
+        unavailable(
+            "the OASIS-1 validation report",
+            "python run.py --mode validate_dataset --oasis1-root <path>",
+            reason="No dataset validation has been run against this outputs tree.",
+        )
+        return
+
+    # ── Headline counts (Section 7) ───────────────────────────────────────
+    st.markdown("### Cohort")
+    columns = st.columns(5)
+    columns[0].metric("MRI volumes", validation.get("n_volumes_found", 0))
+    columns[1].metric("Sessions", validation.get("n_sessions", 0))
+    columns[2].metric("Unique subjects", validation.get("n_unique_subjects", 0))
+    columns[3].metric("Usable", validation.get("n_usable", 0))
+    columns[4].metric(
+        "Excluded",
+        validation.get("n_volumes_found", 0) - validation.get("n_usable", 0),
+    )
+
+    columns = st.columns(4)
+    columns[0].metric("Labelled sessions", validation.get("n_labelled", 0))
+    columns[1].metric("Missing CDR", validation.get("n_missing_cdr", 0))
+    columns[2].metric("Analysable cohort", validation.get("n_analysable", 0))
+    columns[3].metric(
+        "Volume kind", str(validation.get("volume_kind", "-"))
+    )
+
+    st.markdown("**Class counts over the analysable cohort**")
+    imaged = validation.get("class_counts_imaged", {}) or {}
+    subjects = validation.get("subject_counts_imaged", {}) or {}
+    st.dataframe(
+        pd.DataFrame([
+            {"Stage": stage,
+             "Sessions": imaged.get(stage, 0),
+             "Subjects": subjects.get(stage, 0)}
+            for stage in STAGE_ORDER
+        ]),
+        use_container_width=True, hide_index=True,
+    )
+
+    if validation.get("is_subset"):
+        st.warning(
+            "**OASIS-1 SUBSET MODE** — not every session of the complete "
+            "OASIS-1 cross-sectional dataset is present. Results describe the "
+            "uploaded subset."
+        )
+
+    # ── Check list (Section 21) ───────────────────────────────────────────
+    st.markdown("### Integrity checks")
+    splits = state.split_csvs()
+    checks = [
+        ("OASIS-1 detected", bool(dataset) and not synthetic,
+         f"{validation.get('n_volumes_found', 0)} volume(s) discovered"),
+        ("Synthetic data disabled", not synthetic,
+         "no synthetic provenance marker in this tree"),
+        ("Real MRI files readable", validation.get("n_unreadable", 0) == 0,
+         f"{validation.get('n_readable', 0)} readable, "
+         f"{validation.get('n_unreadable', 0)} unreadable"),
+        ("Metadata detected", bool(validation.get("metadata_csv")),
+         str(validation.get("metadata_csv") or "absent")),
+        ("Subject IDs validated",
+         validation.get("n_sessions_without_metadata", 0) == 0,
+         f"{validation.get('n_sessions_without_metadata', 0)} session(s) "
+         "without a metadata row"),
+        ("Dataset validation passed", bool(validation.get("passed")),
+         f"{len(validation.get('errors', []))} error(s)"),
+        ("Split manifest created", state.split_manifest() is not None,
+         "outputs/splits/split.json"),
+        ("Split CSVs created",
+         all(v is not None for v in splits.values()),
+         "oasis1_train.csv / oasis1_val.csv / oasis1_test.csv"),
+    ]
+    if integrity:
+        checks.append((
+            "Train/test leakage check passed",
+            bool(integrity.get("passed")),
+            f"{integrity.get('n_checks', 0)} check(s), "
+            f"{integrity.get('n_failed', 0)} failed",
+        ))
+
+    rows = []
+    for name, ok, detail in checks:
+        rows.append({"": "PASS" if ok else "FAIL", "Check": name,
+                     "Detail": detail})
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+    failed = [name for name, ok, _ in checks if not ok]
+    if failed:
+        st.markdown(
+            '<div class="ng-banner ng-danger">DATASET INTEGRITY FAILURE<br>'
+            "<span style='font-weight:400;font-size:.85rem'>Failed: "
+            f"{', '.join(failed)}. Training is disabled until these are "
+            "resolved.</span></div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.success(
+            "All dataset integrity checks passed. Only validated OASIS-1 "
+            "records can enter training."
+        )
+
+    # ── Pre-training integrity gate ───────────────────────────────────────
+    if integrity:
+        with st.expander("Pre-training integrity gate", expanded=False):
+            st.caption(
+                "Run immediately before training. Every training session must "
+                "appear in the validated OASIS-1 index; anything else stops the "
+                "run by name."
+            )
+            st.dataframe(
+                pd.DataFrame([
+                    {"": "PASS" if c["passed"] else "FAIL",
+                     "Check": c["name"], "Detail": c["detail"],
+                     "Offenders": c["n_offenders"]}
+                    for c in integrity.get("checks", [])
+                ]),
+                use_container_width=True, hide_index=True,
+            )
+
+    # ── Exclusions ────────────────────────────────────────────────────────
+    unreadable = validation.get("unreadable_sessions") or []
+    if unreadable:
+        st.markdown("### Excluded sessions and why")
+        st.dataframe(pd.DataFrame(unreadable), use_container_width=True,
+                     hide_index=True)
+    else:
+        st.caption("No session was excluded for being unreadable.")
+
+    anomalies = validation.get("shape_anomalies") or []
+    if anomalies:
+        with st.expander(f"Volumes with structural warnings ({len(anomalies)})"):
+            st.dataframe(pd.DataFrame(anomalies), use_container_width=True,
+                         hide_index=True)
+
+    # ── Volume properties ─────────────────────────────────────────────────
+    st.markdown("### Volume properties across the dataset")
+    columns = st.columns(4)
+    for column, (label, key) in zip(columns, (
+        ("Shapes", "shapes"), ("Voxel sizes", "voxel_sizes"),
+        ("Orientations", "orientations"), ("Data types", "dtypes"),
+    )):
+        with column:
+            st.markdown(f"**{label}**")
+            values = validation.get(key, {}) or {}
+            st.dataframe(
+                pd.DataFrame([{"value": k, "n": v} for k, v in values.items()]),
+                use_container_width=True, hide_index=True,
+            )
+
+    # ── Clinical variables ────────────────────────────────────────────────
+    missing = validation.get("clinical_missing_counts", {}) or {}
+    if missing:
+        st.markdown("### Missing clinical variables")
+        st.dataframe(
+            pd.DataFrame([{"Variable": k, "Missing rows": v}
+                          for k, v in missing.items()]),
+            use_container_width=True, hide_index=True,
+        )
+
+    # ── Splits ────────────────────────────────────────────────────────────
+    if any(v is not None for v in splits.values()):
+        st.markdown("### Subject-wise split files")
+        for name, frame in splits.items():
+            if frame is None:
+                continue
+            with st.expander(
+                f"oasis1_{name}.csv — {len(frame)} session(s)"
+            ):
+                st.dataframe(frame, use_container_width=True, hide_index=True,
+                             height=260)
+                dataframe_download(frame, f"oasis1_{name}")
+
+    # ── Provenance ────────────────────────────────────────────────────────
+    if provenance:
+        with st.expander("Dataset provenance record (Section 20)",
+                         expanded=False):
+            st.json(provenance)
+
+    for warning in validation.get("warnings", []):
+        st.warning(warning)
+    for error in validation.get("errors", []):
+        st.error(error)
+
+    summary = state.dataset_summary()
+    if summary is not None:
+        st.markdown("### Per-session dataset summary")
+        st.dataframe(summary, use_container_width=True, hide_index=True,
+                     height=340)
+        dataframe_download(summary, "oasis1_dataset_summary")
+
+    what_this_module_did(
+        "`OASIS1DataManager` walks the extracted OASIS-1 discs, selects one "
+        "atlas-registered T88 volume per session, and reads each one to record "
+        "its shape, voxel size, orientation, dtype and intensity range. The "
+        "validator joins that against the OASIS-1 metadata table, maps CDR to "
+        "CN/MCI/AD, and reports the analysable cohort together with the reason "
+        "for every exclusion. Immediately before training, the integrity gate "
+        "asserts that every session about to be used appears in this validated "
+        "index; anything that does not stops the run."
+    )
+
+
 def page_overview(state: DashboardState, subject: Optional[str]) -> None:
     """Global pipeline tracker, readiness checklist and environment report."""
     page_title(
@@ -1859,6 +2112,7 @@ def page_figures(state: DashboardState, subject: Optional[str]) -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 
 PAGES = {
+    "Dataset integrity": page_dataset_integrity,
     "Pipeline tracker": page_overview,
     "Patient selection": page_patient,
     "M1  MRI viewer": page_m1,

@@ -48,6 +48,7 @@ from modules.m04_feature_extraction.feature_spec import (
     FEATURE_ORDER,
     RAW_FEATURES,
 )
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -330,7 +331,7 @@ def save_features(
     csv_path = out_dir / f"{name}.csv"
     json_path = out_dir / f"{name}_quality.json"
     features.to_csv(csv_path, index=False)
-    json_path.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
+    json_path.write_text(json.dumps(json_safe(report.to_dict()), indent=2), encoding="utf-8")
     logger.info("Features saved: %s", csv_path)
     return {"features_csv": csv_path, "quality_json": json_path}
 

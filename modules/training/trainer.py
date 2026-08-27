@@ -27,7 +27,8 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -44,6 +45,7 @@ from modules.m01_dataset.labels import class_weights as compute_class_weights
 from modules.model import ModelOutput, NeuroGenesisModel
 from modules.training.losses import LossBreakdown, NeuroGenesisLoss
 from modules.training.metrics import ClassificationMetrics, compute_metrics
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -189,6 +191,27 @@ class Trainer:
 
     # ── Fit ───────────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _git_commit() -> Optional[str]:
+        """Return the current git commit, or ``None`` outside a repo.
+
+        Recorded in every checkpoint so a trained model can be traced back
+        to the exact code that produced it (Section 15).
+        """
+        import subprocess
+
+        try:
+            result = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True, text=True, timeout=10,
+                cwd=Path(__file__).resolve().parent.parent.parent,
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except Exception:  # noqa: BLE001 - provenance is best-effort
+            pass
+        return None
+
     def fit(
         self,
         train_loader: DataLoader,
@@ -196,6 +219,8 @@ class Trainer:
         checkpoint_path: Optional[Path] = None,
         epochs: Optional[int] = None,
         verbose: bool = True,
+        dataset_provenance: Optional[Dict[str, Any]] = None,
+        split_file: Optional[Path] = None,
     ) -> TrainingResult:
         """Train the model, selecting the best epoch on the validation split.
 
@@ -379,12 +404,60 @@ class Trainer:
 
         saved: Optional[Path] = None
         if checkpoint_path is not None:
+            # Section 15: a checkpoint must record enough to identify the
+            # exact data, split, code and settings that produced it, so a
+            # model trained on the wrong data can never be mistaken for one
+            # trained on the real dataset.
+            n_train = len(getattr(train_loader, "dataset", []) or [])
+            n_val = len(getattr(val_loader, "dataset", []) or []) \
+                if val_loader is not None else 0
             saved = self.model.save_checkpoint(
                 Path(checkpoint_path),
                 extra={
+                    "dataset": (dataset_provenance or {}).get(
+                        "dataset_source", "OASIS-1"
+                    ),
+                    "dataset_provenance": dataset_provenance,
+                    "split_file": (
+                        Path(split_file).as_posix() if split_file else None
+                    ),
+                    "n_train_sessions": n_train,
+                    "n_val_sessions": n_val,
+                    "subject_count": n_train + n_val,
+                    "seed": self.cfg.repro.seed,
+                    "training_date": datetime.now().isoformat(
+                        timespec="seconds"
+                    ),
+                    "git_commit": self._git_commit(),
+                    "hyperparameters": {
+                        "train": asdict(self.cfg.train),
+                        "loss": asdict(self.cfg.loss),
+                        "graph_learning": asdict(self.cfg.graph_learning),
+                        "neuropropx": asdict(self.cfg.neuropropx),
+                        "spatial_encoder": asdict(self.cfg.spatial_encoder),
+                        "stage_tgt": asdict(self.cfg.stage_tgt),
+                        "fusion": asdict(self.cfg.fusion),
+                    },
                     "monitor": monitor,
                     "best_epoch": best_epoch,
                     "best_value": best_value,
+                    "validation_metrics": {
+                        "monitor": monitor,
+                        "best_value": best_value,
+                        "accuracy": (
+                            self.history[best_epoch - 1].val_accuracy
+                            if 0 < best_epoch <= len(self.history) else None
+                        ),
+                        "balanced_accuracy": (
+                            self.history[best_epoch - 1].val_balanced_accuracy
+                            if 0 < best_epoch <= len(self.history) else None
+                        ),
+                        "macro_f1": (
+                            self.history[best_epoch - 1].val_macro_f1
+                            if 0 < best_epoch <= len(self.history) else None
+                        ),
+                    },
+                    "test_metrics": None,  # filled by evaluate()
                     "class_weights": weights.tolist(),
                     "train_class_counts": counts,
                 },
@@ -571,7 +644,7 @@ class Trainer:
         """Write a training result to JSON."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(result.to_dict(), indent=2), encoding="utf-8")
+        path.write_text(json.dumps(json_safe(result.to_dict()), indent=2), encoding="utf-8")
         logger.info("Training result written: %s", path)
         return path
 

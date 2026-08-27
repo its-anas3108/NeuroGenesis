@@ -59,6 +59,7 @@ from modules.m06_neuropropx.ap_laf import APLAF
 from modules.m06_neuropropx.sagr import SAGR
 from modules.m06_neuropropx.srve import SRVE, ConstantVulnerability
 from modules.m06_neuropropx.types import NeuroPropXOutput
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -415,7 +416,7 @@ def save_neuropropx_output(
     written["edge_features_npy"] = p
 
     p = target("enriched_graph", f"{subject_id}_G_star.json")
-    p.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    p.write_text(json.dumps(json_safe(meta), indent=2), encoding="utf-8")
     written["metadata_json"] = p
 
     logger.info("NeuroProp-X output saved for %s (%d artifacts)",

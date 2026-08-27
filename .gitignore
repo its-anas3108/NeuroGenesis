@@ -38,3 +38,9 @@ dataset/OASIS_synthetic/
 config_imaging.json
 *_run.log
 streamlit_boot.log
+outputs_oasis1/
+config_oasis1*.json
+extract_oasis.log
+validate_oasis.log
+preprocess_oasis1.log
+dashboard.log

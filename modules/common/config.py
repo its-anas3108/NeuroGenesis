@@ -50,6 +50,12 @@ class PathsConfig:
     mri_dir: Path = Path("dataset/OASIS")
     #: OASIS-1 cross-sectional metadata table (contains the CDR labels).
     metadata_csv: Path = Path("dataset/oasis_cross-sectional.csv")
+    #: Root of the extracted real OASIS-1 dataset (Section 19). Set by
+    #: configuration or --oasis1-root; never hard-coded to a local path.
+    #: The official source is
+    #: https://sites.wustl.edu/oasisbrains/home/oasis-1/ , but the
+    #: experiment uses only locally supplied files and never downloads.
+    oasis1_root: Optional[Path] = None
     #: Nilearn atlas cache.
     atlas_dir: Path = Path("dataset/nilearn_data")
     #: Root of all generated artifacts.
@@ -66,6 +72,22 @@ class PathsConfig:
 @dataclass
 class DataConfig:
     """Cohort definition, label mapping and splitting."""
+
+    #: The only dataset this project accepts for research execution.
+    dataset_source: str = "OASIS-1"
+    #: Which OASIS-1 volume to consume. ``t88_gfc`` is atlas-registered
+    #: with the skull present, so the pipeline's own skull-stripping
+    #: stage still runs; ``t88_masked_gfc`` is pre-stripped by OASIS and
+    #: would make that stage a no-op.
+    oasis1_volume_kind: str = "t88_gfc"
+    #: Hard switch. Research runs must keep this False. When False the
+    #: integrity guard refuses to start training on any sample that is
+    #: not in the validated OASIS-1 index.
+    allow_synthetic_data: bool = False
+    #: Read voxel data during dataset validation, not just headers.
+    #: Slower, but the only way to detect a truncated or all-zero
+    #: volume.
+    deep_validation: bool = True
 
     #: CDR value -> stage label. OASIS-1 encodes CDR as {0, 0.5, 1, 2}.
     #: Keys are strings because YAML/JSON cannot use floats as mapping keys.
@@ -220,6 +242,32 @@ class LossConfig:
 
 
 @dataclass
+class AugmentationConfig:
+    """Image augmentation of REAL OASIS-1 volumes only (Section 14).
+
+    Augmentation transforms real scans; it never creates subjects and
+    never creates labels. A transformed volume inherits the label of the
+    real subject it came from and is counted as that subject for
+    splitting, so an augmented copy can never appear in a different
+    split from its source.
+
+    Defaults are conservative and augmentation is **off** unless enabled
+    explicitly, because anatomically unrealistic transforms would be a
+    silent confound.
+    """
+
+    enabled: bool = False
+    #: Maximum rotation in degrees about each axis.
+    max_rotation_degrees: float = 5.0
+    #: Maximum translation in voxels along each axis.
+    max_translation_voxels: float = 3.0
+    #: Multiplicative intensity scaling range, as a fraction.
+    intensity_scale: float = 0.05
+    #: Probability that any given training sample is augmented.
+    probability: float = 0.5
+
+
+@dataclass
 class TrainConfig:
     """Optimisation and checkpointing."""
 
@@ -303,6 +351,9 @@ class NeuroGenesisConfig:
     stage_tgt: StageTGTConfig = field(default_factory=StageTGTConfig)
     loss: LossConfig = field(default_factory=LossConfig)
     train: TrainConfig = field(default_factory=TrainConfig)
+    augmentation: AugmentationConfig = field(
+        default_factory=AugmentationConfig
+    )
     ranking: RankingConfig = field(default_factory=RankingConfig)
     stats: StatsConfig = field(default_factory=StatsConfig)
     repro: ReproConfig = field(default_factory=ReproConfig)
@@ -364,6 +415,24 @@ class NeuroGenesisConfig:
         """
         problems: List[str] = []
 
+        if self.data.dataset_source != "OASIS-1":
+            problems.append(
+                "data.dataset_source must be 'OASIS-1'; this project "
+                f"accepts no other dataset, got "
+                f"{self.data.dataset_source!r}"
+            )
+        if self.data.allow_synthetic_data:
+            problems.append(
+                "data.allow_synthetic_data is True. Research execution "
+                "requires it to be False; synthetic data must never "
+                "enter the experiment."
+            )
+        if self.data.oasis1_volume_kind not in ("t88_gfc", "t88_masked_gfc"):
+            problems.append(
+                "data.oasis1_volume_kind must be 't88_gfc' or "
+                f"'t88_masked_gfc', got "
+                f"{self.data.oasis1_volume_kind!r}"
+            )
         if self.data.missing_cdr_policy not in ("exclude", "cn"):
             problems.append(
                 f"data.missing_cdr_policy must be 'exclude' or 'cn', "
@@ -493,6 +562,7 @@ _SECTION_TYPES: Dict[str, Any] = {
     "TrainConfig": TrainConfig,
     "RankingConfig": RankingConfig,
     "StatsConfig": StatsConfig,
+    "AugmentationConfig": AugmentationConfig,
     "ReproConfig": ReproConfig,
 }
 
@@ -514,6 +584,7 @@ __all__ = [
     "StageTGTConfig",
     "LossConfig",
     "TrainConfig",
+    "AugmentationConfig",
     "RankingConfig",
     "StatsConfig",
     "ReproConfig",

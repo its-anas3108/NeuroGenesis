@@ -99,6 +99,60 @@ class SplitManifest:
         logger.info("Split manifest written: %s", path)
         return path
 
+    def to_frames(
+        self, cohort: "pd.DataFrame"
+    ) -> Dict[str, "pd.DataFrame"]:
+        """Return one row-per-session DataFrame per split (Section 9).
+
+        Each row carries ``subject_id``, ``session_id``, ``MRI_path``,
+        ``label`` and ``split``, so the split files are self-contained
+        and auditable without re-deriving anything.
+
+        Args:
+            cohort: The cohort table the split was built from.
+
+        Returns:
+            ``{"train": df, "val": df, "test": df}``.
+        """
+        assignment = self.assignment()
+        indexed = cohort.set_index(
+            cohort["session_id"].astype(str), drop=False
+        )
+        frames: Dict[str, pd.DataFrame] = {}
+        for split in ("train", "val", "test"):
+            rows = []
+            for session in getattr(self, f"{split}_sessions"):
+                if session not in indexed.index:
+                    continue
+                record = indexed.loc[session]
+                if isinstance(record, pd.DataFrame):
+                    record = record.iloc[0]
+                rows.append({
+                    "subject_id": record.get("subject_id"),
+                    "session_id": session,
+                    "MRI_path": record.get("mri_path"),
+                    "stage": record.get("stage"),
+                    "label": record.get("label"),
+                    "split": split,
+                    "dataset_source": "OASIS-1",
+                })
+            frames[split] = pd.DataFrame(rows)
+        return frames
+
+    def save_split_csvs(
+        self, cohort: "pd.DataFrame", out_dir: Path
+    ) -> Dict[str, Path]:
+        """Write ``oasis1_{train,val,test}.csv`` (Section 9)."""
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        written: Dict[str, Path] = {}
+        for split, frame in self.to_frames(cohort).items():
+            path = out_dir / f"oasis1_{split}.csv"
+            frame.to_csv(path, index=False)
+            written[split] = path
+        logger.info("Split CSVs written to %s", out_dir)
+        return written
+
     @classmethod
     def load(cls, path: Path) -> "SplitManifest":
         """Reload a manifest previously written by :meth:`save`."""

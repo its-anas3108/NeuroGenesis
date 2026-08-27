@@ -50,6 +50,7 @@ from modules.m04_feature_extraction.feature_spec import (
     FEATURE_ORDER,
     N_FEATURES,
 )
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -363,7 +364,7 @@ class MorphometricScaler:
                 for (roi, feat), s in self.stats.items()
             ],
         }
-        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        path.write_text(json.dumps(json_safe(payload), indent=2), encoding="utf-8")
         logger.info("Scaler saved: %s", path)
         return path
 

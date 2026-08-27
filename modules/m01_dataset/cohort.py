@@ -30,6 +30,7 @@ from modules.common.config import DataConfig, PathsConfig
 from modules.common.logging_utils import get_logger
 from modules.common.roi_constants import STAGE_ORDER
 from modules.m01_dataset.labels import LabelReport, extract_subject_id, map_labels
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -48,6 +49,10 @@ class CohortReport:
 
     metadata_csv: Optional[str] = None
     mri_dir: Optional[str] = None
+    #: Dataset identity and OASIS-1 provenance (Section 20).
+    dataset_source: str = "OASIS-1"
+    oasis1_root: Optional[str] = None
+    volume_kind: Optional[str] = None
     n_metadata_rows: int = 0
     n_labeled_sessions: int = 0
     n_labeled_subjects: int = 0
@@ -82,6 +87,10 @@ class CohortReport:
     def to_dict(self) -> Dict[str, Any]:
         """JSON-serialisable snapshot."""
         return {
+            "dataset_source": self.dataset_source,
+            "oasis1_root": self.oasis1_root,
+            "volume_kind": self.volume_kind,
+            "is_synthetic": False,
             "metadata_csv": self.metadata_csv,
             "mri_dir": self.mri_dir,
             "n_metadata_rows": self.n_metadata_rows,
@@ -101,6 +110,9 @@ class CohortReport:
     def summary(self) -> str:
         """Human-readable summary for logs and the dashboard."""
         lines = [
+            f"Dataset               : {self.dataset_source}",
+            f"OASIS-1 root          : {self.oasis1_root}",
+            f"Volume kind           : {self.volume_kind}",
             f"Metadata CSV          : {self.metadata_csv}",
             f"MRI directory         : {self.mri_dir}",
             f"Metadata rows         : {self.n_metadata_rows}",
@@ -221,7 +233,37 @@ def build_cohort(
     report.n_labeled_subjects = int(labeled["subject_id"].nunique())
     report.stage_counts = dict(label_report.stage_counts)
 
-    available = discover_mri_files(Path(paths.mri_dir))
+    # Route discovery through OASIS1DataManager when an OASIS-1 root is
+    # configured. This is the single point where the experiment's MRI
+    # data enters: the manager returns only validated real OASIS-1
+    # volumes. The legacy directory glob remains for the code paths that
+    # operate on already-extracted patch trees.
+    oasis_root = getattr(paths, "oasis1_root", None)
+    if oasis_root:
+        from modules.m01_dataset.oasis1_manager import OASIS1DataManager
+
+        manager = OASIS1DataManager(
+            oasis1_root=Path(oasis_root),
+            volume_kind=getattr(data, "oasis1_volume_kind", "t88_gfc"),
+            metadata_csv=csv_path,
+        )
+        index = manager.usable_index(
+            deep=getattr(data, "deep_validation", True)
+        )
+        available = {
+            str(row["session_id"]): Path(row["mri_path"])
+            for _, row in index.iterrows()
+        }
+        report.dataset_source = "OASIS-1"
+        report.oasis1_root = Path(oasis_root).as_posix()
+        report.volume_kind = manager.volume_kind
+        report.mri_dir = Path(oasis_root).as_posix()
+        logger.info(
+            "Cohort MRI source: validated OASIS-1 index (%d usable "
+            "session(s)) from %s", len(available), oasis_root,
+        )
+    else:
+        available = discover_mri_files(Path(paths.mri_dir))
     report.n_mri_files_found = len(available)
 
     labeled = labeled.copy()
@@ -293,7 +335,7 @@ def save_cohort(cohort: pd.DataFrame, report: CohortReport,
     csv_path = out_dir / "cohort.csv"
     json_path = out_dir / "cohort_report.json"
     cohort.to_csv(csv_path, index=False)
-    json_path.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
+    json_path.write_text(json.dumps(json_safe(report.to_dict()), indent=2), encoding="utf-8")
 
     logger.info("Cohort saved: %s", csv_path)
     return {"cohort_csv": csv_path, "report_json": json_path}

@@ -19,6 +19,7 @@ Modes
 
 ::
 
+    python run.py --mode validate_dataset  # OASIS-1 integrity + validation report
     python run.py --mode preprocess     # M1-M8: imaging -> patches -> features
     python run.py --mode train_cnn      # M9: cache 3D CNN embeddings
     python run.py --mode train_graph    # graph stage on cached embeddings
@@ -65,6 +66,7 @@ from modules.common.seeds import set_all_seeds  # noqa: E402
 logger = get_logger(__name__)
 
 MODES = (
+    "validate_dataset",
     "preprocess", "train_cnn", "train_graph", "train_full", "ablation",
     "evaluate", "xai", "report", "statistics", "figures", "dashboard", "status",
 )
@@ -90,6 +92,8 @@ class Context:
         self._cohort: Optional[pd.DataFrame] = None
         self._features: Optional[pd.DataFrame] = None
         self._smoke: Optional[Dict[str, Any]] = None
+        self._manager: Optional[Any] = None
+        self._validated_index: Optional[pd.DataFrame] = None
 
     @property
     def smoke_marker(self) -> Optional[Dict[str, Any]]:
@@ -167,6 +171,72 @@ class Context:
             )
         self._features = pd.read_csv(self.features_path)
         return self._features
+
+    def oasis1_manager(self):
+        """Return the OASIS-1 data manager for the configured root.
+
+        Raises:
+            FileNotFoundError: If no OASIS-1 root is configured. The
+                message is the Section 17 wording, because a research
+                run without real data must stop rather than substitute.
+        """
+        from modules.m01_dataset import OASIS1DataManager
+
+        if self._manager is not None:
+            return self._manager
+        root = self.cfg.paths.oasis1_root
+        if not root:
+            raise FileNotFoundError(
+                "REAL OASIS-1 DATA REQUIRED\n\n"
+                "No OASIS-1 root is configured. Pass --oasis1-root "
+                "<path> or set paths.oasis1_root in the config.\n\n"
+                "Obtain OASIS-1 from "\
+                "https://sites.wustl.edu/oasisbrains/home/oasis-1/ , "
+                "extract the discs with tools/extract_oasis1.py, and "
+                "point the run at the extraction directory.\n\n"
+                "Synthetic and substitute datasets are disabled for "
+                "research execution."
+            )
+        self._manager = OASIS1DataManager(
+            oasis1_root=Path(root),
+            volume_kind=self.cfg.data.oasis1_volume_kind,
+            metadata_csv=Path(self.cfg.paths.metadata_csv),
+        )
+        return self._manager
+
+    def validated_index(self, refresh: bool = False) -> pd.DataFrame:
+        """Return the validated OASIS-1 index, from cache if available."""
+        if self._validated_index is not None and not refresh:
+            return self._validated_index
+        cached = self.outputs / "dataset_validation" \
+            / "oasis1_dataset_summary.csv"
+        if cached.exists() and not refresh:
+            self._validated_index = pd.read_csv(cached)
+            return self._validated_index
+        self._validated_index = self.oasis1_manager().index(
+            validated=True, deep=self.cfg.data.deep_validation
+        )
+        return self._validated_index
+
+    def enforce_integrity(self, session_ids, split=None) -> None:
+        """Run the Section 8 gate; raises before any model sees data."""
+        from modules.m01_dataset import check_dataset_integrity
+
+        cohort = self.cohort()
+        subject_of = dict(zip(
+            cohort["session_id"].astype(str),
+            cohort["subject_id"].astype(str),
+        ))
+        check_dataset_integrity(
+            training_session_ids=list(session_ids),
+            validated_index=self.validated_index(),
+            dataset_source=self.cfg.data.dataset_source,
+            synthetic_data_enabled=self.cfg.data.allow_synthetic_data,
+            split_assignment=split.assignment() if split else None,
+            subject_of=subject_of,
+            provenance=self.smoke_marker,
+            out_dir=self.outputs / "dataset_validation",
+        )
 
     def trainable_cohort(self, require_patches: bool = False) -> pd.DataFrame:
         """Return the cohort restricted to sessions that can actually be used.
@@ -270,6 +340,57 @@ class Context:
 # Modes
 # ──────────────────────────────────────────────────────────────────────────────
 
+def mode_validate_dataset(ctx: Context, args: argparse.Namespace) -> int:
+    """Validate the uploaded OASIS-1 dataset (Sections 6, 17, 18).
+
+    Runs before anything else and is the gate that decides whether a research
+    run is possible at all. Produces the validation report and dataset summary
+    the dashboard displays.
+    """
+    from modules.m01_dataset import save_validation, validate_oasis1
+
+    log_banner(logger, "OASIS-1 dataset validation")
+    try:
+        manager = ctx.oasis1_manager()
+    except FileNotFoundError as exc:
+        print(f"\n{exc}")
+        return 1
+
+    if not manager.root_exists():
+        print(f"\n{manager.missing_data_message()}")
+        return 1
+
+    report, table = validate_oasis1(
+        manager,
+        metadata_csv=Path(ctx.cfg.paths.metadata_csv),
+        cdr_to_stage=ctx.cfg.data.cdr_to_stage,
+        missing_cdr_policy=ctx.cfg.data.missing_cdr_policy,
+        deep=ctx.cfg.data.deep_validation,
+    )
+    written = save_validation(report, table, ctx.outputs / "dataset_validation")
+
+    # Record the dataset provenance alongside the validation artifacts so any
+    # later consumer can trace a result back to the exact volumes used.
+    (ctx.outputs / "dataset_validation" / "oasis1_provenance.json").write_text(
+        json.dumps(manager.provenance(), indent=2), encoding="utf-8"
+    )
+
+    print()
+    print(report.summary())
+    print()
+    for name, path in written.items():
+        print(f"  {name}: {path}")
+
+    if not report.passed:
+        print("\nDATASET VALIDATION FAILED. Training is disabled until the "
+              "errors above are resolved.")
+        return 1
+    if report.is_subset:
+        print("\nOASIS-1 SUBSET MODE: results will describe the uploaded "
+              "subset, not the complete dataset.")
+    return 0
+
+
 def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
     """M1-M8: run the imaging pipeline and extract morphometric features."""
     from modules.m02_preprocessing import check_imaging_dependencies
@@ -282,9 +403,22 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
 
     log_banner(logger, "M1-M8  Preprocessing, ROI extraction, features")
 
+    # Section 17: a research run requires real OASIS-1. If it is not present we
+    # stop here rather than falling back to anything.
+    if ctx.cfg.paths.oasis1_root:
+        manager = ctx.oasis1_manager()
+        if not manager.root_exists() or not manager.discover():
+            print(f"\n{manager.missing_data_message()}")
+            return 1
+        print(f"\nDATASET   : {manager.provenance()['dataset_source']}")
+        print(f"SOURCE    : {manager.provenance()['source_description']}")
+        print("DATA MODE : REAL DATA")
+        print("SYNTHETIC : DISABLED")
+
     # Stamp synthetic provenance into the outputs tree before anything is
     # written. A run over phantom MRI otherwise produces artifacts that are
-    # indistinguishable from a real run.
+    # indistinguishable from a real run. With a real OASIS-1 root this is a
+    # no-op, and the tree carries no synthetic marker.
     from modules.common.provenance import stamp_outputs
 
     stamped = stamp_outputs(ctx.outputs, ctx.cfg.paths.mri_dir)
@@ -489,6 +623,16 @@ def _train(ctx: Context, variant: str, epochs: Optional[int],
             print(f"  {leak}")
         return 1
     split.save(ctx.split_path)
+    split.save_split_csvs(cohort, ctx.outputs / "splits")
+
+    # Section 8: nothing reaches a model until every session is proven
+    # to come from the validated OASIS-1 index.
+    ctx.enforce_integrity(
+        list(split.train_sessions) + list(split.val_sessions)
+        + list(split.test_sessions),
+        split=split,
+    )
+
     print("\nTABLE 1  Dataset and split distribution")
     print(split.table1().to_string(index=False))
     for warning in split.warnings:
@@ -509,6 +653,9 @@ def _train(ctx: Context, variant: str, epochs: Optional[int],
           f"val={val_ds.class_counts()}  test={test_ds.class_counts()}")
 
     trainer = Trainer(model, ctx.cfg)
+    provenance = None
+    if ctx.cfg.paths.oasis1_root:
+        provenance = ctx.oasis1_manager().provenance()
     result = trainer.fit(
         make_loader(train_ds, ctx.cfg.train.batch_size, shuffle=True,
                     seed=ctx.cfg.repro.seed,
@@ -516,6 +663,8 @@ def _train(ctx: Context, variant: str, epochs: Optional[int],
         make_loader(val_ds, ctx.cfg.train.batch_size),
         checkpoint_path=ctx.checkpoint_path(variant),
         epochs=epochs,
+        dataset_provenance=provenance,
+        split_file=ctx.split_path,
     )
     Trainer.save_result(
         result,
@@ -714,10 +863,13 @@ def mode_xai(ctx: Context, args: argparse.Namespace) -> int:
 
     log_banner(logger, "M15-M16  ROI ranking and explainable AI")
     variant = args.variant or "A7"
+    provenance = (
+        ctx.oasis1_manager().provenance() if ctx.cfg.paths.oasis1_root else None
+    )
     pipeline = load_inference_pipeline(
         ctx.outputs, ctx.checkpoint_path(variant), ctx.cfg,
         scaler_path=ctx.scaler_path, split_path=ctx.split_path,
-        smoke_marker=ctx.smoke_marker,
+        smoke_marker=ctx.smoke_marker, dataset_provenance=provenance,
     )
     cohort = ctx.trainable_cohort()
     sessions = [args.patient_id] if args.patient_id else [
@@ -796,10 +948,13 @@ def mode_report(ctx: Context, args: argparse.Namespace) -> int:
 
     log_banner(logger, "M19  Report generation")
     variant = args.variant or "A7"
+    provenance = (
+        ctx.oasis1_manager().provenance() if ctx.cfg.paths.oasis1_root else None
+    )
     pipeline = load_inference_pipeline(
         ctx.outputs, ctx.checkpoint_path(variant), ctx.cfg,
         scaler_path=ctx.scaler_path, split_path=ctx.split_path,
-        smoke_marker=ctx.smoke_marker,
+        smoke_marker=ctx.smoke_marker, dataset_provenance=provenance,
     )
 
     extra: Dict[str, Any] = {}
@@ -1027,6 +1182,7 @@ def mode_status(ctx: Context, args: argparse.Namespace) -> int:
 # ──────────────────────────────────────────────────────────────────────────────
 
 MODE_TABLE = {
+    "validate_dataset": mode_validate_dataset,
     "preprocess": mode_preprocess,
     "train_cnn": mode_train_cnn,
     "train_graph": mode_train_graph,
@@ -1055,6 +1211,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Config YAML/JSON. Defaults are used when omitted.")
     parser.add_argument("--outputs", type=Path,
                         help="Override the outputs root directory.")
+    parser.add_argument("--oasis1-root", type=Path,
+                        help="Root of the extracted real OASIS-1 "
+                             "dataset. Required for research runs.")
     parser.add_argument("--experiment", type=str,
                         help="Experiment ID for the config and checkpoint stamp.")
     parser.add_argument("--patient_id", type=str,
@@ -1085,6 +1244,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         else NeuroGenesisConfig()
     if args.outputs:
         cfg.paths.outputs_dir = args.outputs
+    if args.oasis1_root:
+        cfg.paths.oasis1_root = args.oasis1_root
     if args.experiment:
         cfg.paths.experiment_id = args.experiment
     if args.seed is not None:

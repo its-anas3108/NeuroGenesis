@@ -32,6 +32,7 @@ from modules.common.config import PreprocessConfig
 from modules.common.logging_utils import get_logger
 from modules.common.roi_constants import N_ROI, ROI_METADATA, ROI_ORDER
 from modules.common.run_state import RunStateTracker
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -108,7 +109,7 @@ class SegmentationResult:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         path = out_dir / f"{self.subject_id}_segmentation.json"
-        path.write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
+        path.write_text(json.dumps(json_safe(self.to_dict()), indent=2), encoding="utf-8")
         return path
 
 

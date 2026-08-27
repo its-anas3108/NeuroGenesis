@@ -45,6 +45,7 @@ from modules.common.roi_constants import (
     STAGE_ORDER,
     roi_short,
 )
+from modules.common.serialization import json_safe
 
 logger = get_logger(__name__)
 
@@ -189,6 +190,9 @@ class ReportInputs:
     significant_findings: Optional[List[Dict[str, Any]]] = None
     ablation_table: Optional[pd.DataFrame] = None
     ablation_caveats: Optional[List[str]] = None
+    #: Dataset provenance (Sections 20, 24). Every report must state the
+    #: dataset it was produced from.
+    dataset_provenance: Optional[Dict[str, Any]] = None
     #: Model provenance.
     model_summary: Optional[Dict[str, Any]] = None
     config_snapshot: Optional[Dict[str, Any]] = None
@@ -267,6 +271,10 @@ class ReportGenerator:
             f"| Subject ID | `{data.subject_id}` |",
             f"| Generated | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} |",
             f"| Experiment | `{data.experiment_id or 'not recorded'}` |",
+            f"| Dataset | "
+            f"{(data.dataset_provenance or {}).get('dataset_source', 'OASIS-1')} |",
+            f"| Dataset source | "
+            f"{(data.dataset_provenance or {}).get('source_description', 'Washington University / OASIS')} |",
             f"| Data provenance | {_provenance_label(data.smoke_marker)} |",
             "",
         ]
@@ -631,10 +639,36 @@ class ReportGenerator:
             lines.append("")
         return lines
 
+    def _section_dataset(self, data: ReportInputs) -> List[str]:
+        """State the dataset this result came from (Sections 20, 24)."""
+        lines = ["## 10. Dataset", ""]
+        provenance = data.dataset_provenance or {}
+        if not provenance:
+            lines += [
+                "_Dataset provenance was not recorded for this run._", "",
+            ]
+            return lines
+        lines += [
+            "| Field | Value |",
+            "|---|---|",
+            f"| Dataset | **{provenance.get('dataset_source', 'OASIS-1')}** |",
+            f"| Source | {provenance.get('source_description', '')} |",
+            f"| Volume | {provenance.get('volume_description', '')} |",
+            f"| Synthetic data | {'YES' if provenance.get('is_synthetic') else 'DISABLED'} |",
+            "",
+        ]
+        note = provenance.get("preprocessing_note")
+        if note:
+            lines += [f"> {note}", ""]
+        return lines
+
     def _section_limitations(self, data: ReportInputs) -> List[str]:
         """Section 15: limitations and disclaimer."""
         lines = ["## 10. Limitations", ""]
         limitations = [
+            "The dataset is **OASIS-1 cross-sectional** (Washington "
+            "University / OASIS). Findings apply to that cohort and have not "
+            "been replicated on any independent dataset.",
             "The study is **cross-sectional**. Every subject contributes one "
             "scan, so no within-subject change is measured and no statement "
             "about the future can be supported.",
@@ -693,6 +727,7 @@ class ReportGenerator:
         blocks += self._section_statistics(data)
         blocks += self._section_ablation(data)
         blocks += self._section_model(data)
+        blocks += self._section_dataset(data)
 
         if data.figures:
             blocks += ["## 11. Figures", ""]
@@ -752,6 +787,10 @@ class ReportGenerator:
                 "node_importance": data.node_importance,
             },
             "statistics_summary": data.statistics_summary,
+            "dataset": (data.dataset_provenance or {}).get(
+                "dataset_source", "OASIS-1"
+            ),
+            "dataset_provenance": data.dataset_provenance,
             "model": data.model_summary,
             "config": data.config_snapshot,
             "checkpoint": data.checkpoint_path,
@@ -841,7 +880,7 @@ class ReportGenerator:
         written["html"] = path
 
         path = subject_dir / f"{data.subject_id}_report.json"
-        path.write_text(json.dumps(self.build_json(data), indent=2),
+        path.write_text(json.dumps(json_safe(self.build_json(data)), indent=2),
                         encoding="utf-8")
         written["json"] = path
 
