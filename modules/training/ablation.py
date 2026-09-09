@@ -52,8 +52,17 @@ from modules.common.config import NeuroGenesisConfig
 from modules.common.logging_utils import get_logger
 from modules.common.roi_constants import STAGE_ORDER
 from modules.common.seeds import set_all_seeds
-from modules.m01_dataset.splits import SplitManifest, repeated_subject_splits
-from modules.model import ABLATION_SPECS, BASELINE_SPECS, build_model
+from modules.m01_dataset.splits import (
+    SplitManifest,
+    repeated_subject_splits,
+    stratified_subject_folds,
+)
+from modules.model import (
+    ABLATION_LADDER,
+    ABLATION_SPECS,
+    BASELINE_SPECS,
+    build_model,
+)
 from modules.training.metrics import (
     ClassificationMetrics,
     aggregate_metrics,
@@ -72,6 +81,21 @@ METRIC_NAMES: Tuple[str, ...] = (
 
 
 @dataclass
+def _at_best(result: Any, attribute: str) -> Optional[float]:
+    """Read one validation metric from the selected epoch's record.
+
+    Returns ``None`` rather than the last epoch's value when the best
+    epoch is out of range, so a failed or zero-epoch run cannot contribute
+    a misleading number to a selection decision.
+    """
+    history = getattr(result, "history", None) or []
+    best = getattr(result, "best_epoch", -1)
+    if not 0 < best <= len(history):
+        return None
+    value = getattr(history[best - 1], attribute, None)
+    return None if value is None else float(value)
+
+
 class VariantRun:
     """One variant evaluated on one split."""
 
@@ -83,6 +107,14 @@ class VariantRun:
     n_parameters: int
     train_seconds: float
     stage_geometry_ordered: Optional[bool] = None
+    #: The monitored metric on the **validation** split at the selected
+    #: epoch. This is the only signal any configuration choice may be
+    #: made on; test metrics above must never be used for selection.
+    val_monitor: Optional[str] = None
+    val_best_value: Optional[float] = None
+    val_accuracy: Optional[float] = None
+    val_balanced_accuracy: Optional[float] = None
+    val_macro_f1: Optional[float] = None
     warnings: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -95,6 +127,11 @@ class VariantRun:
             "n_parameters": self.n_parameters,
             "train_seconds": self.train_seconds,
             "stage_geometry_ordered": self.stage_geometry_ordered,
+            "val_monitor": self.val_monitor,
+            "val_best_value": self.val_best_value,
+            "val_accuracy": self.val_accuracy,
+            "val_balanced_accuracy": self.val_balanced_accuracy,
+            "val_macro_f1": self.val_macro_f1,
             "metrics": self.metrics.to_dict(),
             "warnings": list(self.warnings),
         }
@@ -286,18 +323,29 @@ class AblationStudy:
         from modules.m06_spatial_encoder.patch_dataset import make_loader
         from modules.m04_feature_extraction.feature_spec import FEATURE_ORDER
 
-        variants = list(variants or [k for k in ABLATION_SPECS
-                                     if not k.endswith("_no_tgt")])
+        variants = list(variants or ABLATION_LADDER)
         n_repeats = int(n_repeats if n_repeats is not None
                         else self.cfg.data.n_repeats)
 
-        self.splits = list(repeated_subject_splits(
-            self.cohort,
-            n_repeats=n_repeats,
-            val_fraction=self.cfg.data.val_fraction,
-            test_fraction=self.cfg.data.test_fraction,
-            base_seed=self.cfg.repro.seed,
-        ))
+        # Section 9: k-fold is the default because every subject is tested
+        # exactly once per pass, so the spread across partitions reflects model
+        # variance rather than the accident of who was held out. Repeated random
+        # draws remain available for backward comparability.
+        if self.cfg.data.split_scheme == "folds":
+            self.splits = list(stratified_subject_folds(
+                self.cohort,
+                n_folds=self.cfg.data.n_folds,
+                val_fraction=self.cfg.data.val_fraction,
+                seed=self.cfg.repro.seed,
+            ))
+        else:
+            self.splits = list(repeated_subject_splits(
+                self.cohort,
+                n_repeats=n_repeats,
+                val_fraction=self.cfg.data.val_fraction,
+                test_fraction=self.cfg.data.test_fraction,
+                base_seed=self.cfg.repro.seed,
+            ))
         logger.info(
             "Ablation: %d variant(s) x %d repeat(s) = %d training runs",
             len(variants), len(self.splits), len(variants) * len(self.splits),
@@ -356,6 +404,13 @@ class AblationStudy:
                             result.stage_geometry.get("ordering_respected")
                             if result.stage_geometry else None
                         ),
+                        val_monitor=result.monitor,
+                        val_best_value=result.best_value,
+                        val_accuracy=_at_best(result, "val_accuracy"),
+                        val_balanced_accuracy=_at_best(
+                            result, "val_balanced_accuracy"
+                        ),
+                        val_macro_f1=_at_best(result, "val_macro_f1"),
                         warnings=result.warnings,
                     ))
                     logger.info(
@@ -515,7 +570,6 @@ class AblationStudy:
             ("A3", "+ Learned Attention (AP-LAF)"),
             ("A4", "+ SRVE"),
             ("A5", "+ ANP"),
-            ("A6", "3D CNN + graph baseline"),
             ("A7", "Full NeuroProp-X + SAEG-GATv2 + 3D CNN"),
         ]
         rows = []

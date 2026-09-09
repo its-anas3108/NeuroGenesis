@@ -106,7 +106,18 @@ class DataConfig:
     #: Fraction of *subjects* (never sessions) held out.
     val_fraction: float = 0.15
     test_fraction: float = 0.20
-    #: Number of repeated stratified splits used for Table 9 / ablation CIs.
+    #: How evaluation partitions are drawn.
+    #: ``"folds"`` (default) runs subject-wise stratified k-fold cross-validation:
+    #: every subject is tested exactly once per pass, so the mean is an
+    #: estimate over the whole cohort rather than over a resample of it.
+    #: ``"repeats"`` keeps the older scheme of independent random draws, where
+    #: a subject may be tested many times or never.
+    split_scheme: str = "folds"
+    #: Folds when ``split_scheme == "folds"``. 5 gives a 20% test fold and,
+    #: at AD n=30, 6 held-out AD subjects per fold.
+    n_folds: int = 5
+    #: Number of repeated stratified splits used for Table 9 / ablation CIs
+    #: when ``split_scheme == "repeats"``.
     n_repeats: int = 10
 
 
@@ -160,6 +171,11 @@ class NeuroPropXConfig:
     learn_alpha: bool = True
     #: Hidden width of the AP-LAF learned-attention scorer.
     attention_hidden: int = 64
+    #: Softmax temperature for the AP-LAF structural-covariance operand.
+    #: Lower values concentrate adjacency mass on the most correlated
+    #: neighbours; 0.5 keeps the row distribution informative without
+    #: collapsing onto a single edge.
+    structural_temperature: float = 0.5
     #: Include the optional topology term in the ANP propagation score.
     anp_use_topology: bool = True
     #: Append graph centrality features to the SAGR node representation.
@@ -432,6 +448,15 @@ class NeuroGenesisConfig:
                 "data.oasis1_volume_kind must be 't88_gfc' or "
                 f"'t88_masked_gfc', got "
                 f"{self.data.oasis1_volume_kind!r}"
+            )
+        if self.data.split_scheme not in ("folds", "repeats"):
+            problems.append(
+                "data.split_scheme must be 'folds' or 'repeats', got "
+                f"{self.data.split_scheme!r}"
+            )
+        if self.data.split_scheme == "folds" and self.data.n_folds < 2:
+            problems.append(
+                f"data.n_folds must be at least 2, got {self.data.n_folds}"
             )
         if self.data.missing_cdr_policy not in ("exclude", "cn"):
             problems.append(

@@ -750,7 +750,7 @@ def ablation_plot(
                           "requires a completed ablation study")
         return _save(fig, out_dir, "fig15_ablation", smoke_marker)
 
-    order = [k for k in ("A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7")
+    order = [k for k in ("A0", "A1", "A2", "A3", "A4", "A5", "A7")
              if k in summaries]
     means, errors, labels = [], [], []
     for key in order:

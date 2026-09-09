@@ -75,12 +75,16 @@ class NeuroPropXConfigFlags:
             ``False``, ``A_star`` reduces to the row-normalised anatomical prior.
         use_anp: Enable ANP. When ``False``, the propagation channel carries
             ``A_star`` unchanged.
+        use_structural: Enable the AP-LAF structural-covariance operand,
+            a per-subject correlation between ROI morphometric profiles.
+            When ``False``, ``A_star`` mixes only the prior and attention.
         use_cnn: Include the 3D CNN embedding block in ``X_star``.
         use_centrality: Include the centrality block in ``X_star``.
     """
 
     use_srve: bool = True
     use_learned_attention: bool = True
+    use_structural: bool = True
     use_anp: bool = True
     use_cnn: bool = True
     use_centrality: bool = True
@@ -158,6 +162,8 @@ class NeuroPropX(nn.Module):
             alpha_logit_init=self.cfg.alpha_logit_init,
             learn_alpha=self.cfg.learn_alpha,
             learn_attention=self.flags.use_learned_attention,
+            use_structural=self.flags.use_structural,
+            structural_temperature=self.cfg.structural_temperature,
             negative_slope=0.2,
             n_roi=n_roi,
         )
@@ -252,7 +258,12 @@ class NeuroPropX(nn.Module):
         h = torch.cat(blocks, dim=-1) if len(blocks) > 1 else blocks[0]
 
         srve_out = self.srve(h, keep_features=keep_features)
-        aplaf_out = self.ap_laf(h)
+        # The structural operand is deliberately computed from the
+        # morphometric block alone, not from `h`. Mixing the CNN embedding
+        # into a 'structural similarity' would make the term a similarity of
+        # learned representations, which is neither interpretable nor the
+        # structural-covariance construct it is meant to be.
+        aplaf_out = self.ap_laf(h, structural_source=m if m is not None else h)
         anp_out = self.anp(
             srve_out.regional_vulnerability, aplaf_out.adaptive_adjacency
         )

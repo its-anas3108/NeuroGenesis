@@ -50,6 +50,8 @@ branch would contribute nothing subject-specific.
 
 from __future__ import annotations
 
+import math
+
 from typing import Optional
 
 import numpy as np
@@ -118,6 +120,8 @@ class APLAF(nn.Module):
         hidden_dim: int = 64,
         alpha_logit_init: float = 0.0,
         learn_alpha: bool = True,
+        use_structural: bool = False,
+        structural_temperature: float = 0.5,
         learn_attention: bool = True,
         mask_to_prior: bool = False,
         negative_slope: float = 0.2,
@@ -147,6 +151,22 @@ class APLAF(nn.Module):
             torch.from_numpy(prior_mask(include_self_loops=True)),
             persistent=True,
         )
+
+        # The structural operand is measured from the subject's own morphometry
+        # rather than learned, so it costs one scalar weight and no layers.
+        self.use_structural = bool(use_structural and learn_attention)
+        self.structural_temperature = float(structural_temperature)
+        # log(0.5) puts all three operands at one third at initialisation, the
+        # same unbiased start that alpha_logit_init=0.0 gives the original
+        # pair. Initialising to 0.0 would instead hand the new term half the
+        # adjacency mass before it has earned any of it.
+        struct_param = torch.tensor(float(math.log(0.5)))
+        if self.use_structural and learn_alpha:
+            self.structural_logit = nn.Parameter(struct_param)
+        else:
+            self.register_buffer(
+                "structural_logit", struct_param, persistent=True
+            )
 
         alpha_param = torch.tensor(float(alpha_logit_init))
         if learn_alpha and learn_attention:
@@ -178,7 +198,59 @@ class APLAF(nn.Module):
         if not self.learn_attention:
             return torch.ones((), device=self.prior_normalized.device,
                               dtype=self.prior_normalized.dtype)
-        return torch.sigmoid(self.alpha_logit)
+        return self.mix_weights()[0]
+
+    def mix_weights(self) -> torch.Tensor:
+        """Return ``[w_prior, w_att, w_struct]``, summing to 1.
+
+        With the structural term off this is exactly the previous two-way mix:
+        ``[sigmoid(a), 1 - sigmoid(a), 0]``. With it on, the three logits go
+        through a softmax, so every operand's share stays interpretable and
+        ``A_star`` stays row-stochastic.
+        """
+        alpha = torch.sigmoid(self.alpha_logit)
+        if not self.use_structural:
+            zero = torch.zeros((), dtype=alpha.dtype, device=alpha.device)
+            return torch.stack([alpha, 1.0 - alpha, zero])
+        # Re-express the learned prior/attention balance as logits so the
+        # structural weight competes on the same simplex rather than being
+        # bolted on outside the normalisation.
+        eps = 1e-6
+        a = torch.clamp(alpha, eps, 1.0 - eps)
+        logits = torch.stack([
+            torch.log(a),
+            torch.log(1.0 - a),
+            self.structural_logit.to(a.dtype),
+        ])
+        return torch.softmax(logits, dim=0)
+
+    @staticmethod
+    def structural_adjacency(
+        x: torch.Tensor, temperature: float = 0.5
+    ) -> torch.Tensor:
+        """Row-stochastic structural covariance between ROI profiles.
+
+        Centring each ROI's feature vector before taking the cosine makes
+        this the Pearson correlation between the two regions' morphometric
+        profiles -- the structural-covariance construct used in Alzheimer's
+        imaging, computed per subject rather than across a cohort.
+
+        Unlike the anatomical prior this differs from subject to subject,
+        and unlike attention it is measured rather than learned, so it adds
+        a source of edge information that neither existing operand carried.
+
+        Args:
+            x: ``(B, N, F)`` node features, normally the morphometric block.
+            temperature: Softmax temperature. Lower concentrates mass on
+                the most correlated neighbours.
+
+        Returns:
+            ``(B, N, N)`` row-stochastic similarity.
+        """
+        centred = x - x.mean(dim=-1, keepdim=True)
+        unit = F.normalize(centred, p=2, dim=-1, eps=1e-8)
+        correlation = torch.matmul(unit, unit.transpose(-1, -2))
+        return torch.softmax(correlation / max(temperature, 1e-3), dim=-1)
 
     # ── Attention ─────────────────────────────────────────────────────────
 
@@ -210,7 +282,11 @@ class APLAF(nn.Module):
 
     # ── Forward ───────────────────────────────────────────────────────────
 
-    def forward(self, h: torch.Tensor) -> APLAFOutput:
+    def forward(
+        self,
+        h: torch.Tensor,
+        structural_source: Optional[torch.Tensor] = None,
+    ) -> APLAFOutput:
         """Fuse the anatomical prior with learned attention.
 
         Args:
@@ -250,15 +326,29 @@ class APLAF(nn.Module):
             # tensor consumed by SAEG-GATv2 the same width.
             a_att = prior
 
-        alpha = self.alpha()
-        a_star = alpha * prior + (1.0 - alpha) * a_att
+        weights = self.mix_weights()
+        a_struct = None
+        if self.use_structural:
+            source = structural_source if structural_source is not None else h
+            if source.dim() == 2:
+                source = source.unsqueeze(0)
+            a_struct = self.structural_adjacency(
+                source, self.structural_temperature
+            )
+            a_star = (weights[0] * prior
+                      + weights[1] * a_att
+                      + weights[2] * a_struct)
+        else:
+            a_star = weights[0] * prior + weights[1] * a_att
 
         return APLAFOutput(
             adaptive_adjacency=a_star,
             prior_adjacency=prior,
             attention_adjacency=a_att,
-            alpha=alpha,
+            alpha=weights[0],
             raw_prior=self.raw_prior,
+            structural_adjacency=a_struct,
+            mix_weights=weights,
         )
 
     # ── Introspection ─────────────────────────────────────────────────────
@@ -266,7 +356,22 @@ class APLAF(nn.Module):
     def summary(self) -> dict:
         """Return a description of the fusion configuration for the dashboard."""
         return {
-            "formula": "A_star = alpha * A_prior + (1 - alpha) * A_att",
+            "formula": (
+                "A_star = w_prior*A_prior + w_att*A_att + w_struct*A_struct"
+                if self.use_structural else
+                "A_star = alpha * A_prior + (1 - alpha) * A_att"
+            ),
+            "mix_weights": {
+                "prior": float(self.mix_weights()[0].detach().cpu()),
+                "attention": float(self.mix_weights()[1].detach().cpu()),
+                "structural": float(self.mix_weights()[2].detach().cpu()
+                ),
+            },
+            "structural_term": (
+                "Pearson correlation between ROI morphometric profiles, row-"
+                "softmaxed. Subject-specific and measured rather than learned."
+                if self.use_structural else "disabled"
+            ),
             "alpha": float(self.alpha().detach().cpu()),
             "alpha_is_learned": bool(self.learn_alpha and self.learn_attention),
             "attention_active": self.learn_attention,

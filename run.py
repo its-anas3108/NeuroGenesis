@@ -391,6 +391,140 @@ def mode_validate_dataset(ctx: Context, args: argparse.Namespace) -> int:
     return 0
 
 
+# ── Parallel preprocessing (Section 13) ──────────────────────────────────────
+#
+# The 235 OASIS-1 subjects are independent, so M1-M8 parallelises across
+# processes. Three properties make that safe here rather than merely faster:
+#
+# * **Every write is per-subject.** ``preprocessing/<sid>/``, ``roi/<sid>/``,
+#   ``features/workdir/<sid>*`` and ``state/subjects/<sid>.json`` are all keyed
+#   by subject, so two workers never touch the same file. The cohort-level
+#   feature table is assembled by the parent after every worker has returned.
+# * **A failure is contained.** A worker returns a failure record instead of
+#   raising, so one bad subject is logged and retried later rather than taking
+#   the run down.
+# * **Thread oversubscription is capped.** SimpleITK's N4 defaults to every
+#   logical core, so N workers each spawning 20 threads would thrash. Each
+#   worker caps itself at ``cores // workers``.
+#
+# Determinism is unaffected: each subject's imaging result depends only on its
+# own volume, and the parent re-sorts results into cohort order before
+# assembling the table, so the output does not depend on completion order.
+
+def _worker_thread_cap(n_workers: int) -> int:
+    """Threads each worker may use, so N workers do not oversubscribe cores."""
+    import os
+
+    cores = os.cpu_count() or 1
+    return max(1, cores // max(1, n_workers))
+
+
+def _preprocess_worker(task: Dict[str, Any]) -> Dict[str, Any]:
+    """Run M1-M8 for one subject. Executes in a separate process.
+
+    Must stay a module-level function: Windows spawns rather than forks, so the
+    callable has to be importable by name in the child.
+
+    Args:
+        task: ``config_path``, ``subject_id``, ``mri_path``, ``etiv``,
+            ``resume`` and ``threads``.
+
+    Returns:
+        A record with ``subject_id``, ``ok``, and either ``features`` (row
+        dicts) or ``stage``/``error`` naming where it failed.
+    """
+    subject_id = str(task["subject_id"])
+    out: Dict[str, Any] = {"subject_id": subject_id, "ok": False,
+                           "stage": None, "error": None,
+                           "features": [], "resumed": False, "warnings": []}
+    try:
+        threads = int(task.get("threads") or 0)
+        if threads > 0:
+            try:
+                import SimpleITK as sitk
+
+                sitk.ProcessObject.SetGlobalDefaultNumberOfThreads(threads)
+            except Exception:  # pragma: no cover - SimpleITK optional
+                pass
+            try:
+                import torch
+
+                torch.set_num_threads(threads)
+            except Exception:  # pragma: no cover
+                pass
+
+        import nibabel as nib
+
+        from modules.m02_preprocessing.pipeline import PreprocessingPipeline
+        from modules.m03_segmentation import ROIPipeline
+        from modules.m04_feature_extraction import MorphometricFeatureExtractor
+
+        cfg = NeuroGenesisConfig.from_file(Path(task["config_path"]))
+        outputs = Path(cfg.paths.outputs_dir)
+        tracker = RunStateTracker(outputs)
+        pre_dir = outputs / "preprocessing"
+
+        cached = (
+            _cached_preprocessing(
+                pre_dir, subject_id, cfg.preprocess.target_shape
+            ) if task.get("resume") else None
+        )
+        if cached is not None:
+            final_path = cached["final_path"]
+            final_affine = cached.get("final_affine")
+            out["resumed"] = True
+        else:
+            pre = PreprocessingPipeline(cfg.preprocess, outputs, tracker).run(
+                subject_id, Path(task["mri_path"])
+            )
+            pre.save(pre_dir / subject_id)
+            out["warnings"] = list(pre.warnings)
+            if not pre.succeeded or pre.final_path is None:
+                out["stage"] = "preprocessing"
+                out["error"] = pre.error or "unknown"
+                return out
+            final_path = pre.final_path
+            final_affine = pre.final_affine
+
+        image = nib.load(final_path)
+        volume = np.asarray(image.get_fdata(), dtype=np.float32)
+        affine = (np.asarray(final_affine) if final_affine is not None
+                  else image.affine)
+
+        seg, patches = ROIPipeline(
+            cfg.preprocess, outputs, tracker,
+            atlas_dir=cfg.paths.atlas_dir,
+        ).run(subject_id, volume, affine)
+        seg.save(outputs / "roi" / subject_id)
+        if not seg.succeeded:
+            out["stage"] = "roi"
+            out["error"] = seg.error or "unknown"
+            return out
+
+        extractor = MorphometricFeatureExtractor(
+            outputs / "features" / "workdir",
+            gm_threshold=cfg.preprocess.gm_threshold,
+        )
+        etiv = task.get("etiv")
+        with tracker.stage("M8", subject_id) as record:
+            frame = extractor.extract_subject(
+                patches, subject_id,
+                etiv=float(etiv) if etiv is not None else None,
+            )
+            if record is not None:
+                record.record_metric("n_rois", len(patches))
+        out["features"] = frame.to_dict(orient="records")
+        out["ok"] = True
+        return out
+    except BaseException as exc:  # noqa: BLE001 - must not kill the pool
+        import traceback
+
+        out["stage"] = out["stage"] or "worker"
+        out["error"] = f"{type(exc).__name__}: {exc}"
+        out["traceback"] = traceback.format_exc()
+        return out
+
+
 def _cached_preprocessing(
     out_dir: Path, subject_id: str, target_shape: Sequence[int],
 ) -> Optional[Dict[str, Any]]:
@@ -431,6 +565,102 @@ def _cached_preprocessing(
         )
         return None
     return payload
+
+
+def _resolve_workers(requested: Optional[int], n_tasks: int) -> int:
+    """Decide how many preprocessing worker processes to run.
+
+    ``None`` or ``0`` means auto: enough workers to keep the machine busy
+    without starving each one of the threads N4 needs. N4 scales poorly past a
+    handful of threads, so several subjects at four threads each beats one
+    subject at twenty.
+
+    Args:
+        requested: The ``--workers`` value, or ``None``/``0`` for auto.
+        n_tasks: How many subjects there are to process.
+
+    Returns:
+        A worker count of at least 1 and never more than ``n_tasks``.
+    """
+    import os
+
+    cores = os.cpu_count() or 1
+    if requested and int(requested) > 0:
+        chosen = int(requested)
+    else:
+        chosen = max(1, min(cores // 4, 6))
+    return max(1, min(chosen, max(1, n_tasks)))
+
+
+def _save_preprocessing_manifest(
+    ctx: "Context",
+    tasks: Sequence[Dict[str, Any]],
+    results: Sequence[Dict[str, Any]],
+    failures: Sequence[Dict[str, str]],
+) -> Path:
+    """Write the Section 24 accounting of every subject the run touched.
+
+    A subject is never silently dropped: each one appears here as processed,
+    resumed or failed, with the stage and error that stopped it, so the gap
+    between the cohort size and the analysable size is always explainable.
+
+    Returns:
+        Path of the written manifest.
+    """
+    from modules.common.serialization import dump_json
+
+    by_id = {str(r["subject_id"]): r for r in results}
+    rows = []
+    for task in tasks:
+        sid = str(task["subject_id"])
+        record = by_id.get(sid)
+        rows.append({
+            "subject_id": sid,
+            "mri_path": task["mri_path"],
+            "status": ("missing" if record is None else
+                       "resumed" if record.get("resumed") and record["ok"] else
+                       "processed" if record["ok"] else "failed"),
+            "failed_stage": None if record is None or record["ok"]
+            else record.get("stage"),
+            "error": None if record is None or record["ok"]
+            else record.get("error"),
+        })
+
+    cohort = ctx.cohort()
+    stage_of = dict(zip(cohort["session_id"].astype(str), cohort["stage"]))
+    ok_ids = [r["subject_id"] for r in rows if r["status"] in
+              ("processed", "resumed")]
+    class_counts: Dict[str, int] = {}
+    for sid in ok_ids:
+        stage = str(stage_of.get(sid, "unknown"))
+        class_counts[stage] = class_counts.get(stage, 0) + 1
+
+    payload = {
+        "dataset_source": ctx.cfg.data.dataset_source,
+        "synthetic_data_enabled": bool(ctx.cfg.data.allow_synthetic_data),
+        "n_requested": len(tasks),
+        "n_succeeded": len(ok_ids),
+        "n_failed": len(failures),
+        "class_counts_processed": class_counts,
+        "failures": list(failures),
+        "subjects": rows,
+    }
+    path = dump_json(payload, ctx.outputs / "preprocessing" /
+                     "preprocessing_manifest.json")
+    print("")
+    print(f"Subjects requested : {len(tasks)}")
+    print(f"Succeeded          : {len(ok_ids)}")
+    print(f"Failed             : {len(failures)}")
+    for stage in STAGE_ORDER:
+        print(f"  {stage}: {class_counts.get(stage, 0)}")
+    if failures:
+        print("")
+        print("Failed subjects (retry with --resume; completed work is kept):")
+        for failure in failures[:20]:
+            print(f"  {failure['subject']} [{failure['stage']}]: "
+                  f"{failure['error']}")
+    print(f"Manifest           : {path}")
+    return path
 
 
 def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
@@ -521,59 +751,97 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
     pre_dir = ctx.outputs / "preprocessing"
     n_resumed = 0
 
+    # Build one task per subject. Order is the cohort's, and results are
+    # re-sorted into it below, so the assembled table does not depend on which
+    # worker finished first.
+    # Each worker rebuilds the configuration from a snapshot rather than
+    # unpickling it, so a worker can never run under a different
+    # configuration than the one this run recorded.
+    snapshot = ctx.outputs / "tmp" / "preprocess_config.json"
+    snapshot.parent.mkdir(parents=True, exist_ok=True)
+    ctx.cfg.to_file(snapshot)
+
+    tasks: List[Dict[str, Any]] = []
     for _, row in processable.iterrows():
-        subject_id = str(row["session_id"])
-        cached = (
-            _cached_preprocessing(
-                pre_dir, subject_id, ctx.cfg.preprocess.target_shape
-            )
-            if args.resume else None
+        etiv = row.get("eTIV")
+        try:
+            etiv_value: Optional[float] = float(etiv)
+        except (TypeError, ValueError):
+            etiv_value = None
+        tasks.append({
+            "config_path": str(snapshot),
+            "subject_id": str(row["session_id"]),
+            "mri_path": str(row["mri_path"]),
+            "etiv": etiv_value,
+            "resume": bool(args.resume),
+        })
+
+    order = {t["subject_id"]: i for i, t in enumerate(tasks)}
+    n_workers = _resolve_workers(args.workers, len(tasks))
+    results: List[Dict[str, Any]] = []
+
+
+    if n_workers > 1:
+        threads = _worker_thread_cap(n_workers)
+        for task in tasks:
+            task["threads"] = threads
+        print(
+            f"\nPreprocessing {len(tasks)} subject(s) with {n_workers} "
+            f"worker(s), {threads} thread(s) each."
         )
-        if cached is not None:
-            logger.info("Resuming %s from completed M1-M5 output", subject_id)
-            final_path = cached["final_path"]
-            final_affine = cached.get("final_affine")
+        # Warm the atlas cache in the parent. Workers only read it after this,
+        # so concurrent first-use cannot race on a download.
+        try:
+            from nilearn.datasets import fetch_atlas_harvard_oxford
+
+            fetch_atlas_harvard_oxford(
+                ctx.cfg.preprocess.atlas_name,
+                data_dir=str(ctx.cfg.paths.atlas_dir),
+            )
+        except Exception as exc:  # noqa: BLE001 - a worker will report it
+            logger.warning("Could not pre-warm the atlas cache: %s", exc)
+
+        import concurrent.futures as cf
+
+        done = 0
+        with cf.ProcessPoolExecutor(max_workers=n_workers) as pool:
+            futures = {pool.submit(_preprocess_worker, t): t for t in tasks}
+            for future in cf.as_completed(futures):
+                record = future.result()
+                results.append(record)
+                done += 1
+                mark = "ok" if record["ok"] else f"FAILED [{record['stage']}]"
+                logger.info("(%d/%d) %s %s%s", done, len(tasks),
+                            record["subject_id"], mark,
+                            " (resumed)" if record.get("resumed") else "")
+    else:
+        print(f"\nPreprocessing {len(tasks)} subject(s) with 1 worker.")
+        for i, task in enumerate(tasks, 1):
+            record = _preprocess_worker(task)
+            results.append(record)
+            mark = "ok" if record["ok"] else f"FAILED [{record['stage']}]"
+            logger.info("(%d/%d) %s %s%s", i, len(tasks),
+                        record["subject_id"], mark,
+                        " (resumed)" if record.get("resumed") else "")
+
+    results.sort(key=lambda r: order.get(r["subject_id"], 0))
+    for record in results:
+        if record.get("resumed"):
             n_resumed += 1
+        if record["ok"]:
+            frames.append(pd.DataFrame(record["features"]))
         else:
-            logger.info("Processing %s", subject_id)
-            pre = preprocessor.run(subject_id, Path(row["mri_path"]))
-            pre.save(pre_dir / subject_id)
-            if not pre.succeeded or pre.final_path is None:
-                failures.append({"subject": subject_id, "stage": "preprocessing",
-                                 "error": pre.error or "unknown"})
-                continue
-            final_path = pre.final_path
-            final_affine = pre.final_affine
+            failures.append({"subject": record["subject_id"],
+                             "stage": str(record["stage"]),
+                             "error": str(record["error"])})
+            if record.get("traceback"):
+                logger.debug(
+                    "%s traceback:\n%s",
+                    record["subject_id"], record["traceback"],
+                )
 
-        import nibabel as nib
-
-        image = nib.load(final_path)
-        volume = np.asarray(image.get_fdata(), dtype=np.float32)
-        # Use the resampled affine recorded by M5. Reading it back off the saved
-        # file works too, but the recorded value is the authoritative one and
-        # makes the dependency explicit.
-        affine = (
-            np.asarray(final_affine) if final_affine is not None
-            else image.affine
-        )
-        seg, patches = roi_pipeline.run(subject_id, volume, affine)
-        seg.save(ctx.outputs / "roi" / subject_id)
-        if not seg.succeeded:
-            failures.append({"subject": subject_id, "stage": "roi",
-                             "error": seg.error or "unknown"})
-            continue
-
-        with ctx.tracker.stage("M8", subject_id) as record:
-            etiv = row.get("eTIV")
-            try:
-                etiv_value: Optional[float] = float(etiv)
-            except (TypeError, ValueError):
-                etiv_value = None
-            frames.append(
-                extractor.extract_subject(patches, subject_id, etiv=etiv_value)
-            )
-            if record is not None:
-                record.record_metric("n_rois", len(patches))
+    # Section 24: every subject is accounted for, none silently discarded.
+    _save_preprocessing_manifest(ctx, tasks, results, failures)
 
     if not frames:
         print("\nNo subject completed feature extraction. Failures:")
@@ -1277,6 +1545,12 @@ def build_parser() -> argparse.ArgumentParser:
                              "dataset. Required for research runs.")
     parser.add_argument("--experiment", type=str,
                         help="Experiment ID for the config and checkpoint stamp.")
+    parser.add_argument("--workers", type=int, default=0,
+                        help="Preprocessing worker processes. 0 (default) "
+                             "picks a count from the core count. Subjects are "
+                             "independent and every write is per-subject, so "
+                             "this changes only throughput, never the values "
+                             "produced.")
     parser.add_argument("--resume", action="store_true",
                         help="Reuse completed M1-M5 output for subjects that "
                              "already have a standardised volume on disk, "

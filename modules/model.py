@@ -38,8 +38,15 @@ A2   Morphometry + standard GAT (static attention)
 A3   Morphometry + anatomical prior + learned attention (AP-LAF)
 A4   A3 + SRVE
 A5   A4 + ANP
-A6   3D CNN + graph baseline (GATv2, no NeuroProp-X)
 A7   Full: 3D CNN + NeuroProp-X + SAEG-GATv2
+===  ==========================================================================
+
+A6 (3D CNN + graph baseline, no NeuroProp-X) is defined below but is **excluded
+from the ladder** and is therefore never trained, tabulated or plotted. Its
+spec is retained only so ``build_model("A6")`` still resolves if that control
+is wanted explicitly. Note what its exclusion costs: A6 was the rung that
+isolated NeuroProp-X at matched CNN capacity, so the NeuroProp-X contribution
+now rests on the A2/A3 and A5/A7 contrasts instead.
 ===  ==========================================================================
 
 Two deliberate couplings in the ladder:
@@ -122,6 +129,10 @@ class ModelSpec:
     graph_encoder: str = "saeg_gatv2"
     use_neuropropx: bool = True
     use_srve: bool = True
+    #: Enable the AP-LAF structural-covariance operand. Off for every
+    #: rung below A7, so the ladder's earlier increments stay exactly
+    #: what they were before the term existed.
+    use_structural: bool = False
     use_learned_attention: bool = True
     use_anp: bool = True
     use_centrality: bool = True
@@ -156,6 +167,7 @@ class ModelSpec:
         """Translate the spec into NeuroProp-X component flags."""
         return NeuroPropXConfigFlags(
             use_srve=self.use_srve,
+            use_structural=self.use_structural,
             use_learned_attention=self.use_learned_attention,
             use_anp=self.use_anp,
             use_cnn=self.use_cnn,
@@ -208,6 +220,7 @@ ABLATION_SPECS: Dict[str, ModelSpec] = {
         use_srve=True, use_learned_attention=True, use_anp=True,
         use_centrality=True, use_stage_tgt=False,
     ),
+    # Excluded from ABLATION_LADDER: defined, never run by default.
     "A6": ModelSpec(
         name="A6", description="3D CNN + graph baseline (GATv2, no NeuroProp-X)",
         use_cnn=True, graph_encoder="gatv2", use_neuropropx=False,
@@ -219,7 +232,16 @@ ABLATION_SPECS: Dict[str, ModelSpec] = {
         description="Full NeuroProp-X + SAEG-GATv2 + 3D CNN",
         use_cnn=True, graph_encoder="saeg_gatv2", use_neuropropx=True,
         use_srve=True, use_learned_attention=True, use_anp=True,
-        use_centrality=True, use_stage_tgt=True,
+        use_centrality=True, use_stage_tgt=True, use_structural=True,
+    ),
+    # Orthogonal contrast, not a ladder rung: measures what the
+    # structural-covariance operand contributes to the full model.
+    "A7_no_struct": ModelSpec(
+        name="A7_no_struct",
+        description="Full model without the structural-covariance term",
+        use_cnn=True, graph_encoder="saeg_gatv2", use_neuropropx=True,
+        use_srve=True, use_learned_attention=True, use_anp=True,
+        use_centrality=True, use_stage_tgt=True, use_structural=False,
     ),
     "A7_no_tgt": ModelSpec(
         name="A7_no_tgt", description="Full model without Stage-TGT",
@@ -228,6 +250,11 @@ ABLATION_SPECS: Dict[str, ModelSpec] = {
         use_centrality=True, use_stage_tgt=False,
     ),
 }
+
+#: The variants an ablation study runs, in ladder order. A6 is deliberately
+#: absent, so no run, table or figure includes it. ``A7_no_tgt`` is a separate
+#: orthogonal contrast rather than a rung, so it is excluded here too.
+ABLATION_LADDER: Tuple[str, ...] = ("A0", "A1", "A2", "A3", "A4", "A5", "A7")
 
 #: Section 18 baselines, expressed in the same spec language.
 BASELINE_SPECS: Dict[str, ModelSpec] = {

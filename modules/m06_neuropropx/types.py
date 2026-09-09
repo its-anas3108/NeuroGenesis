@@ -70,10 +70,24 @@ class APLAFOutput:
     attention_adjacency: torch.Tensor
     alpha: torch.Tensor
     raw_prior: Optional[torch.Tensor] = None
+    #: ``(B, N, N)`` subject-specific structural-covariance adjacency,
+    #: or ``None`` when the structural term is disabled.
+    structural_adjacency: Optional[torch.Tensor] = None
+    #: ``(3,)`` simplex weights ``[w_prior, w_att, w_struct]``.
+    mix_weights: Optional[torch.Tensor] = None
 
     def alpha_value(self) -> float:
-        """Return ``alpha`` as a Python float."""
+        """Return ``alpha`` (the prior's share) as a Python float."""
         return float(self.alpha.detach().cpu().reshape(-1)[0])
+
+    def weights(self) -> Dict[str, float]:
+        """Return the mixing weights by name."""
+        if self.mix_weights is None:
+            a = self.alpha_value()
+            return {"prior": a, "attention": 1.0 - a, "structural": 0.0}
+        w = self.mix_weights.detach().cpu().reshape(-1).tolist()
+        return {"prior": float(w[0]), "attention": float(w[1]),
+                "structural": float(w[2])}
 
 
 @dataclass

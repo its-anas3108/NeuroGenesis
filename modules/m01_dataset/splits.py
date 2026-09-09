@@ -64,14 +64,21 @@ class SplitManifest:
     #: Subjects whose sessions disagreed on stage, and the stage assigned.
     stratum_conflicts: Dict[str, str] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
-    #: Repeat index when produced by :func:`repeated_subject_splits`.
+    #: Repeat index when produced by :func:`repeated_subject_splits`, or the
+    #: fold index when produced by :func:`stratified_subject_folds`.
     repeat: Optional[int] = None
+    #: Fold index, set only under cross-validation.
+    fold: Optional[int] = None
+    #: Total fold count, set only under cross-validation.
+    n_folds: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """JSON-serialisable representation."""
         return {
             "seed": self.seed,
             "repeat": self.repeat,
+            "fold": self.fold,
+            "n_folds": self.n_folds,
             "val_fraction": self.val_fraction,
             "test_fraction": self.test_fraction,
             "stratum_rule": "most advanced stage across a subject's sessions",
@@ -160,6 +167,8 @@ class SplitManifest:
         return cls(
             seed=payload["seed"],
             repeat=payload.get("repeat"),
+            fold=payload.get("fold"),
+            n_folds=payload.get("n_folds"),
             val_fraction=payload["val_fraction"],
             test_fraction=payload["test_fraction"],
             train_subjects=payload["subjects"]["train"],
@@ -353,6 +362,34 @@ def make_subject_split(
         rng,
     )
 
+    return _assemble_manifest(
+        cohort, train_s, val_s, test_s,
+        seed=seed, repeat=repeat,
+        val_fraction=val_fraction, test_fraction=test_fraction,
+        conflicts=conflicts,
+    )
+
+
+def _assemble_manifest(
+    cohort: pd.DataFrame,
+    train_s: List[str],
+    val_s: List[str],
+    test_s: List[str],
+    seed: int,
+    repeat: Optional[int],
+    val_fraction: float,
+    test_fraction: float,
+    conflicts: Dict[str, str],
+    fold: Optional[int] = None,
+    n_folds: Optional[int] = None,
+) -> SplitManifest:
+    """Expand a subject-level partition into a validated session-level manifest.
+
+    Shared by the random-split and cross-validation schemes so both produce
+    identical bookkeeping: session lists, per-class counts, empty-class
+    warnings, and the disjointness assertion that must hold before any model
+    sees the data.
+    """
     manifest = SplitManifest(
         seed=seed,
         repeat=repeat,
@@ -363,6 +400,9 @@ def make_subject_split(
         test_subjects=test_s,
         stratum_conflicts=conflicts,
     )
+    if fold is not None:
+        manifest.fold = fold
+        manifest.n_folds = n_folds
 
     subj_to_split = {s: "train" for s in train_s}
     subj_to_split.update({s: "val" for s in val_s})
@@ -405,16 +445,128 @@ def make_subject_split(
     if leaks:
         raise ValueError("Split construction produced leakage:\n" + "\n".join(leaks))
 
+    label = f"fold {fold + 1}/{n_folds}" if fold is not None \
+        else f"seed={seed}"
     logger.info(
-        "Subject-wise split (seed=%d): train=%d/%d val=%d/%d test=%d/%d "
+        "Subject-wise split (%s): train=%d/%d val=%d/%d test=%d/%d "
         "(subjects/sessions)",
-        seed, len(train_s), len(manifest.train_sessions),
+        label, len(train_s), len(manifest.train_sessions),
         len(val_s), len(manifest.val_sessions),
         len(test_s), len(manifest.test_sessions),
     )
     for w in manifest.warnings:
         logger.warning("%s", w)
     return manifest
+
+
+def stratified_subject_folds(
+    cohort: pd.DataFrame,
+    n_folds: int = 5,
+    val_fraction: float = 0.15,
+    seed: int = 42,
+) -> Iterator[SplitManifest]:
+    """Yield ``n_folds`` subject-wise, stage-stratified cross-validation folds.
+
+    Why folds rather than repeated random draws
+    -------------------------------------------
+
+    ``repeated_subject_splits`` samples an independent 20% test set each repeat.
+    Every subject is therefore tested a random number of times -- some several
+    times, some never -- so the spread across repeats mixes real model variance
+    with the accident of who happened to be held out. Under k-fold, **every
+    subject is tested exactly once per pass**, so the k test sets tile the
+    cohort and the mean is an estimate over all 235 subjects rather than over a
+    resample of them.
+
+    That matters most for the smallest class. With AD n=30 and k=5, each fold
+    holds 6 AD subjects and all 30 are evaluated exactly once, instead of the
+    1-per-split the previous scheme gave at a 0.20 test fraction on a
+    30-subject pilot.
+
+    Construction
+    ------------
+
+    Subjects -- never sessions -- are assigned to folds round-robin *within
+    each stage stratum*, so class balance is near-identical across folds and no
+    subject can appear in two folds. Validation is then carved out of the
+    remaining training pool only, so the test fold is untouched by model
+    selection.
+
+    Args:
+        cohort: Session-level table with ``subject_id``, ``session_id`` and
+            ``stage``.
+        n_folds: Number of folds. 5 gives a 20% test fold.
+        val_fraction: Validation size as a fraction of the **whole** cohort;
+            it is drawn from the training pool, so the within-pool fraction is
+            scaled up accordingly.
+        seed: RNG seed for fold assignment.
+
+    Yields:
+        One :class:`SplitManifest` per fold, in fold order.
+
+    Raises:
+        ValueError: If ``n_folds`` is less than 2 or exceeds the smallest
+            stratum, which would leave a fold with no subject of that class.
+    """
+    for col in ("subject_id", "session_id", "stage"):
+        if col not in cohort.columns:
+            raise KeyError(
+                f"Cohort is missing required column {col!r}. "
+                f"Present: {list(cohort.columns)}"
+            )
+    if n_folds < 2:
+        raise ValueError(f"n_folds must be at least 2; got {n_folds}")
+
+    subject_df, conflicts = _subject_strata(cohort)
+    stratum_of = dict(zip(subject_df["subject_id"].astype(str),
+                          subject_df["stratum"]))
+
+    by_stratum: Dict[str, List[str]] = {}
+    for subject_id, stratum in stratum_of.items():
+        by_stratum.setdefault(str(stratum), []).append(str(subject_id))
+
+    smallest = min((len(v) for v in by_stratum.values()), default=0)
+    if smallest < n_folds:
+        raise ValueError(
+            f"n_folds={n_folds} exceeds the smallest stage stratum "
+            f"({smallest} subject(s)); some fold would contain no subject of "
+            "that class and its per-class metrics would be undefined."
+        )
+
+    rng = np.random.default_rng(seed)
+    fold_of: Dict[str, int] = {}
+    for stratum in sorted(by_stratum):
+        members = sorted(by_stratum[stratum])
+        rng.shuffle(members)
+        # Round-robin within the stratum keeps every fold's class mix within
+        # one subject of every other fold's.
+        for position, subject_id in enumerate(members):
+            fold_of[subject_id] = position % n_folds
+
+    # Validation comes out of the training pool, which is (1 - 1/k) of the
+    # cohort, so scale the requested whole-cohort fraction up to a within-pool
+    # fraction.
+    pool_share = 1.0 - (1.0 / n_folds)
+    pool_val_fraction = min(0.5, float(val_fraction) / pool_share)
+
+    for fold in range(n_folds):
+        test_s = sorted([s for s, f in fold_of.items() if f == fold])
+        pool = sorted([s for s, f in fold_of.items() if f != fold])
+        train_s, val_s, _ = _stratified_partition(
+            pool,
+            [str(stratum_of[s]) for s in pool],
+            val_fraction=pool_val_fraction,
+            test_fraction=0.0,
+            rng=np.random.default_rng(seed + 1000 + fold),
+        )
+        yield _assemble_manifest(
+            cohort, train_s, val_s, test_s,
+            seed=seed, repeat=fold,
+            val_fraction=val_fraction,
+            test_fraction=1.0 / n_folds,
+            conflicts=conflicts,
+            fold=fold, n_folds=n_folds,
+        )
 
 
 def repeated_subject_splits(
@@ -454,5 +606,6 @@ def repeated_subject_splits(
 __all__ = [
     "SplitManifest",
     "make_subject_split",
+    "stratified_subject_folds",
     "repeated_subject_splits",
 ]
