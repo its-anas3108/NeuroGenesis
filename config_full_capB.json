@@ -5,7 +5,7 @@
     "metadata_csv": "dataset/oasis_cross-sectional.csv",
     "oasis1_root": "C:/Users/avisy/Downloads/dataset/extracted",
     "atlas_dir": "dataset/nilearn_data",
-    "outputs_dir": "outputs_full",
+    "outputs_dir": "outputs_oasis1",
     "experiment_id": "oasis1_full_capB"
   },
   "data": {

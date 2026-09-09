@@ -107,7 +107,7 @@ def main() -> int:
     parser.add_argument("--base", type=Path, default=Path("config_oasis1.json"),
                         help="Config to derive from. For the later stages pass "
                              "the previous stage's winner.")
-    parser.add_argument("--outputs", default="outputs_full",
+    parser.add_argument("--outputs", default="outputs_oasis1",
                         help="Shared outputs tree for the search.")
     args = parser.parse_args()
 
