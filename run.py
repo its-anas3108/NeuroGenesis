@@ -47,7 +47,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -391,6 +391,48 @@ def mode_validate_dataset(ctx: Context, args: argparse.Namespace) -> int:
     return 0
 
 
+def _cached_preprocessing(
+    out_dir: Path, subject_id: str, target_shape: Sequence[int],
+) -> Optional[Dict[str, Any]]:
+    """Return a completed M1-M5 manifest for ``subject_id``, or ``None``.
+
+    M3 (N4 bias-field correction) dominates the imaging cost, so a full-cohort
+    preprocessing pass runs for many hours. Without this, an interruption -- a
+    machine sleeping, a terminated shell -- throws away every subject already
+    finished, because the feature table is only assembled at the end.
+
+    A cached result is only honoured when the manifest says the subject
+    succeeded *and* the standardised volume it names is still on disk, so a
+    half-written or manually deleted artifact is recomputed rather than trusted.
+    Nothing about the science changes: M6-M8 re-run from the same M5 volume and
+    produce the same values they would have on an uninterrupted pass.
+    """
+    path = Path(out_dir) / subject_id / f"{subject_id}_preprocessing.json"
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not payload.get("succeeded") or not payload.get("final_path"):
+        return None
+    if not Path(payload["final_path"]).exists():
+        return None
+    # Reject a volume standardised under different settings. Without this, a
+    # changed `preprocess.target_shape` would silently mix grids across the
+    # cohort -- every subject processed before the change keeping the old one.
+    final_stage = (payload.get("stages") or [{}])[-1]
+    cached_shape = final_stage.get("shape")
+    if cached_shape is not None and list(cached_shape) != list(target_shape):
+        logger.warning(
+            "%s was standardised to %s but the config asks for %s — "
+            "recomputing rather than reusing it.",
+            subject_id, cached_shape, list(target_shape),
+        )
+        return None
+    return payload
+
+
 def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
     """M1-M8: run the imaging pipeline and extract morphometric features."""
     from modules.m02_preprocessing import check_imaging_dependencies
@@ -476,25 +518,42 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
     frames: List[pd.DataFrame] = []
     failures: List[Dict[str, str]] = []
 
+    pre_dir = ctx.outputs / "preprocessing"
+    n_resumed = 0
+
     for _, row in processable.iterrows():
         subject_id = str(row["session_id"])
-        logger.info("Processing %s", subject_id)
-        pre = preprocessor.run(subject_id, Path(row["mri_path"]))
-        pre.save(ctx.outputs / "preprocessing" / subject_id)
-        if not pre.succeeded or pre.final_path is None:
-            failures.append({"subject": subject_id, "stage": "preprocessing",
-                             "error": pre.error or "unknown"})
-            continue
+        cached = (
+            _cached_preprocessing(
+                pre_dir, subject_id, ctx.cfg.preprocess.target_shape
+            )
+            if args.resume else None
+        )
+        if cached is not None:
+            logger.info("Resuming %s from completed M1-M5 output", subject_id)
+            final_path = cached["final_path"]
+            final_affine = cached.get("final_affine")
+            n_resumed += 1
+        else:
+            logger.info("Processing %s", subject_id)
+            pre = preprocessor.run(subject_id, Path(row["mri_path"]))
+            pre.save(pre_dir / subject_id)
+            if not pre.succeeded or pre.final_path is None:
+                failures.append({"subject": subject_id, "stage": "preprocessing",
+                                 "error": pre.error or "unknown"})
+                continue
+            final_path = pre.final_path
+            final_affine = pre.final_affine
 
         import nibabel as nib
 
-        image = nib.load(pre.final_path)
+        image = nib.load(final_path)
         volume = np.asarray(image.get_fdata(), dtype=np.float32)
         # Use the resampled affine recorded by M5. Reading it back off the saved
         # file works too, but the recorded value is the authoritative one and
         # makes the dependency explicit.
         affine = (
-            np.asarray(pre.final_affine) if pre.final_affine is not None
+            np.asarray(final_affine) if final_affine is not None
             else image.affine
         )
         seg, patches = roi_pipeline.run(subject_id, volume, affine)
@@ -527,6 +586,8 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
     report = extractor.audit(features)
     written = save_features(features, report, ctx.outputs / "features")
     print(f"\nFeatures written: {written['features_csv']}")
+    if n_resumed:
+        print(f"Resumed {n_resumed} subject(s) from completed M1-M5 output.")
     print(report.summary())
     if failures:
         print(f"\n{len(failures)} subject(s) failed; see the log for details.")
@@ -1216,6 +1277,11 @@ def build_parser() -> argparse.ArgumentParser:
                              "dataset. Required for research runs.")
     parser.add_argument("--experiment", type=str,
                         help="Experiment ID for the config and checkpoint stamp.")
+    parser.add_argument("--resume", action="store_true",
+                        help="Reuse completed M1-M5 output for subjects that "
+                             "already have a standardised volume on disk, "
+                             "instead of recomputing it. Only affects which "
+                             "work is repeated, never the values produced.")
     parser.add_argument("--patient_id", type=str,
                         help="Restrict the mode to a single session ID.")
     parser.add_argument("--variant", type=str,
