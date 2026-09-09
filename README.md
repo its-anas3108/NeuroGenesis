@@ -187,7 +187,42 @@ Two label decisions that materially affect every claim:
 - **CDR 0.5 → MCI.** OASIS-1 documents CDR 0.5 as "very mild dementia". It is the conventional cross-sectional stand-in for MCI, **not** an independent clinical MCI diagnosis. Reported as "MCI / very mild dementia".
 - **The 201 missing-CDR sessions are excluded.** They are young subjects (18–40) who were never clinically assessed, not unlabelled AD-risk cases. Labelling them CN would roughly triple the CN class while making age almost perfectly predictive of stage. `missing_cdr_policy="cn"` exists only for a deliberate sensitivity analysis and emits a warning.
 
-Place OASIS-1 T1 volumes under `dataset/OASIS/`. Flat, BIDS and FreeSurfer-disc layouts are all discovered by matching the session ID anywhere in the path.
+### Pointing the pipeline at a real OASIS-1 release
+
+Set `paths.oasis1_root` (or pass `--oasis1-root`) to a directory holding the extracted
+discs. Discovery, validation and indexing then run through
+`modules/m01_dataset/oasis1_manager.py`, and the legacy `dataset/OASIS/` scan is bypassed.
+No path is hard-coded, and nothing is downloaded automatically — the
+[official OASIS-1 page](https://sites.wustl.edu/oasisbrains/home/oasis-1/) is
+documentation, not a fetch target.
+
+The release ships as 12 `.tar.gz` discs. Only the atlas-registered T1 series is needed,
+so extract selectively — 11 GB instead of roughly 45 GB:
+
+```bash
+python tools/extract_oasis1.py --archives <archive-dir> --out <archive-dir>/extracted
+python run.py --mode validate_dataset --config config_oasis1.json
+```
+
+Volumes are selected from `PROCESSED/MPRAGE/T88_111/*_t88_gfc.{img,hdr}` — Talairach-88
+space, 1 mm isotropic. The **unmasked** series is deliberate: T88 registration puts the
+Harvard-Oxford atlas on correct anatomy, and retaining the skull means M4 skull stripping
+still does work rather than silently becoming a no-op.
+
+`--mode validate_dataset` reports volumes found, unique subjects, unreadable files, shape
+and orientation anomalies, sessions without metadata, metadata without a volume, missing
+clinical variables, and the class distribution — then writes
+`outputs/dataset_validation/oasis1_validation_report.json`. Nothing is repaired, imputed
+or substituted: a session that fails is excluded and the reason is recorded, so the final
+study size is explainable rather than asserted.
+
+Before any model sees data, `check_dataset_integrity()` asserts that every training
+session ID appears in the validated index. It is a **positive assertion**, not a synthetic
+sniff test — a stray sample is rejected by name whatever its origin (a leftover cached
+artifact, a hand-edited feature table, a file from an earlier run).
+
+Without `oasis1_root`, volumes are read from `dataset/OASIS/`; flat, BIDS and
+FreeSurfer-disc layouts are all discovered by matching the session ID anywhere in the path.
 
 ---
 
@@ -207,16 +242,36 @@ The framework is layered: without the imaging packages (`nibabel`, `SimpleITK`, 
 ## Usage
 
 ```bash
-python run.py --mode status          # environment, artifacts, per-module state
-python run.py --mode preprocess      # M1-M8: imaging → patches → features
-python run.py --mode train_full      # end-to-end training of the full model
-python run.py --mode ablation        # A0-A7 over repeated splits + baselines
-python run.py --mode statistics      # stage-wise tests with FDR correction
-python run.py --mode xai             # ROI ranking and explanations
-python run.py --mode report          # subject reports
-python run.py --mode figures         # research figures
-python run.py --mode dashboard       # Streamlit pipeline inspection app
+python run.py --mode status            # environment, artifacts, per-module state
+python run.py --mode validate_dataset  # OASIS-1 discovery, validation, exclusion report
+python run.py --mode preprocess        # M1-M8: imaging → patches → features
+python run.py --mode train_cnn         # M9 only: cache 3D CNN embeddings
+python run.py --mode train_graph       # graph branch without the CNN
+python run.py --mode train_full        # end-to-end training of the full model
+python run.py --mode evaluate          # metrics for an existing checkpoint
+python run.py --mode ablation          # A0-A7 over repeated splits + baselines
+python run.py --mode statistics        # stage-wise tests with FDR correction
+python run.py --mode xai               # ROI ranking and explanations
+python run.py --mode report            # subject reports
+python run.py --mode figures           # research figures
+python run.py --mode dashboard         # Streamlit pipeline inspection app
 ```
+
+### Resuming an interrupted preprocessing pass
+
+M3 (N4 bias-field correction) is roughly 90% of the imaging cost, so a full-cohort pass
+runs for hours, and the feature table is only assembled after the last subject. Without
+`--resume`, an interruption discards every subject already finished:
+
+```bash
+python run.py --mode preprocess --config config_oasis1.json --resume
+```
+
+A subject's standardised volume is reused only when its manifest records success, the file
+it names is still on disk, **and** it was standardised to the grid the current config asks
+for — so a changed `preprocess.target_shape` recomputes rather than silently leaving half
+the cohort on the old grid. M6-M8 re-run from the cached volume, so the values produced are
+the ones an uninterrupted pass would have produced; only the repeated work changes.
 
 Single-subject inference:
 
