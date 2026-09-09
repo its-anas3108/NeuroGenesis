@@ -80,7 +80,6 @@ METRIC_NAMES: Tuple[str, ...] = (
 )
 
 
-@dataclass
 def _at_best(result: Any, attribute: str) -> Optional[float]:
     """Read one validation metric from the selected epoch's record.
 
@@ -96,6 +95,7 @@ def _at_best(result: Any, attribute: str) -> Optional[float]:
     return None if value is None else float(value)
 
 
+@dataclass
 class VariantRun:
     """One variant evaluated on one split."""
 
