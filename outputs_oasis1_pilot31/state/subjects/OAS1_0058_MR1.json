@@ -1,0 +1,80 @@
+{
+  "scope": "subject",
+  "subject_id": "OAS1_0058_MR1",
+  "updated_at": "2026-08-27 11:22:04",
+  "stages": {
+    "M1": {
+      "code": "M1",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 11:22:00",
+      "finished_at": "2026-08-27 11:22:01",
+      "duration_s": 0.5084,
+      "error": null,
+      "traceback": null,
+      "artifacts": {
+        "source": "C:/Users/avisy/Downloads/dataset/extracted/disc2/OAS1_0058_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0058_MR1_mpr_n4_anon_111_t88_gfc.hdr"
+      },
+      "metrics": {
+        "shape": [
+          176,
+          208,
+          176
+        ],
+        "affine": [
+          [
+            -1.0,
+            0.0,
+            0.0,
+            87.5
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            -103.5
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            -87.5
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      "notes": []
+    },
+    "M2": {
+      "code": "M2",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 11:22:01",
+      "finished_at": "2026-08-27 11:22:04",
+      "duration_s": 3.3272,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "quality_score": 80.18,
+        "passed": true
+      },
+      "notes": []
+    },
+    "M3": {
+      "code": "M3",
+      "status": "RUNNING",
+      "started_at": "2026-08-27 11:22:04",
+      "finished_at": null,
+      "duration_s": null,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {},
+      "notes": []
+    }
+  }
+}

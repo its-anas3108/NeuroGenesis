@@ -628,38 +628,138 @@ def feature_violin(
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# 17. Morphometric differences (Figures & Visual Analytics)
+# ──────────────────────────────────────────────────────────────────────────────
+
+#: (feature column, panel title, y-axis label, unit conversion applied to the
+#: raw feature values before plotting). Four real, already-computed features
+#: from modules.m04_feature_extraction.feature_spec — no new feature is
+#: derived here. Surface area is deliberately left in voxel units rather than
+#: converted to a physical area: post-resample voxel spacing is anisotropic
+#: per axis, so a scalar voxel->cm^2 conversion would need a real per-face
+#: marching-cubes correction the pipeline does not compute. Converting
+#: without it would silently invent a number, so the axis is labelled
+#: honestly instead.
+_MORPHOMETRIC_PANELS: Tuple[Tuple[str, str, str, float], ...] = (
+    ("cortical_thickness_mm", "Cortical Thickness", "mm", 1.0),
+    ("brain_volume_mm3", "Regional Volume", "cm$^3$", 1.0 / 1000.0),
+    ("surface_area_vox", "Surface Area", "voxels", 1.0),
+    ("gm_fraction", "GM Fraction", "fraction", 1.0),
+)
+
+
+def _boxplot_panel(ax: plt.Axes, table: pd.DataFrame, feature: str,
+                   scale: float, title: str, ylabel: str) -> None:
+    """Draw one grouped (ROI x stage) boxplot panel onto ``ax``."""
+    width = 0.24
+    positions = np.arange(N_ROI)
+    for offset, stage in enumerate(STAGE_ORDER):
+        group_positions, group_data = [], []
+        for i, roi in enumerate(ROI_ORDER):
+            values = pd.to_numeric(
+                table.loc[(table["roi_name"] == roi) & (table["stage"] == stage),
+                          feature],
+                errors="coerce",
+            ).dropna().values * scale
+            if values.size:
+                group_positions.append(positions[i] + (offset - 1) * width)
+                group_data.append(values)
+        if not group_data:
+            continue
+        bp = ax.boxplot(
+            group_data, positions=group_positions, widths=width * 0.85,
+            patch_artist=True, showfliers=False,
+            medianprops={"color": TEXT, "linewidth": 1.1},
+            whiskerprops={"color": MUTED}, capprops={"color": MUTED},
+        )
+        for box in bp["boxes"]:
+            box.set_facecolor(STAGE_COLOR[stage])
+            box.set_alpha(0.6)
+            box.set_edgecolor(GRID)
+
+    ax.set_xticks(positions, [roi_short(r) for r in ROI_ORDER])
+    ax.set_xlim(-0.6, N_ROI - 0.4)
+    _style(ax, title, "", ylabel)
+
+
+def morphometric_group_comparison(
+    features: Optional[pd.DataFrame],
+    cohort: Optional[pd.DataFrame],
+    out_dir: Path,
+    smoke_marker: Optional[Dict[str, Any]] = None,
+) -> Path:
+    """Figure 17: morphometric differences across CN/MCI/AD, four features at once.
+
+    Combines four already-computed per-ROI features (cortical thickness,
+    regional volume, surface area, grey-matter fraction) into one figure, one
+    boxplot panel per feature, each grouped by ROI and stage. Reuses the exact
+    ``features``/``cohort`` join :func:`stagewise_feature_map` and
+    :func:`feature_violin` already use; this figure differs from those only in
+    combining four features side by side as boxplots, matching how the
+    stage-wise contrast is presented alongside the single-feature bar/violin
+    figures already produced by ``--mode figures``.
+    """
+    fig, axes = plt.subplots(1, 4, figsize=(16.0, 4.0), facecolor=FIG_BG)
+    if features is None or cohort is None:
+        for ax, (_, title, unit, _) in zip(axes, _MORPHOMETRIC_PANELS):
+            unavailable_panel(ax, title, "requires an extracted feature table")
+        return _save(fig, out_dir, "fig17_morphometric_differences", smoke_marker)
+
+    stage_map = dict(zip(cohort["session_id"].astype(str),
+                         cohort["stage"].astype(str)))
+    table = features.copy()
+    table["stage"] = table["session_id"].astype(str).map(stage_map)
+
+    for ax, (feature, title, unit, scale) in zip(axes, _MORPHOMETRIC_PANELS):
+        if feature not in table.columns:
+            unavailable_panel(ax, title, f"'{feature}' not in feature table")
+            continue
+        _boxplot_panel(ax, table, feature, scale,
+                      f"{title}\n({unit})", unit)
+
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, facecolor=STAGE_COLOR[s], alpha=0.6,
+                      edgecolor=GRID)
+        for s in STAGE_ORDER
+    ]
+    fig.legend(handles, STAGE_ORDER, loc="upper right", ncol=1,
+              frameon=False, fontsize=9, bbox_to_anchor=(0.995, 0.96))
+    fig.suptitle(
+        _check_title("Morphometric differences across CN / MCI / AD"),
+        fontsize=12, color=TEXT, fontweight="semibold",
+    )
+    return _save(fig, out_dir, "fig17_morphometric_differences", smoke_marker)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # 13. Embedding projection
 # ──────────────────────────────────────────────────────────────────────────────
 
-def embedding_projection(
-    embeddings: Optional[np.ndarray],
-    labels: Optional[Sequence[int]],
-    out_dir: Path,
-    name: str = "fig13_embedding_projection",
-    title: str = "Representation projection (PCA)",
-    smoke_marker: Optional[Dict[str, Any]] = None,
-) -> Path:
-    """Figure 13: 2-D PCA projection of a representation, coloured by stage.
+def _pca_scatter(ax: plt.Axes, embeddings: Optional[np.ndarray],
+                 labels: Optional[Sequence[int]], title: str) -> None:
+    """Project ``embeddings`` to 2-D via SVD and scatter onto ``ax``, coloured
+    by stage. Shared by :func:`embedding_projection` and
+    :func:`embedding_projection_pair` so both draw from one PCA
+    implementation.
 
     PCA is computed directly from the SVD rather than via UMAP or t-SNE. Those
     methods have stochastic, hyper-parameter-sensitive layouts that invite
     over-reading of apparent cluster separation; PCA is a deterministic linear
     projection whose axes carry a stated explained-variance fraction.
     """
-    fig, ax = plt.subplots(figsize=(5.6, 4.8), facecolor=FIG_BG)
     if embeddings is None or labels is None:
         unavailable_panel(ax, title, "requires a trained model")
-        return _save(fig, out_dir, name, smoke_marker)
+        return
 
     matrix = np.asarray(embeddings, dtype=np.float64)
     if matrix.ndim > 2:
         matrix = matrix.reshape(matrix.shape[0], -1)
-    labels = np.asarray(labels, dtype=np.int64).ravel()
+    labels_arr = np.asarray(labels, dtype=np.int64).ravel()
 
     if matrix.shape[0] < 3 or matrix.shape[1] < 2:
         unavailable_panel(ax, title,
                           f"too few samples to project ({matrix.shape[0]})")
-        return _save(fig, out_dir, name, smoke_marker)
+        return
 
     centred = matrix - matrix.mean(axis=0, keepdims=True)
     _, singular, components = np.linalg.svd(centred, full_matrices=False)
@@ -668,7 +768,7 @@ def embedding_projection(
     explained = variance / variance.sum() if variance.sum() > 0 else variance
 
     for index, stage in enumerate(STAGE_ORDER):
-        mask = labels == index
+        mask = labels_arr == index
         if not mask.any():
             continue
         ax.scatter(projected[mask, 0], projected[mask, 1], s=34,
@@ -679,7 +779,141 @@ def embedding_projection(
            f"PC1 ({explained[0]:.1%} variance)",
            f"PC2 ({explained[1]:.1%} variance)")
     ax.legend(frameon=False, fontsize=8)
+
+
+def embedding_projection(
+    embeddings: Optional[np.ndarray],
+    labels: Optional[Sequence[int]],
+    out_dir: Path,
+    name: str = "fig13_embedding_projection",
+    title: str = "Representation projection (PCA)",
+    smoke_marker: Optional[Dict[str, Any]] = None,
+) -> Path:
+    """Figure 13: 2-D PCA projection of a representation, coloured by stage."""
+    fig, ax = plt.subplots(figsize=(5.6, 4.8), facecolor=FIG_BG)
+    _pca_scatter(ax, embeddings, labels, title)
     return _save(fig, out_dir, name, smoke_marker)
+
+
+def embedding_projection_pair(
+    z_g: Optional[np.ndarray],
+    z_h: Optional[np.ndarray],
+    labels: Optional[Sequence[int]],
+    out_dir: Path,
+    smoke_marker: Optional[Dict[str, Any]] = None,
+) -> Path:
+    """Figure 19: PCA projections of the graph embedding Z_G and the shared
+    representation Z_H, side by side, coloured by real CN/MCI/AD labels.
+
+    Two panels only, deliberately. A faculty reference figure this project
+    was asked to reproduce also shows a third "Spatial Embedding (Z_3D)"
+    panel — the output of the 3D-CNN branch. That branch was removed from
+    this architecture entirely (a prior, explicit decision), so Z_3D does not
+    exist as a real quantity anymore; fabricating a third panel to match the
+    reference layout was rejected in favour of showing exactly the two
+    representations this architecture actually computes.
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.8), facecolor=FIG_BG)
+    _pca_scatter(axes[0], z_g, labels, "Graph Embedding (Z_G)")
+    _pca_scatter(axes[1], z_h, labels, "Fused Embedding (Z_H)")
+    fig.suptitle(
+        _check_title("Embedding visualisation (PCA)"),
+        fontsize=12, color=TEXT, fontweight="semibold",
+    )
+    fig.text(
+        0.5, 0.005,
+        "No third 'Spatial Embedding' panel: this architecture has no 3D-CNN "
+        "/ spatial branch.",
+        ha="center", fontsize=7.5, color=MUTED,
+    )
+    return _save(fig, out_dir, "fig19_embedding_projection", smoke_marker)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 18. SRVE regional vulnerability maps
+# ──────────────────────────────────────────────────────────────────────────────
+
+def srve_vulnerability_maps(
+    background: Optional[np.ndarray],
+    roi_masks: Optional[Dict[str, np.ndarray]],
+    stage_vulnerability: Optional[Dict[str, Dict[str, Optional[float]]]],
+    out_dir: Path,
+    smoke_marker: Optional[Dict[str, Any]] = None,
+) -> Path:
+    """Figure 18: SRVE regional vulnerability, averaged by stage, on real
+    anatomy.
+
+    Args:
+        background: A 2-D grayscale slice (standard/atlas space), shared
+            across all three panels.
+        roi_masks: ``{roi_name: 2-D boolean mask}`` in the same grid as
+            ``background`` (extracted once from a template, not from any
+            individual subject).
+        stage_vulnerability: ``{stage: {roi_name: mean_RV_or_None}}`` — real
+            per-subject SRVE regional-vulnerability scores (Section 11.1),
+            averaged over every subject with that real stage label in this
+            cohort. ``None`` for a cell means no subject in that stage had a
+            score for that ROI, not zero vulnerability.
+
+    Region location is standard-space and shared; only the fill colour (a
+    real, computed group average) differs between the three panels. This is
+    not a claim that vulnerability is spatially localised beyond the ROI's
+    extent — it is the same five discrete regional scores shown elsewhere in
+    this report, placed on real anatomy instead of a bar chart.
+    """
+    # A dedicated 4th subplot hosts the colorbar (``width_ratios`` makes it
+    # narrow) rather than the usual `fig.colorbar(sm, ax=list(axes))`, which
+    # steals space from the three panels *after* layout and is not
+    # compatible with the `tight_layout` call `_save` always makes — that
+    # combination previously produced a colorbar that visually overlapped
+    # the AD panel.
+    fig, all_axes = plt.subplots(
+        1, 4, figsize=(14.5, 4.8), facecolor=FIG_BG,
+        gridspec_kw={"width_ratios": [1, 1, 1, 0.06]},
+    )
+    axes, cax = all_axes[:3], all_axes[3]
+    if background is None or roi_masks is None or stage_vulnerability is None:
+        cax.set_axis_off()
+        for ax, stage in zip(axes, STAGE_ORDER):
+            unavailable_panel(
+                ax, stage,
+                "requires standard-space ROI masks and SRVE vulnerability",
+            )
+        return _save(fig, out_dir, "fig18_srve_vulnerability_maps", smoke_marker)
+
+    cmap = plt.get_cmap("jet")
+    norm = plt.Normalize(vmin=0.0, vmax=1.0)
+
+    for ax, stage in zip(axes, STAGE_ORDER):
+        ax.imshow(background, cmap="gray", origin="lower")
+        scores = stage_vulnerability.get(stage, {})
+        overlay = np.zeros((*background.shape, 4), dtype=np.float64)
+        any_score = False
+        for roi in ROI_ORDER:
+            mask = roi_masks.get(roi)
+            score = scores.get(roi)
+            if mask is None or score is None or not mask.any():
+                continue
+            any_score = True
+            color = cmap(norm(score))
+            overlay[mask] = (color[0], color[1], color[2], 0.65)
+        if any_score:
+            ax.imshow(overlay, origin="lower")
+        ax.set_title(_check_title(stage), fontsize=12, color=TEXT, pad=8,
+                     fontweight="semibold")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    fig.colorbar(sm, cax=cax, label="mean regional vulnerability (RV)")
+    fig.suptitle(
+        _check_title("SRVE regional vulnerability maps, averaged by stage"),
+        fontsize=12, color=TEXT, fontweight="semibold",
+    )
+    return _save(fig, out_dir, "fig18_srve_vulnerability_maps", smoke_marker)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -717,7 +951,7 @@ def ranking_stability_plot(
     ax.invert_yaxis()
     ax.set_xlim(0.5, N_ROI + 0.5)
     _style(ax, "ROI mean rank (lower is more important)",
-           "mean rank +/- SD across repeats", "")
+           "mean rank +/- SD across subjects", "")
 
     ax = axes[1]
     ax.barh(positions, [r["selection_frequency"] for r in rows],

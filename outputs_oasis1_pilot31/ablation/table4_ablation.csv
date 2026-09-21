@@ -1,0 +1,8 @@
+Configuration,Variant,Accuracy,Macro-F1,Balanced Accuracy,ROC-AUC
+Baseline (morphometry only),A0,0.2857 +/- 0.1650,0.2714 +/- 0.1787,0.3333 +/- 0.2187,0.5120 +/- 0.1467
++ Anatomical Prior,A1,not run,not run,not run,not run
++ Standard GAT,A2,not run,not run,not run,not run
++ Learned Attention (AP-LAF),A3,not run,not run,not run,not run
++ SRVE,A4,not run,not run,not run,not run
++ ANP,A5,0.2419 +/- 0.1167,0.1946 +/- 0.1129,0.2444 +/- 0.1694,0.5369 +/- 0.2373
+Full: NeuroProp-X + SAEG-GATv2 + structural covariance + Stage-TGT,A7,0.3657 +/- 0.1263,0.3022 +/- 0.1574,0.3889 +/- 0.1884,0.5513 +/- 0.2199

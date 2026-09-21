@@ -5,14 +5,20 @@ NeuroGenesis pipeline orchestrator (Sections 29, 30).
 
 NeuroGenesis is a multimodal NeuroAI framework for stage-wise analysis of
 Alzheimer's disease using structural MRI of speech-related brain networks. It
-localizes five speech-related regions using the Harvard-Oxford atlas, learns
-local three-dimensional representations with a lightweight 3D CNN, constructs a
-subject-specific brain graph, and applies the proposed NeuroProp-X framework to
-estimate stage-relevant regional vulnerability, fuse anatomical priors with
-learned graph attention, and derive adaptive propagation representations. The
-resulting enriched disease graph is processed by an edge-gated GATv2 model for
-CN/MCI/AD classification. A Stage-Temporal Graph Transformer learns the ordered
-CN->MCI->AD representation to estimate model-derived stage-transition propensity.
+localizes five speech-related regions using the Harvard-Oxford atlas, extracts
+per-ROI morphometric features, constructs a subject-specific brain graph, and
+applies the proposed NeuroProp-X framework to estimate stage-relevant regional
+vulnerability, fuse anatomical priors with learned graph attention, and derive
+adaptive propagation representations. The resulting enriched disease graph is
+processed by an edge-gated GATv2 model for CN/MCI/AD classification. A
+Stage-Temporal Graph Transformer learns the ordered CN->MCI->AD representation
+to estimate model-derived stage-transition propensity.
+
+Training requires labelled data (OASIS-1 today). An ADNI root
+(``--adni-root``/``paths.adni_root``) can also be configured, but ADNI here
+carries no CN/MCI/AD labels, so it only supports ``preprocess`` and an
+inference-only ``report``/``xai`` pass against an already-trained checkpoint
+(``--checkpoint``/``--scaler-path``) -- never training or evaluation.
 
 Modes
 -----
@@ -21,8 +27,7 @@ Modes
 
     python run.py --mode validate_dataset  # OASIS-1 integrity + validation report
     python run.py --mode preprocess     # M1-M8: imaging -> patches -> features
-    python run.py --mode train_cnn      # M9: cache 3D CNN embeddings
-    python run.py --mode train_graph    # graph stage on cached embeddings
+    python run.py --mode train_graph    # graph-stage training (A5 without Stage-TGT)
     python run.py --mode train_full     # end-to-end training of the full model
     python run.py --mode ablation       # A0-A7 over repeated splits + baselines
     python run.py --mode evaluate       # test-split evaluation of a checkpoint
@@ -67,7 +72,7 @@ logger = get_logger(__name__)
 
 MODES = (
     "validate_dataset",
-    "preprocess", "train_cnn", "train_graph", "train_full", "ablation",
+    "preprocess", "train_graph", "train_full", "ablation",
     "evaluate", "xai", "report", "statistics", "figures", "dashboard", "status",
 )
 
@@ -93,6 +98,7 @@ class Context:
         self._features: Optional[pd.DataFrame] = None
         self._smoke: Optional[Dict[str, Any]] = None
         self._manager: Optional[Any] = None
+        self._adni_manager: Optional[Any] = None
         self._validated_index: Optional[pd.DataFrame] = None
 
     @property
@@ -204,6 +210,27 @@ class Context:
         )
         return self._manager
 
+    def adni_manager(self):
+        """Return the ADNI data manager for the configured root.
+
+        Raises:
+            FileNotFoundError: If no ADNI root is configured.
+        """
+        from modules.m01_dataset import ADNIDataManager
+
+        if self._adni_manager is not None:
+            return self._adni_manager
+        root = self.cfg.paths.adni_root
+        if not root:
+            raise FileNotFoundError(
+                "No ADNI root is configured. Pass --adni-root <path> or set "
+                "paths.adni_root in the config."
+            )
+        self._adni_manager = ADNIDataManager(
+            adni_root=Path(root), cache_dir=self.outputs / "adni_nifti",
+        )
+        return self._adni_manager
+
     def validated_index(self, refresh: bool = False) -> pd.DataFrame:
         """Return the validated OASIS-1 index, from cache if available."""
         if self._validated_index is not None and not refresh:
@@ -238,10 +265,10 @@ class Context:
             out_dir=self.outputs / "dataset_validation",
         )
 
-    def trainable_cohort(self, require_patches: bool = False) -> pd.DataFrame:
+    def trainable_cohort(self, require_labels: bool = True) -> pd.DataFrame:
         """Return the cohort restricted to sessions that can actually be used.
 
-        A session is trainable only if the feature table has rows for it. The
+        A session is usable only if the feature table has rows for it. The
         full labelled cohort is larger than the processed subset whenever
         preprocessing has been run on a subset, or whenever some subjects failed
         preprocessing. Splitting the full cohort in that situation produces
@@ -249,42 +276,41 @@ class Context:
         later as an opaque lookup error.
 
         Args:
-            require_patches: Also require a cached ROI patch tensor, which the
-                variants with a 3D CNN branch need.
+            require_labels: Also require at least two CN/MCI/AD sessions per
+                stage, the bare minimum for a stratified split. Training,
+                evaluation and ablation all need this (``True``, the default).
+                Inference-only modes on an unlabeled cohort (e.g. the ADNI
+                smoke test) pass ``False`` to skip it.
 
         Returns:
             The filtered cohort, in the original order.
 
         Raises:
-            ValueError: If fewer than two sessions per stage remain, since a
-                stratified train/val/test split is then impossible.
+            ValueError: If ``require_labels`` and fewer than two sessions per
+                stage remain, since a stratified train/val/test split is then
+                impossible.
         """
-        from modules.m06_spatial_encoder.patch_dataset import patch_tensor_path
-
         cohort = self.cohort()
         features = self.features()
         available = set(features["session_id"].astype(str))
 
         usable = cohort[cohort["session_id"].astype(str).isin(available)]
-        if require_patches:
-            usable = usable[usable["session_id"].astype(str).map(
-                lambda s: patch_tensor_path(self.outputs, s).exists()
-            )]
 
         dropped = len(cohort) - len(usable)
         if dropped:
             logger.info(
                 "Restricting the cohort to processed sessions: %d of %d "
-                "labelled session(s) have extracted features%s.",
+                "session(s) have extracted features.",
                 len(usable), len(cohort),
-                " and ROI patches" if require_patches else "",
             )
             print(
-                f"\nNOTE: {len(usable)} of {len(cohort)} labelled session(s) "
-                f"have been processed; the remaining {dropped} are excluded "
-                "from the split. Run `--mode preprocess` on the full dataset "
-                "to use all of them."
+                f"\nNOTE: {len(usable)} of {len(cohort)} session(s) have been "
+                f"processed; the remaining {dropped} are excluded. Run "
+                "`--mode preprocess` on the full dataset to use all of them."
             )
+
+        if not require_labels:
+            return usable.reset_index(drop=True)
 
         counts = {
             stage: int((usable["stage"] == stage).sum())
@@ -310,7 +336,7 @@ class Context:
             encoding="utf-8",
         )
 
-    def build_datasets(self, split: Any, use_cnn: bool) -> Tuple[Any, Any, Any]:
+    def build_datasets(self, split: Any) -> Tuple[Any, Any, Any]:
         """Build train/val/test datasets for one split.
 
         The scaler is fitted on **this split's** training sessions and nothing
@@ -328,9 +354,7 @@ class Context:
 
         def make(sessions: List[str]) -> ROIPatchDataset:
             array, _ = scaler.to_tensor_array(table, sessions)
-            return ROIPatchDataset(
-                sessions, cohort, array, self.outputs, load_patches=use_cnn
-            )
+            return ROIPatchDataset(sessions, cohort, array, self.outputs)
 
         return (make(split.train_sessions), make(split.val_sessions),
                 make(split.test_sessions))
@@ -339,6 +363,19 @@ class Context:
 # ──────────────────────────────────────────────────────────────────────────────
 # Modes
 # ──────────────────────────────────────────────────────────────────────────────
+
+def _dataset_provenance(ctx: Context) -> Optional[Dict[str, Any]]:
+    """Return the configured dataset's provenance dict, or ``None``.
+
+    OASIS-1 takes priority when both are configured (only one is expected to
+    be set at a time). Neither manager is required to be configured.
+    """
+    if ctx.cfg.paths.oasis1_root:
+        return ctx.oasis1_manager().provenance()
+    if ctx.cfg.paths.adni_root:
+        return ctx.adni_manager().provenance()
+    return None
+
 
 def mode_validate_dataset(ctx: Context, args: argparse.Namespace) -> int:
     """Validate the uploaded OASIS-1 dataset (Sections 6, 17, 18).
@@ -686,6 +723,18 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
         print(f"SOURCE    : {manager.provenance()['source_description']}")
         print("DATA MODE : REAL DATA")
         print("SYNTHETIC : DISABLED")
+    elif ctx.cfg.paths.adni_root:
+        adni = ctx.adni_manager()
+        if not adni.root_exists() or not adni.discover():
+            print(f"\n{adni.missing_data_message()}")
+            return 1
+        provenance = adni.provenance()
+        print(f"\nDATASET   : {provenance['dataset_source']}")
+        print(f"SOURCE    : {provenance['source_description']}")
+        print("DATA MODE : REAL DATA (unlabeled — smoke test only)")
+        print("\n*** CAVEATS ***")
+        for caveat in provenance.get("caveats", []):
+            print(f"  - {caveat}")
 
     # Stamp synthetic provenance into the outputs tree before anything is
     # written. A run over phantom MRI otherwise produces artifacts that are
@@ -727,10 +776,10 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
         )
         return 1
     if processable.empty:
-        print(
-            f"\nNo MRI volumes found under {ctx.cfg.paths.mri_dir}. Place "
-            "OASIS-1 T1 volumes there and re-run."
-        )
+        source_dir = (ctx.cfg.paths.adni_root if ctx.cfg.paths.adni_root
+                      else ctx.cfg.paths.mri_dir)
+        print(f"\nNo MRI volumes found under {source_dir}. Place T1 volumes "
+              "there and re-run.")
         return 1
 
     preprocessor = PreprocessingPipeline(
@@ -862,70 +911,7 @@ def mode_preprocess(ctx: Context, args: argparse.Namespace) -> int:
     return 0
 
 
-def mode_train_cnn(ctx: Context, args: argparse.Namespace) -> int:
-    """M9: cache 3D CNN embeddings for every subject with a patch tensor.
-
-    The encoder is untrained at this point, so the cached embeddings are only
-    useful for inspecting the encoder's behaviour and for the dashboard M9 panel.
-    They are **not** used by ``--mode train_full``, which trains the encoder
-    jointly with the rest of the model. The caveat is written into the manifest
-    so a cached embedding cannot be mistaken for a trained representation.
-    """
-    from modules.m06_spatial_encoder.cnn3d import SpatialEncoder3D, save_embeddings
-    from modules.m06_spatial_encoder.patch_dataset import patch_tensor_path
-
-    log_banner(logger, "M9  3D CNN spatial encoding")
-    encoder = SpatialEncoder3D(ctx.cfg.spatial_encoder)
-    print(encoder.describe())
-
-    cohort = ctx.cohort()
-    sessions = [
-        str(s) for s in cohort["session_id"]
-        if patch_tensor_path(ctx.outputs, str(s)).exists()
-    ]
-    if args.patient_id:
-        sessions = [s for s in sessions if s == args.patient_id]
-    if not sessions:
-        print(
-            "\nNo ROI patch tensors found. Run `--mode preprocess` first, or "
-            "generate synthetic artifacts with tools/make_smoke_artifacts.py."
-        )
-        return 1
-
-    checkpoint = ctx.outputs / "checkpoints" / "cnn3d_untrained.pt"
-    encoder.save_checkpoint(checkpoint, extra={
-        "status": "untrained",
-        "caveat": "This encoder has not been trained. Embeddings cached from it "
-                  "describe the random initialisation, not learned structure.",
-    })
-
-    for subject_id in sessions:
-        volume = np.load(patch_tensor_path(ctx.outputs, subject_id))
-        with ctx.tracker.stage("M9", subject_id) as record:
-            output = encoder.encode(volume, trace=True)
-            written = save_embeddings(
-                output, ctx.outputs / "cnn_embeddings" / subject_id, subject_id
-            )
-            if record is not None:
-                record.record_metric(
-                    "embed_dim", int(output.embeddings.shape[-1])
-                )
-                record.record_metric("encoder_status", "untrained")
-                for name, path in written.items():
-                    record.record_artifact(name, path)
-
-    print(f"\nCached embeddings for {len(sessions)} subject(s) under "
-          f"{ctx.outputs / 'cnn_embeddings'}")
-    print(
-        "\nNOTE: this encoder is untrained. These embeddings exist for "
-        "inspection only; `--mode train_full` trains the encoder jointly with "
-        "the rest of the model and does not read them."
-    )
-    return 0
-
-
-def _train(ctx: Context, variant: str, epochs: Optional[int],
-           use_cnn_override: Optional[bool] = None) -> int:
+def _train(ctx: Context, variant: str, epochs: Optional[int]) -> int:
     """Shared training routine for ``train_graph`` and ``train_full``."""
     from modules.m01_dataset import make_subject_split
     from modules.m04_feature_extraction import FEATURE_ORDER, MorphometricScaler
@@ -936,7 +922,7 @@ def _train(ctx: Context, variant: str, epochs: Optional[int],
     model_probe = build_model(
         len(FEATURE_ORDER), ctx.cfg, variant, list(FEATURE_ORDER)
     )
-    cohort = ctx.trainable_cohort(require_patches=model_probe.spec.use_cnn)
+    cohort = ctx.trainable_cohort()
     features = ctx.features()
 
     split = make_subject_split(
@@ -972,8 +958,7 @@ def _train(ctx: Context, variant: str, epochs: Optional[int],
     )
     scaler.save(ctx.scaler_path)
     model = model_probe
-    use_cnn = model.spec.use_cnn if use_cnn_override is None else use_cnn_override
-    train_ds, val_ds, test_ds = ctx.build_datasets(split, use_cnn)
+    train_ds, val_ds, test_ds = ctx.build_datasets(split)
 
     print(f"\nVariant {variant}: {model.n_parameters():,} trainable parameters")
     print(f"Datasets  train={len(train_ds)}  val={len(val_ds)}  "
@@ -1034,7 +1019,7 @@ def _train(ctx: Context, variant: str, epochs: Optional[int],
 
 
 def mode_train_graph(ctx: Context, args: argparse.Namespace) -> int:
-    """Train the graph stage without the 3D CNN branch (ablation A5)."""
+    """Train the graph stage without Stage-TGT (ablation A5)."""
     log_banner(logger, "Graph-stage training (A5: NeuroProp-X + SAEG-GATv2)")
     return _train(ctx, args.variant or "A5", args.epochs)
 
@@ -1052,9 +1037,7 @@ def mode_ablation(ctx: Context, args: argparse.Namespace) -> int:
     from modules.training.baselines import BaselineStudy
 
     log_banner(logger, "M18  Ablation and baseline study")
-    # The ladder includes CNN variants, so every session needs a patch
-    # tensor as well as features.
-    cohort = ctx.trainable_cohort(require_patches=True)
+    cohort = ctx.trainable_cohort()
     features = ctx.features()
 
     study = AblationStudy(
@@ -1139,7 +1122,7 @@ def mode_evaluate(ctx: Context, args: argparse.Namespace) -> int:
     model = NeuroGenesisModel.load_checkpoint(checkpoint)
     # Evaluation reuses the recorded split, so the cohort filter only needs
     # to make the feature lookup succeed for those sessions.
-    _, _, test_ds = ctx.build_datasets(split, model.spec.use_cnn)
+    _, _, test_ds = ctx.build_datasets(split)
     trainer = Trainer(model, ctx.cfg)
     evaluation = trainer.evaluate(make_loader(test_ds, ctx.cfg.train.batch_size))
 
@@ -1192,15 +1175,16 @@ def mode_xai(ctx: Context, args: argparse.Namespace) -> int:
 
     log_banner(logger, "M15-M16  ROI ranking and explainable AI")
     variant = args.variant or "A7"
-    provenance = (
-        ctx.oasis1_manager().provenance() if ctx.cfg.paths.oasis1_root else None
-    )
+    is_oasis = ctx.cfg.data.dataset_source == "OASIS-1"
+    provenance = _dataset_provenance(ctx)
+    checkpoint = args.checkpoint or ctx.checkpoint_path(variant)
+    scaler_path = args.scaler_path or ctx.scaler_path
     pipeline = load_inference_pipeline(
-        ctx.outputs, ctx.checkpoint_path(variant), ctx.cfg,
-        scaler_path=ctx.scaler_path, split_path=ctx.split_path,
+        ctx.outputs, checkpoint, ctx.cfg,
+        scaler_path=scaler_path, split_path=ctx.split_path,
         smoke_marker=ctx.smoke_marker, dataset_provenance=provenance,
     )
-    cohort = ctx.trainable_cohort()
+    cohort = ctx.trainable_cohort(require_labels=is_oasis)
     sessions = [args.patient_id] if args.patient_id else [
         str(s) for s in cohort["session_id"]
     ]
@@ -1210,13 +1194,14 @@ def mode_xai(ctx: Context, args: argparse.Namespace) -> int:
     per_subject: Dict[str, Tuple[str, ROIRanking]] = {}
     rankings: List[ROIRanking] = []
     records: List[Dict[str, Any]] = []
+    embedding_session_ids: List[str] = []
+    embedding_stages: List[str] = []
+    embedding_z_g: List[Any] = []
+    embedding_z_h: List[Any] = []
 
     for subject_id in sessions:
         try:
-            result = pipeline.run(
-                subject_id, explain=True, occlusion=not args.no_occlusion,
-                tracker=ctx.tracker,
-            )
+            result = pipeline.run(subject_id, explain=True, tracker=ctx.tracker)
         except (KeyError, FileNotFoundError) as exc:
             logger.warning("Skipping %s: %s", subject_id, exc)
             continue
@@ -1230,6 +1215,36 @@ def mode_xai(ctx: Context, args: argparse.Namespace) -> int:
             per_subject[subject_id] = (
                 result.record.get("reference_stage") or "unknown", ranking
             )
+        # Persist the shared representation Z_H and the graph embedding Z_G
+        # for every subject processed. These are real per-subject tensors
+        # produced by the forward pass (modules/model.py's FusionOutput /
+        # GraphEncoderOutput) but were previously held only in memory and
+        # discarded once the loop moved to the next subject; saving them here
+        # is what lets the embedding-projection figure be built from real
+        # data instead of never existing at all.
+        output = result.output
+        if output is not None and output.graph is not None:
+            embedding_session_ids.append(subject_id)
+            embedding_stages.append(result.record.get("reference_stage") or "")
+            embedding_z_g.append(
+                output.graph.graph_embedding[0].detach().cpu().numpy()
+            )
+            embedding_z_h.append(output.z_h[0].detach().cpu().numpy())
+
+    if embedding_session_ids:
+        embeddings_dir = ctx.outputs / "embeddings"
+        embeddings_dir.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            embeddings_dir / "z_g_z_h.npz",
+            session_ids=np.array(embedding_session_ids, dtype=object),
+            stages=np.array(embedding_stages, dtype=object),
+            z_g=np.stack(embedding_z_g),
+            z_h=np.stack(embedding_z_h),
+        )
+        print(
+            f"\nSaved Z_G/Z_H embeddings for {len(embedding_session_ids)} "
+            f"subject(s) to {embeddings_dir / 'z_g_z_h.npz'}"
+        )
 
     out_dir = ctx.outputs / "roi_ranking"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1277,12 +1292,13 @@ def mode_report(ctx: Context, args: argparse.Namespace) -> int:
 
     log_banner(logger, "M19  Report generation")
     variant = args.variant or "A7"
-    provenance = (
-        ctx.oasis1_manager().provenance() if ctx.cfg.paths.oasis1_root else None
-    )
+    is_oasis = ctx.cfg.data.dataset_source == "OASIS-1"
+    provenance = _dataset_provenance(ctx)
+    checkpoint = args.checkpoint or ctx.checkpoint_path(variant)
+    scaler_path = args.scaler_path or ctx.scaler_path
     pipeline = load_inference_pipeline(
-        ctx.outputs, ctx.checkpoint_path(variant), ctx.cfg,
-        scaler_path=ctx.scaler_path, split_path=ctx.split_path,
+        ctx.outputs, checkpoint, ctx.cfg,
+        scaler_path=scaler_path, split_path=ctx.split_path,
         smoke_marker=ctx.smoke_marker, dataset_provenance=provenance,
     )
 
@@ -1302,9 +1318,9 @@ def mode_report(ctx: Context, args: argparse.Namespace) -> int:
 
         extra["ablation_table"] = pd.read_csv(ablation_path)
         extra["ablation_caveats"] = AblationStudy.caveats()
-    extra["checkpoint_path"] = ctx.checkpoint_path(variant).as_posix()
+    extra["checkpoint_path"] = Path(checkpoint).as_posix()
 
-    cohort = ctx.trainable_cohort()
+    cohort = ctx.trainable_cohort(require_labels=is_oasis)
     sessions = [args.patient_id] if args.patient_id else [
         str(s) for s in cohort["session_id"]
     ]
@@ -1314,9 +1330,7 @@ def mode_report(ctx: Context, args: argparse.Namespace) -> int:
     generated = 0
     for subject_id in sessions:
         try:
-            result = pipeline.run(subject_id, explain=True,
-                                  occlusion=not args.no_occlusion,
-                                  tracker=ctx.tracker)
+            result = pipeline.run(subject_id, explain=True, tracker=ctx.tracker)
             written = pipeline.generate_report(
                 result, ctx.outputs / "reports", extra=extra,
                 tracker=ctx.tracker,
@@ -1330,6 +1344,94 @@ def mode_report(ctx: Context, args: argparse.Namespace) -> int:
 
     print(f"\nGenerated {generated} report(s) under {ctx.outputs / 'reports'}")
     return 0 if generated else 1
+
+
+def _srve_vulnerability_figure(
+    ctx: Context, out_dir: Path, marker: Optional[Dict[str, Any]], F: Any,
+) -> Path:
+    """Build Figure 18's inputs and render it.
+
+    ROI masks are extracted once against the MNI152 template rather than any
+    individual subject (reusing ``segmentation.roi_extraction.ROIExtractor``,
+    the same class every subject's own M6 stage already uses), so the
+    anatomical background is subject-independent and reproducible. The SRVE
+    scores painted onto those masks are real per-subject values, already
+    saved by NeuroProp-X (``outputs/neuropropx/vulnerability/``), averaged
+    over the real CN/MCI/AD groups in this cohort — nothing here is invented.
+    """
+    from modules.common.roi_constants import ROI_ORDER
+
+    background = None
+    roi_masks_2d: Optional[Dict[str, np.ndarray]] = None
+    try:
+        from nilearn.datasets import load_mni152_template
+
+        from segmentation.roi_extraction import ROIExtractor
+
+        template_img = load_mni152_template(resolution=2)
+        template_data = np.asarray(template_img.get_fdata(), dtype=np.float32)
+        extractor = ROIExtractor(
+            output_dir=ctx.outputs / "figures" / "_srve_template_masks",
+            atlas_name=ctx.cfg.preprocess.atlas_name,
+            data_dir=ctx.cfg.paths.atlas_dir,
+        )
+        extractor.load_atlas()
+        masks_3d = extractor.extract_all(
+            template_data, template_img.affine, "mni152_template", save=False,
+        )
+        combined = np.zeros(template_data.shape, dtype=bool)
+        for mask in masks_3d.values():
+            combined |= np.asarray(mask, dtype=bool)
+        voxel_counts = combined.sum(axis=(0, 1))
+        z = int(np.argmax(voxel_counts)) if voxel_counts.any() \
+            else template_data.shape[2] // 2
+        background = template_data[:, :, z].T
+        roi_masks_2d = {
+            roi: np.asarray(mask, dtype=bool)[:, :, z].T
+            for roi, mask in masks_3d.items()
+        }
+    except Exception as exc:  # noqa: BLE001 - figure degrades, run continues
+        logger.warning(
+            "SRVE map: could not build standard-space ROI masks: %s", exc
+        )
+
+    stage_vulnerability: Optional[Dict[str, Dict[str, Optional[float]]]] = None
+    try:
+        cohort = ctx.cohort()
+        stage_of = dict(zip(cohort["session_id"].astype(str), cohort["stage"]))
+        sums = {s: {r: 0.0 for r in ROI_ORDER} for s in STAGE_ORDER}
+        counts = {s: {r: 0 for r in ROI_ORDER} for s in STAGE_ORDER}
+        vuln_root = ctx.outputs / "neuropropx" / "vulnerability"
+        for session_id, stage in stage_of.items():
+            if stage not in STAGE_ORDER:
+                continue
+            csv_path = (vuln_root / session_id
+                       / f"{session_id}_regional_vulnerability.csv")
+            if not csv_path.exists():
+                continue
+            table = pd.read_csv(csv_path)
+            for _, row in table.iterrows():
+                roi = row["roi"]
+                if roi in sums[stage]:
+                    sums[stage][roi] += float(row["regional_vulnerability"])
+                    counts[stage][roi] += 1
+        stage_vulnerability = {
+            stage: {
+                roi: (sums[stage][roi] / counts[stage][roi])
+                if counts[stage][roi] else None
+                for roi in ROI_ORDER
+            }
+            for stage in STAGE_ORDER
+        }
+        if not any(v is not None for scores in stage_vulnerability.values()
+                   for v in scores.values()):
+            stage_vulnerability = None
+    except FileNotFoundError:
+        stage_vulnerability = None
+
+    return F.srve_vulnerability_maps(
+        background, roi_masks_2d, stage_vulnerability, out_dir, marker
+    )
 
 
 def mode_figures(ctx: Context, args: argparse.Namespace) -> int:
@@ -1384,19 +1486,59 @@ def mode_figures(ctx: Context, args: argparse.Namespace) -> int:
         written.append(F.roc_curves(None, None, out_dir, marker))
     written.append(F.propensity_figure(predictions, out_dir, marker))
 
+    features_table: Optional[pd.DataFrame] = None
+    cohort_table: Optional[pd.DataFrame] = None
     try:
-        features = ctx.features()
-        cohort = ctx.cohort()
+        features_table = ctx.features()
+        cohort_table = ctx.cohort()
         for feature in ("gm_volume_mm3", "entropy"):
             written.append(
-                F.stagewise_feature_map(features, cohort, feature, out_dir, marker)
+                F.stagewise_feature_map(features_table, cohort_table, feature,
+                                        out_dir, marker)
             )
             written.append(
-                F.feature_violin(features, cohort, feature, out_dir, marker)
+                F.feature_violin(features_table, cohort_table, feature,
+                                 out_dir, marker)
             )
     except FileNotFoundError:
         written.append(F.stagewise_feature_map(None, None, "gm_volume_mm3",
                                                out_dir, marker))
+
+    # Figure 17: morphometric differences, four features combined (Figures &
+    # Visual Analytics). Reuses the same features/cohort tables above.
+    written.append(F.morphometric_group_comparison(
+        features_table, cohort_table, out_dir, marker
+    ))
+
+    # Figure 18: SRVE regional-vulnerability maps, averaged by real stage
+    # (Figures & Visual Analytics). ROI masks are extracted once against the
+    # MNI152 template — not any individual subject — so the anatomical
+    # background is subject-independent; only the fill colour (the real,
+    # computed per-stage mean SRVE score) varies across the three panels.
+    written.append(_srve_vulnerability_figure(ctx, out_dir, marker, F))
+
+    # Figure 19: Z_G / Z_H embedding projection (Figures & Visual Analytics).
+    # Real per-subject embeddings saved by `--mode xai`
+    # (outputs/embeddings/z_g_z_h.npz); no fabricated third panel — see
+    # embedding_projection_pair's docstring.
+    embeddings_path = ctx.outputs / "embeddings" / "z_g_z_h.npz"
+    if embeddings_path.exists():
+        from modules.common.roi_constants import STAGE_INDEX
+
+        payload = np.load(embeddings_path, allow_pickle=True)
+        stage_labels = [
+            STAGE_INDEX.get(str(s)) for s in payload["stages"]
+        ]
+        if all(s is not None for s in stage_labels) and stage_labels:
+            written.append(F.embedding_projection_pair(
+                payload["z_g"], payload["z_h"], stage_labels, out_dir, marker
+            ))
+        else:
+            written.append(F.embedding_projection_pair(
+                None, None, None, out_dir, marker
+            ))
+    else:
+        written.append(F.embedding_projection_pair(None, None, None, out_dir, marker))
 
     ablation_path = ctx.outputs / "ablation" / "ablation_results.json"
     summaries = None
@@ -1513,7 +1655,6 @@ def mode_status(ctx: Context, args: argparse.Namespace) -> int:
 MODE_TABLE = {
     "validate_dataset": mode_validate_dataset,
     "preprocess": mode_preprocess,
-    "train_cnn": mode_train_cnn,
     "train_graph": mode_train_graph,
     "train_full": mode_train_full,
     "ablation": mode_ablation,
@@ -1543,6 +1684,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--oasis1-root", type=Path,
                         help="Root of the extracted real OASIS-1 "
                              "dataset. Required for research runs.")
+    parser.add_argument("--adni-root", type=Path,
+                        help="Root of a local ADNI raw-DICOM export. Carries "
+                             "no CN/MCI/AD labels here, so it only supports "
+                             "preprocess and an inference-only report/xai "
+                             "pass, never training.")
+    parser.add_argument("--checkpoint", type=Path,
+                        help="Override the checkpoint path (report, xai, "
+                             "evaluate). Defaults to this run's own outputs "
+                             "tree; set explicitly to run inference under one "
+                             "outputs tree against a checkpoint trained under "
+                             "another (e.g. an ADNI smoke test against an "
+                             "OASIS-1-trained checkpoint).")
+    parser.add_argument("--scaler-path", type=Path,
+                        help="Override the fitted morphometric-scaler path "
+                             "(report, xai). See --checkpoint.")
     parser.add_argument("--experiment", type=str,
                         help="Experiment ID for the config and checkpoint stamp.")
     parser.add_argument("--workers", type=int, default=0,
@@ -1559,7 +1715,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--patient_id", type=str,
                         help="Restrict the mode to a single session ID.")
     parser.add_argument("--variant", type=str,
-                        help="Model variant (A0..A7, A7_no_tgt). Default A7.")
+                        help="Model variant (A0..A5, A7, A7_no_struct, "
+                             "A7_no_tgt). Default A7.")
     parser.add_argument("--variants", type=str,
                         help="Comma-separated variants for --mode ablation.")
     parser.add_argument("--epochs", type=int,
@@ -1569,8 +1726,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int, help="Override the random seed.")
     parser.add_argument("--limit", type=int,
                         help="Process at most N subjects (xai, report).")
-    parser.add_argument("--no-occlusion", action="store_true",
-                        help="Skip the 3D CNN occlusion attribution.")
     parser.add_argument("--log-level", default="INFO",
                         choices=("DEBUG", "INFO", "WARNING", "ERROR"))
     return parser
@@ -1586,6 +1741,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         cfg.paths.outputs_dir = args.outputs
     if args.oasis1_root:
         cfg.paths.oasis1_root = args.oasis1_root
+    if args.adni_root:
+        cfg.paths.adni_root = args.adni_root
+        cfg.data.dataset_source = "ADNI"
     if args.experiment:
         cfg.paths.experiment_id = args.experiment
     if args.seed is not None:

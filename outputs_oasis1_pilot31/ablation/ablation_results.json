@@ -1,0 +1,1702 @@
+{
+  "n_variants": 3,
+  "n_repeats": 5,
+  "reference_variant": "A7",
+  "caveats": [
+    "Confidence intervals and p-values describe variability across repeated splits of one fixed cohort. The same subjects appear in every repeat, so these are not confidence intervals over the population of Alzheimer's patients.",
+    "Comparisons against the reference variant are paired across identical splits and use the Wilcoxon signed-rank test, which does not assume normality of the paired differences.",
+    "With a small AD class, a non-significant difference is not evidence that two variants perform equally."
+  ],
+  "summaries": {
+    "A0": {
+      "variant": "A0",
+      "description": "Morphometry only",
+      "n_repeats": 5,
+      "n_parameters": 38223,
+      "aggregate": {
+        "accuracy": {
+          "mean": 0.2857142857142857,
+          "sd": 0.1649572197684645,
+          "ci_low": 0.1411229074558755,
+          "ci_high": 0.4303056639726959,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.42857142857142855,
+            0.3333333333333333,
+            0.3333333333333333,
+            0.3333333333333333,
+            0.0
+          ]
+        },
+        "macro_f1": {
+          "mean": 0.2714285714285714,
+          "sd": 0.17873889854297456,
+          "ci_low": 0.11475701910128397,
+          "ci_high": 0.4281001237558588,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.38888888888888884,
+            0.1904761904761905,
+            0.3333333333333333,
+            0.4444444444444444,
+            0.0
+          ]
+        },
+        "balanced_accuracy": {
+          "mean": 0.3333333333333333,
+          "sd": 0.21872244094477253,
+          "ci_low": 0.141614660839713,
+          "ci_high": 0.5250520058269537,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.5,
+            0.2222222222222222,
+            0.4444444444444444,
+            0.5,
+            0.0
+          ]
+        },
+        "roc_auc_macro": {
+          "mean": 0.5120370370370371,
+          "sd": 0.14672055220369595,
+          "ci_low": 0.3834308026949189,
+          "ci_high": 0.6406432713791552,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.45,
+            0.4518518518518519,
+            0.5055555555555555,
+            0.7638888888888888,
+            0.38888888888888884
+          ]
+        },
+        "macro_precision": {
+          "mean": 0.3388888888888889,
+          "sd": 0.2593915006650834,
+          "ci_low": 0.11152221380594807,
+          "ci_high": 0.5662555639718297,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.6666666666666666,
+            0.16666666666666666,
+            0.4444444444444444,
+            0.4166666666666667,
+            0.0
+          ]
+        },
+        "macro_recall": {
+          "mean": 0.3333333333333333,
+          "sd": 0.21872244094477253,
+          "ci_low": 0.141614660839713,
+          "ci_high": 0.5250520058269537,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.5,
+            0.2222222222222222,
+            0.4444444444444444,
+            0.5,
+            0.0
+          ]
+        }
+      },
+      "comparison": {
+        "accuracy": {
+          "metric": "accuracy",
+          "n_pairs": 5,
+          "mean_difference": -0.08,
+          "p_value": 0.5,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -0.6666666666666666,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.21421692017412838,
+          "statistic": 1.0
+        },
+        "macro_f1": {
+          "metric": "macro_f1",
+          "n_pairs": 5,
+          "mean_difference": -0.030793650793650807,
+          "p_value": 1.0,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -0.06666666666666667,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.20699106522600516,
+          "statistic": 7.0
+        },
+        "balanced_accuracy": {
+          "metric": "balanced_accuracy",
+          "n_pairs": 5,
+          "mean_difference": -0.05555555555555554,
+          "p_value": 0.875,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -0.2,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.2859897261385278,
+          "statistic": 4.0
+        },
+        "roc_auc_macro": {
+          "metric": "roc_auc_macro",
+          "n_pairs": 5,
+          "mean_difference": -0.03925925925925929,
+          "p_value": 0.8125,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -0.2,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.1500994183564564,
+          "statistic": 6.0
+        },
+        "macro_precision": {
+          "metric": "macro_precision",
+          "n_pairs": 5,
+          "mean_difference": -0.07333333333333332,
+          "p_value": 0.625,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -0.4,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.25632131648372636,
+          "statistic": 3.0
+        },
+        "macro_recall": {
+          "metric": "macro_recall",
+          "n_pairs": 5,
+          "mean_difference": -0.05555555555555554,
+          "p_value": 0.875,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -0.2,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.2859897261385278,
+          "statistic": 4.0
+        }
+      },
+      "notes": [
+        "Compared against A7, paired across the same repeated splits."
+      ]
+    },
+    "A5": {
+      "variant": "A5",
+      "description": "A4 + ANP",
+      "n_repeats": 5,
+      "n_parameters": 64292,
+      "aggregate": {
+        "accuracy": {
+          "mean": 0.24190476190476193,
+          "sd": 0.11671039025186988,
+          "ci_low": 0.13960359432154767,
+          "ci_high": 0.3442059294879762,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.14285714285714285,
+            0.16666666666666666,
+            0.16666666666666666,
+            0.3333333333333333,
+            0.4
+          ]
+        },
+        "macro_f1": {
+          "mean": 0.1946031746031746,
+          "sd": 0.11286372851546102,
+          "ci_low": 0.09567375469455093,
+          "ci_high": 0.2935325945117983,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.09523809523809525,
+            0.1111111111111111,
+            0.13333333333333333,
+            0.3333333333333333,
+            0.3
+          ]
+        },
+        "balanced_accuracy": {
+          "mean": 0.2444444444444444,
+          "sd": 0.16942167424418786,
+          "ci_low": 0.09593979929948732,
+          "ci_high": 0.3929490895894015,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.16666666666666666,
+            0.5,
+            0.3333333333333333
+          ]
+        },
+        "roc_auc_macro": {
+          "mean": 0.5368518518518518,
+          "sd": 0.23726605689779964,
+          "ci_low": 0.3288789833169412,
+          "ci_high": 0.7448247203867624,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.33888888888888885,
+            0.3527777777777778,
+            0.4231481481481481,
+            0.875,
+            0.6944444444444443
+          ]
+        },
+        "macro_precision": {
+          "mean": 0.23888888888888887,
+          "sd": 0.14546912191973513,
+          "ci_low": 0.11137958155491376,
+          "ci_high": 0.36639819622286396,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.125,
+            0.1111111111111111,
+            0.16666666666666666,
+            0.375,
+            0.41666666666666663
+          ]
+        },
+        "macro_recall": {
+          "mean": 0.2444444444444444,
+          "sd": 0.16942167424418786,
+          "ci_low": 0.09593979929948732,
+          "ci_high": 0.3929490895894015,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.1111111111111111,
+            0.1111111111111111,
+            0.16666666666666666,
+            0.5,
+            0.3333333333333333
+          ]
+        }
+      },
+      "comparison": {
+        "accuracy": {
+          "metric": "accuracy",
+          "n_pairs": 5,
+          "mean_difference": -0.12380952380952381,
+          "p_value": 0.25,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -1.0,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.12302867316917916,
+          "statistic": 0.0
+        },
+        "macro_f1": {
+          "metric": "macro_f1",
+          "n_pairs": 5,
+          "mean_difference": -0.10761904761904764,
+          "p_value": 0.125,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -1.0,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.10078677641849372,
+          "statistic": 0.0
+        },
+        "balanced_accuracy": {
+          "metric": "balanced_accuracy",
+          "n_pairs": 5,
+          "mean_difference": -0.14444444444444443,
+          "p_value": 0.125,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -1.0,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.12171612389003691,
+          "statistic": 0.0
+        },
+        "roc_auc_macro": {
+          "metric": "roc_auc_macro",
+          "n_pairs": 5,
+          "mean_difference": -0.014444444444444504,
+          "p_value": 0.625,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -0.4,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.06937218462755804,
+          "statistic": 3.0
+        },
+        "macro_precision": {
+          "metric": "macro_precision",
+          "n_pairs": 5,
+          "mean_difference": -0.1733333333333333,
+          "p_value": 0.25,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -1.0,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.22739296763179606,
+          "statistic": 0.0
+        },
+        "macro_recall": {
+          "metric": "macro_recall",
+          "n_pairs": 5,
+          "mean_difference": -0.14444444444444443,
+          "p_value": 0.125,
+          "test": "wilcoxon_signed_rank",
+          "effect_size": -1.0,
+          "effect_size_name": "rank_biserial_matched_pairs",
+          "note": null,
+          "sd_difference": 0.12171612389003691,
+          "statistic": 0.0
+        }
+      },
+      "notes": [
+        "Compared against A7, paired across the same repeated splits."
+      ]
+    },
+    "A7": {
+      "variant": "A7",
+      "description": "Full: NeuroProp-X + SAEG-GATv2 + structural covariance + Stage-TGT",
+      "n_repeats": 5,
+      "n_parameters": 132136,
+      "aggregate": {
+        "accuracy": {
+          "mean": 0.36571428571428566,
+          "sd": 0.1263206875368134,
+          "ci_low": 0.25498932114993017,
+          "ci_high": 0.47643925027864115,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.42857142857142855,
+            0.3333333333333333,
+            0.16666666666666666,
+            0.5,
+            0.4
+          ]
+        },
+        "macro_f1": {
+          "mean": 0.3022222222222222,
+          "sd": 0.15740958604156793,
+          "ci_low": 0.16424663662019545,
+          "ci_high": 0.440197807824249,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.3333333333333333,
+            0.16666666666666666,
+            0.13333333333333333,
+            0.5222222222222223,
+            0.35555555555555557
+          ]
+        },
+        "balanced_accuracy": {
+          "mean": 0.38888888888888884,
+          "sd": 0.18839805508681298,
+          "ci_low": 0.22375071255176623,
+          "ci_high": 0.5540270652260114,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.4444444444444444,
+            0.2222222222222222,
+            0.16666666666666666,
+            0.611111111111111,
+            0.5
+          ]
+        },
+        "roc_auc_macro": {
+          "mean": 0.5512962962962963,
+          "sd": 0.21990263152708683,
+          "ci_low": 0.35854314114623975,
+          "ci_high": 0.7440494514463528,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.39999999999999997,
+            0.3111111111111111,
+            0.5314814814814816,
+            0.875,
+            0.638888888888889
+          ]
+        },
+        "macro_precision": {
+          "mean": 0.41222222222222216,
+          "sd": 0.22894012371559855,
+          "ci_low": 0.21154735589534845,
+          "ci_high": 0.6128970885490959,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.6666666666666666,
+            0.2,
+            0.16666666666666666,
+            0.611111111111111,
+            0.41666666666666663
+          ]
+        },
+        "macro_recall": {
+          "mean": 0.38888888888888884,
+          "sd": 0.18839805508681298,
+          "ci_low": 0.22375071255176623,
+          "ci_high": 0.5540270652260114,
+          "ci_clamped": false,
+          "n": 5,
+          "values": [
+            0.4444444444444444,
+            0.2222222222222222,
+            0.16666666666666666,
+            0.611111111111111,
+            0.5
+          ]
+        }
+      },
+      "comparison": null,
+      "notes": [
+        "Stage prototype ordering was violated in 4/5 repeat(s); propensity outputs from those repeats reflect under-trained geometry."
+      ]
+    }
+  },
+  "runs": [
+    {
+      "variant": "A0",
+      "repeat": 0,
+      "seed": 42,
+      "best_epoch": 1,
+      "n_parameters": 38223,
+      "train_seconds": 0.061973300005774945,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.16666666666666666,
+      "val_accuracy": 0.25,
+      "val_balanced_accuracy": 0.16666666666666666,
+      "val_macro_f1": 0.2222222222222222,
+      "metrics": {
+        "n_samples": 7,
+        "accuracy": 0.42857142857142855,
+        "balanced_accuracy": 0.5,
+        "macro_f1": 0.38888888888888884,
+        "macro_precision": 0.6666666666666666,
+        "macro_recall": 0.5,
+        "roc_auc_macro": 0.45,
+        "confusion_matrix": [
+          [
+            0,
+            0,
+            3
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            2
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.25
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.5,
+            "specificity": 1.0,
+            "f1": 0.6666666666666666,
+            "auc": 0.5
+          },
+          {
+            "stage": "AD",
+            "support": 2,
+            "n_predicted": 6,
+            "precision": 0.3333333333333333,
+            "recall": 1.0,
+            "specificity": 0.2,
+            "f1": 0.5,
+            "auc": 0.6
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "CN: precision is undefined \u2014 the model made no CN prediction (support 3).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A5",
+      "repeat": 0,
+      "seed": 42,
+      "best_epoch": 2,
+      "n_parameters": 64292,
+      "train_seconds": 0.16399449999153148,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.5,
+      "val_accuracy": 0.5,
+      "val_balanced_accuracy": 0.5,
+      "val_macro_f1": 0.38888888888888884,
+      "metrics": {
+        "n_samples": 7,
+        "accuracy": 0.14285714285714285,
+        "balanced_accuracy": 0.1111111111111111,
+        "macro_f1": 0.09523809523809525,
+        "macro_precision": 0.125,
+        "macro_recall": 0.1111111111111111,
+        "roc_auc_macro": 0.33888888888888885,
+        "confusion_matrix": [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 4,
+            "precision": 0.25,
+            "recall": 0.3333333333333333,
+            "specificity": 0.25,
+            "f1": 0.28571428571428575,
+            "auc": 0.4166666666666667
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.4,
+            "f1": 0.0,
+            "auc": 0.4
+          },
+          {
+            "stage": "AD",
+            "support": 2,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.2
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 2).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A7",
+      "repeat": 0,
+      "seed": 42,
+      "best_epoch": 1,
+      "n_parameters": 132136,
+      "train_seconds": 0.27447180000308435,
+      "stage_geometry_ordered": false,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.3333333333333333,
+      "val_accuracy": 0.25,
+      "val_balanced_accuracy": 0.3333333333333333,
+      "val_macro_f1": 0.13333333333333333,
+      "metrics": {
+        "n_samples": 7,
+        "accuracy": 0.42857142857142855,
+        "balanced_accuracy": 0.4444444444444444,
+        "macro_f1": 0.3333333333333333,
+        "macro_precision": 0.6666666666666666,
+        "macro_recall": 0.4444444444444444,
+        "roc_auc_macro": 0.39999999999999997,
+        "confusion_matrix": [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.3333333333333333,
+            "specificity": 1.0,
+            "f1": 0.5,
+            "auc": 0.5
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 6,
+            "precision": 0.3333333333333333,
+            "recall": 1.0,
+            "specificity": 0.2,
+            "f1": 0.5,
+            "auc": 0.5
+          },
+          {
+            "stage": "AD",
+            "support": 2,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.2
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 2).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "warnings": [
+        "The learned stage prototypes do not respect the CN < MCI < AD ordering at the selected checkpoint. Stage-transition propensity and AD-associated propensity are therefore weakly separated and should be read as under-trained geometry, not as a finding. Increase loss.lambda_order, train for more epochs, or raise train.early_stopping_patience."
+      ]
+    },
+    {
+      "variant": "A0",
+      "repeat": 1,
+      "seed": 42,
+      "best_epoch": 2,
+      "n_parameters": 38223,
+      "train_seconds": 0.05800299999827985,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.6666666666666666,
+      "val_accuracy": 0.5,
+      "val_balanced_accuracy": 0.6666666666666666,
+      "val_macro_f1": 0.5,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.3333333333333333,
+        "balanced_accuracy": 0.2222222222222222,
+        "macro_f1": 0.1904761904761905,
+        "macro_precision": 0.16666666666666666,
+        "macro_recall": 0.2222222222222222,
+        "roc_auc_macro": 0.4518518518518519,
+        "confusion_matrix": [
+          [
+            2,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 4,
+            "precision": 0.5,
+            "recall": 0.6666666666666666,
+            "specificity": 0.3333333333333333,
+            "f1": 0.5714285714285715,
+            "auc": 0.5555555555555556
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.75,
+            "f1": 0.0,
+            "auc": 0.0
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.8,
+            "f1": 0.0,
+            "auc": 0.8
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A5",
+      "repeat": 1,
+      "seed": 42,
+      "best_epoch": 1,
+      "n_parameters": 64292,
+      "train_seconds": 0.397444500005804,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.3333333333333333,
+      "val_accuracy": 0.25,
+      "val_balanced_accuracy": 0.3333333333333333,
+      "val_macro_f1": 0.2222222222222222,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.16666666666666666,
+        "balanced_accuracy": 0.1111111111111111,
+        "macro_f1": 0.1111111111111111,
+        "macro_precision": 0.1111111111111111,
+        "macro_recall": 0.1111111111111111,
+        "roc_auc_macro": 0.3527777777777778,
+        "confusion_matrix": [
+          [
+            1,
+            0,
+            2
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.3333333333333333,
+            "specificity": 0.3333333333333333,
+            "f1": 0.3333333333333333,
+            "auc": 0.3333333333333333
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.75,
+            "f1": 0.0,
+            "auc": 0.125
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 2,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.6,
+            "f1": 0.0,
+            "auc": 0.6
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A7",
+      "repeat": 1,
+      "seed": 42,
+      "best_epoch": 1,
+      "n_parameters": 132136,
+      "train_seconds": 0.4253748000046471,
+      "stage_geometry_ordered": false,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.3333333333333333,
+      "val_accuracy": 0.25,
+      "val_balanced_accuracy": 0.3333333333333333,
+      "val_macro_f1": 0.3333333333333333,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.3333333333333333,
+        "balanced_accuracy": 0.2222222222222222,
+        "macro_f1": 0.16666666666666666,
+        "macro_precision": 0.2,
+        "macro_recall": 0.2222222222222222,
+        "roc_auc_macro": 0.3111111111111111,
+        "confusion_matrix": [
+          [
+            2,
+            0,
+            1
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 5,
+            "precision": 0.4,
+            "recall": 0.6666666666666666,
+            "specificity": 0.0,
+            "f1": 0.5,
+            "auc": 0.3333333333333333
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.0
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.8,
+            "f1": 0.0,
+            "auc": 0.6
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "MCI: precision is undefined \u2014 the model made no MCI prediction (support 2).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "warnings": [
+        "The learned stage prototypes do not respect the CN < MCI < AD ordering at the selected checkpoint. Stage-transition propensity and AD-associated propensity are therefore weakly separated and should be read as under-trained geometry, not as a finding. Increase loss.lambda_order, train for more epochs, or raise train.early_stopping_patience."
+      ]
+    },
+    {
+      "variant": "A0",
+      "repeat": 2,
+      "seed": 42,
+      "best_epoch": 2,
+      "n_parameters": 38223,
+      "train_seconds": 0.06673970000701956,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.6666666666666666,
+      "val_accuracy": 0.5,
+      "val_balanced_accuracy": 0.6666666666666666,
+      "val_macro_f1": 0.4444444444444444,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.3333333333333333,
+        "balanced_accuracy": 0.4444444444444444,
+        "macro_f1": 0.3333333333333333,
+        "macro_precision": 0.4444444444444444,
+        "macro_recall": 0.4444444444444444,
+        "roc_auc_macro": 0.5055555555555555,
+        "confusion_matrix": [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.3333333333333333,
+            "specificity": 1.0,
+            "f1": 0.5,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 2,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.5,
+            "f1": 0.0,
+            "auc": 0.25
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 1.0,
+            "specificity": 0.6,
+            "f1": 0.5,
+            "auc": 0.6
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A5",
+      "repeat": 2,
+      "seed": 42,
+      "best_epoch": 1,
+      "n_parameters": 64292,
+      "train_seconds": 0.16412680000939872,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.3333333333333333,
+      "val_accuracy": 0.25,
+      "val_balanced_accuracy": 0.3333333333333333,
+      "val_macro_f1": 0.16666666666666666,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.16666666666666666,
+        "balanced_accuracy": 0.16666666666666666,
+        "macro_f1": 0.13333333333333333,
+        "macro_precision": 0.16666666666666666,
+        "macro_recall": 0.16666666666666666,
+        "roc_auc_macro": 0.4231481481481481,
+        "confusion_matrix": [
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.4444444444444444
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "specificity": 0.5,
+            "f1": 0.4,
+            "auc": 0.625
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 3,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.4,
+            "f1": 0.0,
+            "auc": 0.2
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "CN: precision is undefined \u2014 the model made no CN prediction (support 3).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A7",
+      "repeat": 2,
+      "seed": 42,
+      "best_epoch": 1,
+      "n_parameters": 132136,
+      "train_seconds": 0.43687839999620337,
+      "stage_geometry_ordered": false,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.6666666666666666,
+      "val_accuracy": 0.5,
+      "val_balanced_accuracy": 0.6666666666666666,
+      "val_macro_f1": 0.5,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.16666666666666666,
+        "balanced_accuracy": 0.16666666666666666,
+        "macro_f1": 0.13333333333333333,
+        "macro_precision": 0.16666666666666666,
+        "macro_recall": 0.16666666666666666,
+        "roc_auc_macro": 0.5314814814814816,
+        "confusion_matrix": [
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.4444444444444444
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "specificity": 0.5,
+            "f1": 0.4,
+            "auc": 0.75
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 3,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.4,
+            "f1": 0.0,
+            "auc": 0.4
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "CN: precision is undefined \u2014 the model made no CN prediction (support 3).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "warnings": [
+        "The learned stage prototypes do not respect the CN < MCI < AD ordering at the selected checkpoint. Stage-transition propensity and AD-associated propensity are therefore weakly separated and should be read as under-trained geometry, not as a finding. Increase loss.lambda_order, train for more epochs, or raise train.early_stopping_patience."
+      ]
+    },
+    {
+      "variant": "A0",
+      "repeat": 3,
+      "seed": 42,
+      "best_epoch": 2,
+      "n_parameters": 38223,
+      "train_seconds": 0.07877009999356233,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.5,
+      "val_accuracy": 0.5,
+      "val_balanced_accuracy": 0.5,
+      "val_macro_f1": 0.38888888888888884,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.3333333333333333,
+        "balanced_accuracy": 0.5,
+        "macro_f1": 0.4444444444444444,
+        "macro_precision": 0.4166666666666667,
+        "macro_recall": 0.5,
+        "roc_auc_macro": 0.7638888888888888,
+        "confusion_matrix": [
+          [
+            0,
+            3,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.6666666666666666,
+            "f1": 0.0,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 4,
+            "precision": 0.25,
+            "recall": 0.5,
+            "specificity": 0.25,
+            "f1": 0.3333333333333333,
+            "auc": 0.625
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "f1": 1.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A5",
+      "repeat": 3,
+      "seed": 42,
+      "best_epoch": 1,
+      "n_parameters": 64292,
+      "train_seconds": 0.23656810000829864,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.5,
+      "val_accuracy": 0.5,
+      "val_balanced_accuracy": 0.5,
+      "val_macro_f1": 0.4444444444444444,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.3333333333333333,
+        "balanced_accuracy": 0.5,
+        "macro_f1": 0.3333333333333333,
+        "macro_precision": 0.375,
+        "macro_recall": 0.5,
+        "roc_auc_macro": 0.875,
+        "confusion_matrix": [
+          [
+            0,
+            3,
+            0
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 1.0
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 4,
+            "precision": 0.25,
+            "recall": 0.5,
+            "specificity": 0.25,
+            "f1": 0.3333333333333333,
+            "auc": 0.625
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 2,
+            "precision": 0.5,
+            "recall": 1.0,
+            "specificity": 0.8,
+            "f1": 0.6666666666666666,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "CN: precision is undefined \u2014 the model made no CN prediction (support 3).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A7",
+      "repeat": 3,
+      "seed": 42,
+      "best_epoch": 1,
+      "n_parameters": 132136,
+      "train_seconds": 0.3407440000009956,
+      "stage_geometry_ordered": false,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.5,
+      "val_accuracy": 0.5,
+      "val_balanced_accuracy": 0.5,
+      "val_macro_f1": 0.4444444444444444,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.5,
+        "balanced_accuracy": 0.611111111111111,
+        "macro_f1": 0.5222222222222223,
+        "macro_precision": 0.611111111111111,
+        "macro_recall": 0.611111111111111,
+        "roc_auc_macro": 0.875,
+        "confusion_matrix": [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.3333333333333333,
+            "specificity": 1.0,
+            "f1": 0.5,
+            "auc": 1.0
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "specificity": 0.5,
+            "f1": 0.4,
+            "auc": 0.625
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 2,
+            "precision": 0.5,
+            "recall": 1.0,
+            "specificity": 0.8,
+            "f1": 0.6666666666666666,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "warnings": [
+        "The learned stage prototypes do not respect the CN < MCI < AD ordering at the selected checkpoint. Stage-transition propensity and AD-associated propensity are therefore weakly separated and should be read as under-trained geometry, not as a finding. Increase loss.lambda_order, train for more epochs, or raise train.early_stopping_patience."
+      ]
+    },
+    {
+      "variant": "A0",
+      "repeat": 4,
+      "seed": 42,
+      "best_epoch": 2,
+      "n_parameters": 38223,
+      "train_seconds": 0.06323450000490993,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.6666666666666666,
+      "val_accuracy": 0.5,
+      "val_balanced_accuracy": 0.6666666666666666,
+      "val_macro_f1": 0.5,
+      "metrics": {
+        "n_samples": 5,
+        "accuracy": 0.0,
+        "balanced_accuracy": 0.0,
+        "macro_f1": 0.0,
+        "macro_precision": 0.0,
+        "macro_recall": 0.0,
+        "roc_auc_macro": 0.38888888888888884,
+        "confusion_matrix": [
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 2,
+            "n_predicted": 2,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.3333333333333333,
+            "f1": 0.0,
+            "auc": 0.3333333333333333
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.6666666666666666,
+            "f1": 0.0,
+            "auc": 0.3333333333333333
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 2,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.5,
+            "f1": 0.0,
+            "auc": 0.5
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A5",
+      "repeat": 4,
+      "seed": 42,
+      "best_epoch": 1,
+      "n_parameters": 64292,
+      "train_seconds": 0.21695119999640156,
+      "stage_geometry_ordered": null,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.8333333333333334,
+      "val_accuracy": 0.75,
+      "val_balanced_accuracy": 0.8333333333333334,
+      "val_macro_f1": 0.7777777777777777,
+      "metrics": {
+        "n_samples": 5,
+        "accuracy": 0.4,
+        "balanced_accuracy": 0.3333333333333333,
+        "macro_f1": 0.3,
+        "macro_precision": 0.41666666666666663,
+        "macro_recall": 0.3333333333333333,
+        "roc_auc_macro": 0.6944444444444443,
+        "confusion_matrix": [
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 2,
+            "n_predicted": 2,
+            "precision": 0.5,
+            "recall": 0.5,
+            "specificity": 0.6666666666666666,
+            "f1": 0.5,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "specificity": 0.3333333333333333,
+            "f1": 0.4,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.75
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "warnings": []
+    },
+    {
+      "variant": "A7",
+      "repeat": 4,
+      "seed": 42,
+      "best_epoch": 2,
+      "n_parameters": 132136,
+      "train_seconds": 0.37479119999625254,
+      "stage_geometry_ordered": true,
+      "val_monitor": "balanced_accuracy",
+      "val_best_value": 0.5,
+      "val_accuracy": 0.5,
+      "val_balanced_accuracy": 0.5,
+      "val_macro_f1": 0.38888888888888884,
+      "metrics": {
+        "n_samples": 5,
+        "accuracy": 0.4,
+        "balanced_accuracy": 0.5,
+        "macro_f1": 0.35555555555555557,
+        "macro_precision": 0.41666666666666663,
+        "macro_recall": 0.5,
+        "roc_auc_macro": 0.638888888888889,
+        "confusion_matrix": [
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "specificity": 0.3333333333333333,
+            "f1": 0.4,
+            "auc": 0.3333333333333333
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.8333333333333334
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 2,
+            "precision": 0.5,
+            "recall": 1.0,
+            "specificity": 0.75,
+            "f1": 0.6666666666666666,
+            "auc": 0.75
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "MCI: precision is undefined \u2014 the model made no MCI prediction (support 2).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "warnings": []
+    }
+  ],
+  "failures": []
+}

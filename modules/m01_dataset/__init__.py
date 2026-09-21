@@ -1,5 +1,13 @@
-"""M01 — OASIS-1 dataset: manager, validation, integrity, labels, splits."""
+"""M01 — dataset layer: OASIS-1 (trainable) and ADNI (inference-only)."""
 
+from modules.m01_dataset.adni_manager import (
+    ADNIDataManager,
+    ADNISeries,
+)
+from modules.m01_dataset.adni_manager import DATASET_NAME as ADNI_DATASET_NAME
+from modules.m01_dataset.adni_manager import (
+    DATASET_SOURCE as ADNI_DATASET_SOURCE,
+)
 from modules.m01_dataset.cohort import (
     CohortReport,
     build_cohort,
@@ -43,6 +51,10 @@ __all__ = [
     "VOLUME_KINDS",
     "OASIS1DataManager",
     "OASIS1Session",
+    "ADNI_DATASET_NAME",
+    "ADNI_DATASET_SOURCE",
+    "ADNIDataManager",
+    "ADNISeries",
     "ValidationReport",
     "validate_oasis1",
     "save_validation",

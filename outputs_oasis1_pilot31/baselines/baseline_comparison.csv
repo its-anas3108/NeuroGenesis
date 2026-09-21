@@ -1,0 +1,5 @@
+Method,Baseline,Accuracy,Macro-F1,Balanced Accuracy,ROC-AUC,Repeats
+Morphometry + Gradient Boosting (XGBoost substitute),gradient_boosting,0.5724 +/- 0.1581,0.4271 +/- 0.1371,0.4667 +/- 0.1279,0.8122 +/- 0.1592,5
+Morphometry + Logistic Regression,logistic_regression,0.6295 +/- 0.0831,0.5148 +/- 0.1373,0.5778 +/- 0.1152,0.8267 +/- 0.1431,5
+Morphometry + MLP (scikit-learn),mlp,0.5657 +/- 0.2467,0.5016 +/- 0.3245,0.5556 +/- 0.2860,0.6583 +/- 0.2195,5
+Morphometry + Random Forest,random_forest,0.6076 +/- 0.1736,0.5283 +/- 0.2070,0.5778 +/- 0.2026,0.8400 +/- 0.1312,5

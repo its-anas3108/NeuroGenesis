@@ -60,7 +60,6 @@ class Harness:
     scaler: object = None
     model: object = None
     morph: Optional[torch.Tensor] = None
-    patches: Optional[torch.Tensor] = None
     npx_out: object = None
     graph_out: object = None
     fusion_out: object = None
@@ -116,13 +115,12 @@ def checkpoint_2(h: Harness) -> Result:
 
     npx = NeuroPropX(
         morph_dim=len(FEATURE_ORDER),
-        cnn_dim=h.cfg.spatial_encoder.embed_dim,
+        cnn_dim=0,
         cfg=h.cfg.neuropropx,
         morph_feature_names=list(FEATURE_ORDER),
     )
     morph = torch.randn(2, N_ROI, len(FEATURE_ORDER))
-    cnn = torch.randn(2, N_ROI, h.cfg.spatial_encoder.embed_dim)
-    out = npx(morph, cnn)
+    out = npx(morph, None)
     h.npx_out = out
 
     checks = [
@@ -146,32 +144,29 @@ def checkpoint_2(h: Harness) -> Result:
 
 
 def checkpoint_3(h: Harness) -> Result:
-    """3D CNN produces five ROI spatial embeddings."""
-    from modules.m06_spatial_encoder import SpatialEncoder3D
+    """Architecture is morphometry-only: no 3D CNN branch anywhere."""
+    from modules.common.config import NeuroGenesisConfig
+    from modules.m04_feature_extraction import FEATURE_ORDER
+    from modules.model import ABLATION_SPECS, build_model
 
-    encoder = SpatialEncoder3D(h.cfg.spatial_encoder)
-    patches = np.random.default_rng(0).random(
-        (N_ROI, *h.cfg.preprocess.patch_size)
-    ).astype(np.float32)
-    out = encoder.encode(patches, trace=True)
+    if hasattr(NeuroGenesisConfig(), "spatial_encoder"):
+        return Result(3, "no 3D CNN branch", "FAIL",
+                      "NeuroGenesisConfig still carries a spatial_encoder "
+                      "section")
 
-    if out.embeddings.shape != (1, N_ROI, h.cfg.spatial_encoder.embed_dim):
-        return Result(3, "3D CNN -> five ROI embeddings", "FAIL",
-                      f"shape {tuple(out.embeddings.shape)}")
-    if len(out.per_roi()) != N_ROI:
-        return Result(3, "3D CNN -> five ROI embeddings", "FAIL",
-                      "per-ROI accessor incomplete")
-    if not out.trace:
-        return Result(3, "3D CNN -> five ROI embeddings", "FAIL",
-                      "no intermediate shapes traced")
-    repeat = encoder.encode(patches)
-    if not torch.allclose(out.embeddings, repeat.embeddings):
-        return Result(3, "3D CNN -> five ROI embeddings", "FAIL",
-                      "inference is not deterministic")
+    model = build_model(len(FEATURE_ORDER), h.cfg, "A7", list(FEATURE_ORDER))
+    if model.spatial_encoder is not None or model.cnn_dim != 0:
+        return Result(3, "no 3D CNN branch", "FAIL",
+                      "A7 still constructs a spatial encoder or non-zero "
+                      "cnn_dim")
+    if any(hasattr(spec, "use_cnn") for spec in ABLATION_SPECS.values()):
+        return Result(3, "no 3D CNN branch", "FAIL",
+                      "a ModelSpec still carries use_cnn")
+
     return Result(
-        3, "3D CNN -> five ROI embeddings", "PASS",
-        f"{tuple(out.embeddings.shape)}, {encoder.n_parameters():,} params, "
-        f"{len(out.trace)} traced stages, deterministic",
+        3, "no 3D CNN branch", "PASS",
+        f"{len(ABLATION_SPECS)} spec(s) checked, A7.spatial_encoder=None, "
+        "A7.cnn_dim=0",
     )
 
 
@@ -183,9 +178,8 @@ def checkpoint_4(h: Harness) -> Result:
     model = build_model(len(FEATURE_ORDER), h.cfg, "A7", list(FEATURE_ORDER))
     h.model = model
     morph = torch.randn(3, N_ROI, len(FEATURE_ORDER))
-    patches = torch.rand(3, N_ROI, *h.cfg.preprocess.patch_size)
-    h.morph, h.patches = morph, patches
-    out = model(morph, patches, return_trace=True)
+    h.morph = morph
+    out = model(morph, return_trace=True)
     h.graph_out, h.fusion_out, h.class_out = (
         out.graph, out.fusion, out.classification
     )
@@ -213,22 +207,25 @@ def checkpoint_4(h: Harness) -> Result:
 
 
 def checkpoint_5(h: Harness) -> Result:
-    """Fusion of CNN and graph representations."""
+    """Fusion of the graph representation (no spatial branch)."""
     if h.fusion_out is None:
         return Result(5, "multimodal fusion", "FAIL",
                       "checkpoint 4 did not produce a fusion output")
     fusion = h.fusion_out
-    if fusion.z_3d is None or fusion.z_g is None:
+    if fusion.z_3d is not None:
         return Result(5, "multimodal fusion", "FAIL",
-                      "one branch is missing from the fusion")
-    expected = fusion.z_3d.shape[-1] + fusion.z_g.shape[-1]
-    if fusion.z_f.shape[-1] != expected:
+                      "z_3d is populated but there is no spatial branch")
+    if fusion.z_g is None:
         return Result(5, "multimodal fusion", "FAIL",
-                      f"Z_F width {fusion.z_f.shape[-1]} != {expected}")
+                      "the graph branch is missing from the fusion")
+    if fusion.z_f.shape[-1] != fusion.z_g.shape[-1]:
+        return Result(5, "multimodal fusion", "FAIL",
+                      f"Z_F width {fusion.z_f.shape[-1]} != "
+                      f"Z_G width {fusion.z_g.shape[-1]}")
     return Result(
         5, "multimodal fusion", "PASS",
-        f"Z_3D={tuple(fusion.z_3d.shape)} + Z_G={tuple(fusion.z_g.shape)} "
-        f"-> Z_F={tuple(fusion.z_f.shape)} -> Z_H={tuple(fusion.z_h.shape)}",
+        f"Z_G={tuple(fusion.z_g.shape)} -> Z_F={tuple(fusion.z_f.shape)} "
+        f"-> Z_H={tuple(fusion.z_h.shape)}",
     )
 
 
@@ -237,7 +234,7 @@ def checkpoint_6(h: Harness) -> Result:
     if h.model is None:
         return Result(6, "Stage-TGT propensity", "FAIL",
                       "no model from checkpoint 4")
-    out = h.model(h.morph, h.patches, return_trace=True)
+    out = h.model(h.morph, return_trace=True)
     if out.propensity is None or out.stage_tgt is None:
         return Result(6, "Stage-TGT propensity", "FAIL",
                       "the Stage-TGT branch produced no output")
@@ -327,7 +324,7 @@ def checkpoint_8(h: Harness) -> Result:
 
     if h.model is None:
         return Result(8, "explanations", "FAIL", "no model")
-    out = h.model(h.morph, h.patches, return_trace=True)
+    out = h.model(h.morph, return_trace=True)
 
     graph = explain_graph(out, 0)
     if graph.edge_attention is None or not graph.node_importance:
@@ -338,19 +335,13 @@ def checkpoint_8(h: Harness) -> Result:
         return Result(8, "explanations", "FAIL",
                       "NeuroProp-X explanation is empty")
 
-    with torch.no_grad():
-        embedding = h.model.spatial_encoder(h.patches).embeddings
-
     def predict(flat: np.ndarray) -> np.ndarray:
         tensor = torch.from_numpy(
             np.asarray(flat, dtype=np.float32).reshape(-1, N_ROI,
                                                        len(FEATURE_ORDER))
         )
         with torch.no_grad():
-            result = h.model(
-                morph_features=tensor,
-                cnn_embeddings=embedding[:1].expand(tensor.shape[0], -1, -1),
-            )
+            result = h.model(morph_features=tensor)
         return result.classification.probabilities.cpu().numpy()
 
     attributor = FeatureAttributor(
@@ -384,13 +375,11 @@ def checkpoint_9(h: Harness) -> Result:
     from modules.training.ablation import paired_comparison
 
     built = []
-    for variant in ("A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7"):
+    for variant in ("A0", "A1", "A2", "A3", "A4", "A5", "A7"):
         model = build_model(len(FEATURE_ORDER), h.cfg, variant,
                             list(FEATURE_ORDER))
         spec = ABLATION_SPECS[variant]
-        result = model(
-            h.morph, h.patches if spec.use_cnn else None
-        )
+        result = model(h.morph)
         if result.logits.shape != (h.morph.shape[0], len(STAGE_ORDER)):
             return Result(9, "ablation ladder", "FAIL",
                           f"{variant} produced {tuple(result.logits.shape)}")
@@ -423,9 +412,9 @@ def checkpoint_10(h: Harness) -> Result:
 
     state = DashboardState(outputs=h.outputs, cfg=h.cfg)
     status = state.pipeline_status(None)
-    if len(status) != 23:
+    if len(status) != 22:
         return Result(10, "dashboard", "FAIL",
-                      f"pipeline table has {len(status)} rows, expected 23")
+                      f"pipeline table has {len(status)} rows, expected 22")
 
     try:
         import streamlit  # noqa: F401

@@ -86,15 +86,9 @@ def main() -> int:
     )
     features = scaler.transform(scaler.add_atrophy_index(features))
 
-    spec_uses_cnn = build_model(
-        len(FEATURE_ORDER), cfg, args.variant, FEATURE_ORDER
-    ).spec.use_cnn
-
     def make_ds(sessions):
         array, _ = scaler.to_tensor_array(features, sessions)
-        return ROIPatchDataset(
-            sessions, cohort, array, args.out, load_patches=spec_uses_cnn
-        )
+        return ROIPatchDataset(sessions, cohort, array, args.out)
 
     train_ds, val_ds, test_ds = (
         make_ds(split.train_sessions), make_ds(split.val_sessions),
@@ -109,8 +103,7 @@ def main() -> int:
     test_loader = make_loader(test_ds, cfg.train.batch_size)
 
     model = build_model(len(FEATURE_ORDER), cfg, args.variant, FEATURE_ORDER)
-    print(f"variant {args.variant}: {model.n_parameters():,} parameters, "
-          f"CNN branch={spec_uses_cnn}")
+    print(f"variant {args.variant}: {model.n_parameters():,} parameters")
 
     trainer = Trainer(model, cfg)
     result = trainer.fit(

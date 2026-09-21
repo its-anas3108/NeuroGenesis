@@ -37,11 +37,16 @@ and the omission is recorded in :attr:`ROIRanking.signals_used`.
 Stability
 ---------
 
-:func:`ranking_stability` aggregates rankings across repeated runs into mean
-rank, rank standard deviation, selection frequency (how often the ROI appears in
-the top-``k``) and a composite stability score. With AD n=30, a single split's
-ROI ranking is not a finding; the stability table is what makes the ranking
-reportable.
+:func:`ranking_stability` aggregates rankings across the subjects a
+``--mode xai`` pass processed into mean rank, rank standard deviation,
+selection frequency (how often the ROI appears in the top-``k``) and a
+composite stability score. One "run" in this table's output (``n_runs``) is
+one *subject* the ranking was computed for, not a repeated experiment
+execution — the name is inherited from the design document's more general
+framing, but every caller in this codebase supplies one :class:`ROIRanking`
+per subject. With a small stage (e.g. AD n=6-30 depending on the cohort), a
+single subject's ROI ranking is not a finding; the stability table, computed
+across every available subject, is what makes the ranking reportable.
 """
 
 from __future__ import annotations
@@ -226,7 +231,11 @@ def compute_roi_ranking(
 
 @dataclass
 class StabilityReport:
-    """Ranking stability across repeated runs (Table 8)."""
+    """Ranking stability across subjects (Table 8).
+
+    ``n_runs`` counts the subjects a ranking was computed for, not repeated
+    experiment executions — see :func:`ranking_stability`.
+    """
 
     n_runs: int
     top_k: int
@@ -247,10 +256,13 @@ def ranking_stability(
     rankings: Sequence[ROIRanking],
     top_k: int = 3,
 ) -> StabilityReport:
-    """Aggregate repeated rankings into a stability table (Section 14, Table 8).
+    """Aggregate per-subject rankings into a stability table (Section 14, Table 8).
 
     Args:
-        rankings: One :class:`ROIRanking` per repeat.
+        rankings: One :class:`ROIRanking` per subject the caller processed
+            (every current call site — ``run.py``'s ``mode_xai`` — supplies
+            exactly this: one ranking per subject, not one per repeated
+            pipeline execution).
         top_k: Cutoff for the selection-frequency column.
 
     Returns:
@@ -331,8 +343,8 @@ def ranking_stability(
     )
     if usable < 5:
         report.notes.append(
-            f"Stability is computed over only {usable} run(s); rank standard "
-            "deviations from so few repeats are themselves unstable."
+            f"Stability is computed over only {usable} subject(s); rank "
+            "standard deviations from so few subjects are themselves unstable."
         )
     return report
 

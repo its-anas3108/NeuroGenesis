@@ -1,0 +1,57 @@
+{
+  "n_runs": 30,
+  "top_k": 3,
+  "rows": [
+    {
+      "roi": "Broca_Area",
+      "roi_short": "Broca",
+      "mean_rank": 2.4,
+      "rank_sd": 1.069966161243848,
+      "selection_frequency": 0.9333333333333333,
+      "stability_score": 0.5575084596890381,
+      "mean_score": 0.5798761055100933,
+      "n_runs": 30
+    },
+    {
+      "roi": "Insula",
+      "roi_short": "Insula",
+      "mean_rank": 2.8666666666666667,
+      "rank_sd": 1.4558640835892125,
+      "selection_frequency": 0.6333333333333333,
+      "stability_score": 0.40270064576936354,
+      "mean_score": 0.5224418542440786,
+      "n_runs": 30
+    },
+    {
+      "roi": "Wernicke_Area",
+      "roi_short": "Wernicke",
+      "mean_rank": 3.1,
+      "rank_sd": 1.5165750888103102,
+      "selection_frequency": 0.5333333333333333,
+      "stability_score": 0.35835622779742243,
+      "mean_score": 0.4322969705820526,
+      "n_runs": 30
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "roi_short": "IFG",
+      "mean_rank": 3.2,
+      "rank_sd": 1.5402641958779175,
+      "selection_frequency": 0.5,
+      "stability_score": 0.3399339510305206,
+      "mean_score": 0.4332524657283731,
+      "n_runs": 30
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "roi_short": "STG",
+      "mean_rank": 3.433333333333333,
+      "rank_sd": 1.330888563259934,
+      "selection_frequency": 0.4,
+      "stability_score": 0.36311119251834983,
+      "mean_score": 0.36913980405028635,
+      "n_runs": 30
+    }
+  ],
+  "notes": []
+}

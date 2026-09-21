@@ -1,0 +1,92 @@
+{
+  "dataset_source": "OASIS-1",
+  "source_description": "Washington University / OASIS \u2014 https://sites.wustl.edu/oasisbrains/home/oasis-1/",
+  "is_synthetic": false,
+  "generated_at": "2026-08-27T01:00:36",
+  "oasis1_root": "C:/Users/avisy/Downloads/dataset/extracted",
+  "volume_kind": "t88_gfc",
+  "n_volumes_found": 436,
+  "n_sessions": 436,
+  "n_unique_subjects": 416,
+  "n_readable": 436,
+  "n_unreadable": 0,
+  "n_usable": 436,
+  "unreadable_sessions": [],
+  "shape_anomalies": [],
+  "orientations": {
+    "LAS": 436
+  },
+  "voxel_sizes": {
+    "[1.0, 1.0, 1.0]": 436
+  },
+  "shapes": {
+    "[176, 208, 176, 1]": 436
+  },
+  "dtypes": {
+    ">i2": 436
+  },
+  "subjects_with_repeat_sessions": {
+    "OAS1_0061": 2,
+    "OAS1_0080": 2,
+    "OAS1_0092": 2,
+    "OAS1_0101": 2,
+    "OAS1_0111": 2,
+    "OAS1_0117": 2,
+    "OAS1_0145": 2,
+    "OAS1_0150": 2,
+    "OAS1_0156": 2,
+    "OAS1_0191": 2,
+    "OAS1_0202": 2,
+    "OAS1_0230": 2,
+    "OAS1_0236": 2,
+    "OAS1_0239": 2,
+    "OAS1_0249": 2,
+    "OAS1_0285": 2,
+    "OAS1_0353": 2,
+    "OAS1_0368": 2,
+    "OAS1_0379": 2,
+    "OAS1_0395": 2
+  },
+  "metadata_csv": "dataset/oasis_cross-sectional.csv",
+  "n_metadata_rows": 436,
+  "missing_clinical_columns": [],
+  "clinical_missing_counts": {
+    "ID": 0,
+    "M/F": 0,
+    "Hand": 0,
+    "Age": 0,
+    "Educ": 201,
+    "SES": 220,
+    "MMSE": 201,
+    "CDR": 201,
+    "eTIV": 0,
+    "nWBV": 0,
+    "ASF": 0
+  },
+  "n_sessions_without_metadata": 0,
+  "sessions_without_metadata": [],
+  "n_metadata_without_volume": 0,
+  "metadata_without_volume": [],
+  "n_labelled": 235,
+  "n_missing_cdr": 201,
+  "class_counts": {
+    "CN": 135,
+    "MCI": 70,
+    "AD": 30
+  },
+  "class_counts_imaged": {
+    "CN": 135,
+    "MCI": 70,
+    "AD": 30
+  },
+  "subject_counts_imaged": {
+    "CN": 135,
+    "MCI": 70,
+    "AD": 30
+  },
+  "passed": true,
+  "is_subset": false,
+  "errors": [],
+  "warnings": [],
+  "n_analysable": 235
+}

@@ -31,9 +31,11 @@ scikit-learn>=1.3.0
 # statistics/dashboard paths still run on cached artifacts, but no MRI can be
 # read, preprocessed, atlas-localized or cropped into ROI patches.
 nibabel>=5.0.0               # NIfTI I/O
-SimpleITK>=2.3.0             # N4 bias correction, anisotropic diffusion, resampling
-nilearn>=0.10.0              # Harvard-Oxford atlas, brain masking
+SimpleITK>=2.3.0             # N4 bias correction, anisotropic diffusion, resampling,
+                              # and ADNI DICOM-to-MNI152 registration
+nilearn>=0.10.0              # Harvard-Oxford atlas, brain masking, MNI152 template
 scikit-image>=0.21.0         # CLAHE, marching-cubes surface area
+pydicom>=2.4.0                # ADNI raw-DICOM series ingestion
 
 # --- Visualisation -----------------------------------------------------------
 matplotlib>=3.7.0

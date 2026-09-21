@@ -2,14 +2,16 @@
 M13 — Multimodal fusion (Section 10).
 =====================================
 
-Combines the two representation branches into the shared representation used by
-**both** the current-stage classifier and the Stage-TGT:
+Combines the graph branch into the shared representation used by **both** the
+current-stage classifier and the Stage-TGT:
 
 .. code-block:: text
 
-    3D CNN branch  ->  Z_3D  ─┐
-                              ├─ concat ->  Z_F  ->  MLP  ->  Z_H
-    graph branch   ->  Z_G   ─┘
+    graph branch   ->  Z_G   ->  MLP  ->  Z_H
+
+The ``spatial_dim``/``z_3d`` plumbing is retained so the fusion head can still
+run graph-only (``spatial_dim=0``, the only mode the model uses now) without
+further changes.
 
 ``Z_H`` is deliberately shared. If the classifier and the Stage-TGT each had
 their own trunk, the stage prototypes would live in a different space from the
@@ -73,74 +75,6 @@ class FusionOutput:
             "Z_F": stats(self.z_f),
             "Z_H": stats(self.z_h),
         }
-
-
-class SpatialBranchProjection(nn.Module):
-    """Project the five per-ROI CNN embeddings into one branch vector ``Z_3D``.
-
-    Args:
-        n_roi: Number of ROIs.
-        embed_dim: Per-ROI embedding width.
-        out_dim: Output width of ``Z_3D``.
-        dropout: Dropout applied before the projection.
-        mode: ``"flatten"`` concatenates all ROI embeddings and projects them,
-            preserving which ROI each value came from; ``"mean"`` averages over
-            ROIs first, which is smaller but discards regional identity.
-            ``"flatten"`` is the default because regional identity is the whole
-            point of an ROI-centric design.
-
-    Shape:
-        ``(B, n_roi, embed_dim)`` -> ``(B, out_dim)``.
-    """
-
-    def __init__(
-        self,
-        n_roi: int,
-        embed_dim: int,
-        out_dim: int,
-        dropout: float = 0.2,
-        mode: str = "flatten",
-    ) -> None:
-        super().__init__()
-        if mode not in ("flatten", "mean"):
-            raise ValueError(f"mode must be 'flatten' or 'mean', got {mode!r}")
-        self.n_roi = n_roi
-        self.embed_dim = embed_dim
-        self.out_dim = out_dim
-        self.mode = mode
-        in_dim = n_roi * embed_dim if mode == "flatten" else embed_dim
-        self.net = nn.Sequential(
-            nn.Dropout(dropout),
-            nn.Linear(in_dim, out_dim),
-            nn.LayerNorm(out_dim),
-            nn.ReLU(inplace=True),
-        )
-
-    def forward(self, embeddings: torch.Tensor) -> torch.Tensor:
-        """Project per-ROI embeddings to ``Z_3D``.
-
-        Args:
-            embeddings: ``(B, n_roi, embed_dim)``.
-
-        Raises:
-            ValueError: On an ROI-axis or width mismatch.
-        """
-        if embeddings.dim() == 2:
-            embeddings = embeddings.unsqueeze(0)
-        b, n, d = embeddings.shape
-        if n != self.n_roi or d != self.embed_dim:
-            raise ValueError(
-                f"Expected (B, {self.n_roi}, {self.embed_dim}); got "
-                f"{tuple(embeddings.shape)}"
-            )
-        x = embeddings.reshape(b, n * d) if self.mode == "flatten" \
-            else embeddings.mean(dim=1)
-        return self.net(x)
-
-    def extra_repr(self) -> str:
-        """Torch module repr."""
-        return (f"n_roi={self.n_roi}, embed_dim={self.embed_dim}, "
-                f"out_dim={self.out_dim}, mode={self.mode}")
 
 
 class MultimodalFusion(nn.Module):
@@ -257,4 +191,4 @@ class MultimodalFusion(nn.Module):
                 f"out_dim={self.out_dim}")
 
 
-__all__ = ["FusionOutput", "SpatialBranchProjection", "MultimodalFusion"]
+__all__ = ["FusionOutput", "MultimodalFusion"]

@@ -44,3 +44,11 @@ extract_oasis.log
 validate_oasis.log
 preprocess_oasis1.log
 dashboard.log
+
+# Ship the full OASIS-1 pilot outputs tree for hosting/deployment (Railway),
+# overriding the blanket data-file exclusions above for this tree only.
+!outputs_oasis1_pilot31/**/*.pt
+!outputs_oasis1_pilot31/**/*.npy
+!outputs_oasis1_pilot31/**/*.npz
+!outputs_oasis1_pilot31/**/*.nii
+!outputs_oasis1_pilot31/**/*.nii.gz

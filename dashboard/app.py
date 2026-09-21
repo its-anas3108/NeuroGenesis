@@ -33,7 +33,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -874,7 +874,7 @@ def page_m7(state: DashboardState, subject: Optional[str]) -> None:
         "it to 48x48x48, then stacks the five patches in `ROI_ORDER`. A missing "
         "region raises rather than being zero-filled, because a blank patch "
         "labelled with the subject's stage would silently corrupt training. "
-        "Output feeds M8 (features) and M9 (3D CNN)."
+        "Output feeds M8 (morphometric feature extraction)."
     )
 
 
@@ -991,134 +991,6 @@ def page_m8(state: DashboardState, subject: Optional[str]) -> None:
         "fraction, eTIV-normalized volume, surface-to-volume ratio and the "
         "training-referenced atrophy index. The quality audit flags any feature "
         "that has silently degraded to a constant."
-    )
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Page M9 (Section 49)
-# ──────────────────────────────────────────────────────────────────────────────
-
-def page_m9(state: DashboardState, subject: Optional[str]) -> None:
-    """M9 — 3D CNN spatial encoding, with intermediate tensor shapes."""
-    record = state.stage_record("M9", subject)
-    module_header("M9", "3D CNN spatial encoding",
-                  (record or {}).get("status", "NOT_STARTED"),
-                  PIPELINE_BY_CODE["M9"].description)
-    provenance_banner(state)
-
-    st.info(
-        "The 3D CNN captures local three-dimensional spatial structure inside "
-        "each ROI patch — the patterns hand-crafted morphometric features "
-        "cannot express."
-    )
-
-    from modules.common.config import SpatialEncoderConfig
-    from modules.m06_spatial_encoder.cnn3d import SpatialEncoder3D
-
-    st.markdown("### Architecture and intermediate tensor shapes")
-    encoder = SpatialEncoder3D(state.cfg.spatial_encoder)
-    shapes = encoder.layer_shapes(state.cfg.preprocess.patch_size)
-    st.dataframe(
-        pd.DataFrame([
-            {
-                "Stage": s["name"],
-                "Kind": s["kind"],
-                "Output shape (per patch)": str(tuple(s["output_shape"])),
-                "Elements": f"{s['n_elements']:,}",
-                "Parameters": f"{s['n_params']:,}",
-            }
-            for s in shapes
-        ]),
-        use_container_width=True, hide_index=True,
-    )
-    columns = st.columns(3)
-    columns[0].metric("Trainable parameters", f"{encoder.n_parameters():,}")
-    columns[1].metric("Embedding dim", encoder.embed_dim)
-    columns[2].metric("Encoder shared across ROIs",
-                      str(state.cfg.spatial_encoder.shared_encoder))
-    st.caption(
-        "Shapes are measured by a real traced forward pass over a zero tensor, "
-        "not hand-computed, so they cannot drift from the code."
-    )
-
-    embeddings, summary = state.cnn_embeddings(subject) if subject else (None, None)
-    if embeddings is None:
-        unavailable(
-            "cached CNN embeddings for this subject",
-            "python run.py --mode train_cnn",
-            reason=(
-                "Note that `--mode train_full` trains the encoder jointly and "
-                "does not write cached embeddings; the cache exists for "
-                "inspection."
-            ),
-        )
-        stage_detail(record)
-        return
-
-    if summary and (record or {}).get("metrics", {}).get(
-            "encoder_status") == "untrained":
-        st.warning(
-            "These embeddings were produced by an **untrained** encoder. They "
-            "describe the random initialisation, not learned structure."
-        )
-
-    st.markdown("### Per-ROI embeddings")
-    columns = st.columns(3)
-    columns[0].metric("Shape", str(tuple(embeddings.shape)))
-    columns[1].metric("Mean", f"{embeddings.mean():.4f}")
-    columns[2].metric("SD", f"{embeddings.std():.4f}")
-
-    statistics = (summary or {}).get("per_roi_statistics", {})
-    if statistics:
-        st.dataframe(
-            pd.DataFrame([
-                {"ROI": roi_short(roi), **{k: round(v, 5)
-                                           for k, v in values.items()}}
-                for roi, values in statistics.items()
-            ]),
-            use_container_width=True, hide_index=True,
-        )
-
-    st.markdown("### Embedding similarity between regions")
-    normalised = embeddings / (
-        np.linalg.norm(embeddings, axis=1, keepdims=True) + 1e-12
-    )
-    matrix_view(
-        normalised @ normalised.T, "Cosine similarity",
-        labels=[roi_short(r) for r in ROI_ORDER], cmap="Purples",
-        download_name=f"{subject}_embedding_similarity",
-    )
-
-    st.markdown("### PCA projection of the five ROI embeddings")
-    centred = embeddings - embeddings.mean(axis=0, keepdims=True)
-    if centred.shape[0] >= 2:
-        _, singular, components = np.linalg.svd(centred, full_matrices=False)
-        projected = centred @ components[:2].T
-        variance = singular ** 2
-        explained = variance / variance.sum() if variance.sum() else variance
-        st.dataframe(
-            pd.DataFrame({
-                "ROI": [roi_short(r) for r in ROI_ORDER],
-                f"PC1 ({explained[0]:.1%})": projected[:, 0],
-                f"PC2 ({explained[1]:.1%})": projected[:, 1],
-            }),
-            use_container_width=True, hide_index=True,
-        )
-        st.caption(
-            "PCA is used rather than UMAP or t-SNE: it is deterministic and its "
-            "axes carry a stated explained-variance fraction, so apparent "
-            "separation cannot be a hyper-parameter artifact."
-        )
-
-    array_download(embeddings, f"{subject}_cnn_embeddings")
-    stage_detail(record)
-    what_this_module_did(
-        "Each 48x48x48 patch passes through three Conv3D-BatchNorm-ReLU blocks "
-        "(two with max-pooling), global average pooling and a linear projection "
-        "to a 128-dimensional embedding. One encoder is shared across ROIs, with "
-        "a learned per-ROI embedding added to the projection, because per-ROI "
-        "encoders would quintuple the parameters for the same data. Output "
-        "feeds M10 and M11."
     )
 
 
@@ -1567,12 +1439,10 @@ def page_m13(state: DashboardState, subject: Optional[str]) -> None:
 
     stage_detail(record)
     what_this_module_did(
-        "Projects the five per-ROI CNN embeddings into one spatial branch "
-        "vector, concatenates it with the graph embedding and passes the result "
-        "through a small two-layer MLP with LayerNorm and dropout. The head is "
-        "kept small deliberately: it sees a fully-connected view of both "
-        "branches at once and is the easiest place in the architecture to "
-        "overfit."
+        "Passes the graph embedding through a small two-layer MLP with "
+        "LayerNorm and dropout to produce the shared representation Z_H. The "
+        "head is kept small deliberately: it sees a fully-connected view of "
+        "the branch and is an easy place in the architecture to overfit."
     )
 
 
@@ -1718,7 +1588,7 @@ def page_m15(state: DashboardState, subject: Optional[str]) -> None:
     if stability:
         st.markdown("### Table 8 — ROI ranking stability")
         st.caption(
-            f"Aggregated over {stability.get('n_runs')} run(s), top-"
+            f"Aggregated over {stability.get('n_runs')} subject(s), top-"
             f"{stability.get('top_k')} selection frequency."
         )
         rows = pd.DataFrame(stability.get("rows") or [])
@@ -1738,11 +1608,11 @@ def page_m15(state: DashboardState, subject: Optional[str]) -> None:
     stage_detail(record)
     what_this_module_did(
         "Combines NeuroProp-X regional vulnerability, SAEG-GATv2 node "
-        "attention, morphometric feature attribution and (when available) 3D "
-        "CNN occlusion importance into one score per region, then aggregates "
-        "across subjects for the stage-wise ranking and across repeats for the "
-        "stability table. With a small AD class, a single ranking is not a "
-        "finding — the stability table is what makes it reportable."
+        "attention and morphometric feature attribution into one score per "
+        "region, then aggregates across subjects for the stage-wise ranking "
+        "and across repeats for the stability table. With a small AD class, a "
+        "single ranking is not a finding — the stability table is what makes "
+        "it reportable."
     )
 
 
@@ -1843,30 +1713,14 @@ def page_m16(state: DashboardState, subject: Optional[str]) -> None:
     else:
         st.caption("This variant has no NeuroProp-X.")
 
-    st.markdown("### D. 3D CNN occlusion")
-    occlusion = explanations.get("cnn_occlusion")
-    if occlusion:
-        columns = st.columns(3)
-        columns[0].metric("Method", occlusion.get("method", "-"))
-        columns[1].metric("Baseline", occlusion.get("baseline", "-"))
-        columns[2].metric("Baseline probability",
-                          f"{occlusion.get('baseline_probability', 0):.4f}")
-        st.dataframe(pd.DataFrame(occlusion.get("ranking") or []),
-                     use_container_width=True, hide_index=True)
-        for note in occlusion.get("notes", []):
-            st.caption(note)
-    else:
-        st.caption("No occlusion analysis available for this subject.")
-
     stage_detail(record)
     what_this_module_did(
         "Extracts the explanation signals the model actually computed: "
         "attention and edge-gate matrices recorded during the forward pass, "
         "NeuroProp-X vulnerability and propagation values taken from the module "
-        "outputs, feature attribution against a training-split background, and "
-        "whole-ROI occlusion of the CNN branch. Nothing here is re-derived from "
-        "a formula, and the attribution method is always named so a permutation "
-        "result cannot be presented as SHAP."
+        "outputs, and feature attribution against a training-split background. "
+        "Nothing here is re-derived from a formula, and the attribution method "
+        "is always named so a permutation result cannot be presented as SHAP."
     )
 
 
@@ -2089,6 +1943,61 @@ def page_m19(state: DashboardState, subject: Optional[str]) -> None:
     )
 
 
+#: Rich captions for the "Figures & Visual Analytics" section. Each entry:
+#: (display title, one-paragraph scientific caption, source module/pipeline
+#: stage). Kept separate from the generic figures loop below so every other
+#: figure keeps rendering exactly as before — this only adds context on top
+#: of four specific, already-generated files.
+_VISUAL_ANALYTICS_CAPTIONS: Dict[str, Tuple[str, str, str]] = {
+    "fig17_morphometric_differences": (
+        "Figure A — Morphometric Differences Across CN / MCI / AD",
+        "Four already-computed per-ROI morphometric features (cortical "
+        "thickness, regional volume, surface area, grey-matter fraction), "
+        "each as a boxplot grouped by speech ROI and real cohort stage. "
+        "Surface area is left in voxel units rather than converted to a "
+        "physical area, because post-resample voxel spacing is anisotropic "
+        "and a scalar conversion would invent a number the pipeline does "
+        "not compute.",
+        "Source: modules.m04_feature_extraction (same table M8/M17 use) + "
+        "modules.m10_results.figures.morphometric_group_comparison",
+    ),
+    "fig18_srve_vulnerability_maps": (
+        "Figure B — SRVE Regional Vulnerability Maps",
+        "Real per-subject SRVE regional-vulnerability scores (M11.1), "
+        "averaged over every subject with that real CN/MCI/AD label in this "
+        "cohort. ROI locations are extracted once against the MNI152 "
+        "template (not any individual subject), so the anatomical "
+        "background is identical across panels and only the real, computed "
+        "per-stage average colour differs.",
+        "Source: modules.m06_neuropropx (SRVE) + segmentation.roi_extraction "
+        "(standard-space ROI masks) + "
+        "modules.m10_results.figures.srve_vulnerability_maps",
+    ),
+    "fig19_embedding_projection": (
+        "Figure C — Embedding Visualisation (PCA)",
+        "2-D PCA projections of the graph embedding Z_G and the shared "
+        "representation Z_H, coloured by real CN/MCI/AD labels. Two panels, "
+        "not three: this architecture has no 3D-CNN/spatial branch, so a "
+        "'Spatial Embedding' panel would have nothing real to show. PCA is "
+        "used instead of UMAP/t-SNE for the same reason the rest of this "
+        "project does — a deterministic projection with a stated "
+        "explained-variance fraction, rather than a stochastic layout.",
+        "Source: modules.model (Z_G/Z_H from the forward pass, saved by "
+        "--mode xai) + modules.m10_results.figures.embedding_projection_pair",
+    ),
+    "fig14_ranking_stability": (
+        "Figure D — ROI Ranking Stability Across Subjects",
+        "The exact same data as Table 8 (M15) — mean rank +/- SD and top-3 "
+        "selection frequency, aggregated over every subject this cohort's "
+        "--mode xai pass processed. Not recomputed independently: this "
+        "figure and Table 8 are two views of one underlying "
+        "table8_ranking_stability.json.",
+        "Source: modules.m08_xai.roi_ranking.ranking_stability (M15) + "
+        "modules.m10_results.figures.ranking_stability_plot",
+    ),
+}
+
+
 def page_figures(state: DashboardState, subject: Optional[str]) -> None:
     """All generated figures."""
     page_title("Figures", "Every figure generated from real computed values.")
@@ -2101,7 +2010,22 @@ def page_figures(state: DashboardState, subject: Optional[str]) -> None:
         "Figures showing an explicit 'Not available' panel are honest reports of "
         "a missing input, not rendering failures."
     )
+
+    highlighted = [name for name in _VISUAL_ANALYTICS_CAPTIONS if name in figures]
+    if highlighted:
+        st.markdown("### Figures & Visual Analytics")
+        for name in highlighted:
+            title, caption, source = _VISUAL_ANALYTICS_CAPTIONS[name]
+            st.markdown(f"#### {title}")
+            st.image(str(figures[name]), use_container_width=True)
+            st.caption(caption)
+            st.caption(source)
+            download_button(figures[name])
+        st.markdown("---")
+
     for name, path in figures.items():
+        if name in _VISUAL_ANALYTICS_CAPTIONS:
+            continue
         st.markdown(f"**{name}**")
         st.image(str(path), use_container_width=True)
         download_button(path)
@@ -2123,7 +2047,6 @@ PAGES = {
     "M6  Harvard-Oxford ROIs": page_m6,
     "M7  ROI patches": page_m7,
     "M8  Morphometric features": page_m8,
-    "M9  3D CNN embeddings": page_m9,
     "M10 Brain graph": page_m10,
     "M11 NeuroProp-X": page_m11,
     "M12 SAEG-GATv2": page_m12,

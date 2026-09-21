@@ -1,0 +1,633 @@
+{
+  "feature_order": [
+    "voxel_count",
+    "brain_volume_mm3",
+    "gm_volume_mm3",
+    "mean_intensity",
+    "std_intensity",
+    "skewness",
+    "kurtosis",
+    "entropy",
+    "surface_area_vox",
+    "cortical_thickness_mm",
+    "gm_fraction",
+    "normalized_volume",
+    "surface_to_volume_ratio",
+    "atrophy_index"
+  ],
+  "roi_order": [
+    "Broca_Area",
+    "Wernicke_Area",
+    "Insula",
+    "Inferior_Frontal_Gyrus",
+    "Superior_Temporal_Gyrus"
+  ],
+  "clip": 5.0,
+  "atrophy_reference": {
+    "Broca_Area": 6.215317919075145,
+    "Wernicke_Area": 5.51092318534179,
+    "Insula": 5.392253521126761,
+    "Inferior_Frontal_Gyrus": 7.869942196531792,
+    "Superior_Temporal_Gyrus": 5.261267605633803
+  },
+  "fit_report": {
+    "n_train_sessions": 19,
+    "n_train_rows": 95,
+    "features_fitted": [
+      "voxel_count",
+      "brain_volume_mm3",
+      "gm_volume_mm3",
+      "mean_intensity",
+      "std_intensity",
+      "skewness",
+      "kurtosis",
+      "entropy",
+      "surface_area_vox",
+      "cortical_thickness_mm",
+      "gm_fraction",
+      "normalized_volume",
+      "surface_to_volume_ratio",
+      "atrophy_index"
+    ],
+    "features_missing": [],
+    "degenerate_cells": [
+      "Broca_Area/atrophy_index (no data)",
+      "Wernicke_Area/atrophy_index (no data)",
+      "Insula/atrophy_index (no data)",
+      "Inferior_Frontal_Gyrus/atrophy_index (no data)",
+      "Superior_Temporal_Gyrus/atrophy_index (no data)"
+    ],
+    "atrophy_reference": {
+      "Broca_Area": 6.215317919075145,
+      "Wernicke_Area": 5.51092318534179,
+      "Insula": 5.392253521126761,
+      "Inferior_Frontal_Gyrus": 7.869942196531792,
+      "Superior_Temporal_Gyrus": 5.261267605633803
+    },
+    "clip": 5.0,
+    "center_statistic": "median",
+    "scale_statistic": "IQR / 1.349"
+  },
+  "stats": [
+    {
+      "roi": "Broca_Area",
+      "feature": "voxel_count",
+      "center": 8777.0,
+      "scale": 147.5166790214974,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "brain_volume_mm3",
+      "center": 8777.0,
+      "scale": 147.5166790214974,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "gm_volume_mm3",
+      "center": 5411.0,
+      "scale": 534.4699777613047,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "mean_intensity",
+      "center": 0.410554,
+      "scale": 0.026969977761304657,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "std_intensity",
+      "center": 0.237552,
+      "scale": 0.00624425500370645,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "skewness",
+      "center": 0.292016,
+      "scale": 0.11259488510007414,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "kurtosis",
+      "center": -1.154748,
+      "scale": 0.04862083024462546,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "entropy",
+      "center": 4.062976,
+      "scale": 0.03283951074870296,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "surface_area_vox",
+      "center": 4985.5459,
+      "scale": 20.416975537435487,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "cortical_thickness_mm",
+      "center": 1.766,
+      "scale": 0.030392883617494384,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "gm_fraction",
+      "center": 0.6135776104304822,
+      "scale": 0.04735034419955025,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "normalized_volume",
+      "center": 6.215317919075145,
+      "scale": 0.6507168794100487,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "surface_to_volume_ratio",
+      "center": 0.5663722000683604,
+      "scale": 0.00969141498196375,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Broca_Area",
+      "feature": "atrophy_index",
+      "center": 0.0,
+      "scale": 1.0,
+      "n": 0,
+      "degenerate": true
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "voxel_count",
+      "center": 7899.0,
+      "scale": 38.91771682727947,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "brain_volume_mm3",
+      "center": 7899.0,
+      "scale": 38.91771682727947,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "gm_volume_mm3",
+      "center": 5435.0,
+      "scale": 368.7916975537435,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "mean_intensity",
+      "center": 0.403347,
+      "scale": 0.023575982209043778,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "std_intensity",
+      "center": 0.214556,
+      "scale": 0.004607487027427713,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "skewness",
+      "center": 0.367463,
+      "scale": 0.12113083765752412,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "kurtosis",
+      "center": -0.793453,
+      "scale": 0.08818346923647154,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "entropy",
+      "center": 4.049019,
+      "scale": 0.025673091178651117,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "surface_area_vox",
+      "center": 4750.2734,
+      "scale": 29.317531504817882,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "cortical_thickness_mm",
+      "center": 1.663,
+      "scale": 0.009266123054113961,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "gm_fraction",
+      "center": 0.6871529530540131,
+      "scale": 0.04311694528594049,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "normalized_volume",
+      "center": 5.51092318534179,
+      "scale": 0.5284593286986001,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "surface_to_volume_ratio",
+      "center": 0.6013765539941764,
+      "scale": 0.0031436553052754815,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Wernicke_Area",
+      "feature": "atrophy_index",
+      "center": 0.0,
+      "scale": 1.0,
+      "n": 0,
+      "degenerate": true
+    },
+    {
+      "roi": "Insula",
+      "feature": "voxel_count",
+      "center": 7651.0,
+      "scale": 65.23350630096368,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "brain_volume_mm3",
+      "center": 7651.0,
+      "scale": 65.23350630096368,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "gm_volume_mm3",
+      "center": 4411.0,
+      "scale": 182.35730170496666,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "mean_intensity",
+      "center": 0.348412,
+      "scale": 0.01665863602668644,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "std_intensity",
+      "center": 0.206406,
+      "scale": 0.007826538176426992,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "skewness",
+      "center": 0.553686,
+      "scale": 0.06964529280948849,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "kurtosis",
+      "center": -0.764843,
+      "scale": 0.17547702001482585,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "entropy",
+      "center": 4.001612,
+      "scale": 0.025241289844328628,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "surface_area_vox",
+      "center": 5214.1333,
+      "scale": 12.688250555967711,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "cortical_thickness_mm",
+      "center": 1.466,
+      "scale": 0.008524833209785239,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "gm_fraction",
+      "center": 0.57631129223084,
+      "scale": 0.025138502904380355,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "normalized_volume",
+      "center": 5.392253521126761,
+      "scale": 0.47304949071195196,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "surface_to_volume_ratio",
+      "center": 0.6821676766357582,
+      "scale": 0.003959548619059833,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Insula",
+      "feature": "atrophy_index",
+      "center": 0.0,
+      "scale": 1.0,
+      "n": 0,
+      "degenerate": true
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "voxel_count",
+      "center": 11099.0,
+      "scale": 131.20830244625648,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "brain_volume_mm3",
+      "center": 11099.0,
+      "scale": 131.20830244625648,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "gm_volume_mm3",
+      "center": 7193.0,
+      "scale": 564.8628613787992,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "mean_intensity",
+      "center": 0.433871,
+      "scale": 0.024031134173461827,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "std_intensity",
+      "center": 0.247307,
+      "scale": 0.004148628613788015,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "skewness",
+      "center": 0.165522,
+      "scale": 0.12018865826538176,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "kurtosis",
+      "center": -1.224314,
+      "scale": 0.047367309117865145,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "entropy",
+      "center": 4.08748,
+      "scale": 0.017282060785767554,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "surface_area_vox",
+      "center": 5928.4971,
+      "scale": 22.53009636767926,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "cortical_thickness_mm",
+      "center": 1.879,
+      "scale": 0.024091919940696795,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "gm_fraction",
+      "center": 0.6470853230020722,
+      "scale": 0.03957731035019297,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "normalized_volume",
+      "center": 7.869942196531792,
+      "scale": 0.7838518939186903,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "surface_to_volume_ratio",
+      "center": 0.532084086815562,
+      "scale": 0.006948862866785467,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Inferior_Frontal_Gyrus",
+      "feature": "atrophy_index",
+      "center": 0.0,
+      "scale": 1.0,
+      "n": 0,
+      "degenerate": true
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "voxel_count",
+      "center": 7485.0,
+      "scale": 45.95997034840623,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "brain_volume_mm3",
+      "center": 7485.0,
+      "scale": 45.95997034840623,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "gm_volume_mm3",
+      "center": 4937.0,
+      "scale": 220.90437361008154,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "mean_intensity",
+      "center": 0.416831,
+      "scale": 0.015270200148258004,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "std_intensity",
+      "center": 0.227407,
+      "scale": 0.005352483320978496,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "skewness",
+      "center": 0.321144,
+      "scale": 0.07436879169755375,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "kurtosis",
+      "center": -0.934552,
+      "scale": 0.08618977020014824,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "entropy",
+      "center": 4.069139,
+      "scale": 0.016150852483321196,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "surface_area_vox",
+      "center": 5500.9189,
+      "scale": 17.09073387694603,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "cortical_thickness_mm",
+      "center": 1.359,
+      "scale": 0.009636767976278651,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "gm_fraction",
+      "center": 0.6623289508988462,
+      "scale": 0.02664007817320214,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "normalized_volume",
+      "center": 5.261267605633803,
+      "scale": 0.5166424949270333,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "surface_to_volume_ratio",
+      "center": 0.7359811356045424,
+      "scale": 0.005208174270456045,
+      "n": 19,
+      "degenerate": false
+    },
+    {
+      "roi": "Superior_Temporal_Gyrus",
+      "feature": "atrophy_index",
+      "center": 0.0,
+      "scale": 1.0,
+      "n": 0,
+      "degenerate": true
+    }
+  ]
+}

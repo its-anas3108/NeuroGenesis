@@ -6,23 +6,20 @@ Composes every component into one ``nn.Module``:
 
 .. code-block:: text
 
-    ROI patches (5,48,48,48)      morphometric features (5,F)
-            |                                |
-      3D CNN encoder                         |
-            |                                |
-       E_3D (5,128) ----+---------------------+
-                        |
-                   NeuroProp-X  ->  G* = (V, X*, A*, P)
-                        |
-                   SAEG-GATv2  ->  Z_G
-                        |
-     Z_3D ------- Multimodal Fusion -------  Z_H
-                        |
-             +----------+-----------+
-             |                      |
-      Stage classifier         Stage-TGT
-             |                      |
-       P(CN/MCI/AD)          propensity scores
+    morphometric features (5,F)
+            |
+       NeuroProp-X  ->  G* = (V, X*, A*, P)
+            |
+       SAEG-GATv2  ->  Z_G
+            |
+    Multimodal Fusion  ->  Z_H
+            |
+     +------+-------+
+     |              |
+    Stage        Stage-TGT
+    classifier       |
+     |          propensity scores
+    P(CN/MCI/AD)
 
 Ablation ladder (Section 17)
 ----------------------------
@@ -38,15 +35,7 @@ A2   Morphometry + standard GAT (static attention)
 A3   Morphometry + anatomical prior + learned attention (AP-LAF)
 A4   A3 + SRVE
 A5   A4 + ANP
-A7   Full: 3D CNN + NeuroProp-X + SAEG-GATv2
-===  ==========================================================================
-
-A6 (3D CNN + graph baseline, no NeuroProp-X) is defined below but is **excluded
-from the ladder** and is therefore never trained, tabulated or plotted. Its
-spec is retained only so ``build_model("A6")`` still resolves if that control
-is wanted explicitly. Note what its exclusion costs: A6 was the rung that
-isolated NeuroProp-X at matched CNN capacity, so the NeuroProp-X contribution
-now rests on the A2/A3 and A5/A7 contrasts instead.
+A7   Full: NeuroProp-X + SAEG-GATv2 + structural covariance + Stage-TGT
 ===  ==========================================================================
 
 Two deliberate couplings in the ladder:
@@ -80,7 +69,6 @@ from modules.m06_graph_learning.classifier import (
 from modules.m06_graph_learning.fusion import (
     FusionOutput,
     MultimodalFusion,
-    SpatialBranchProjection,
 )
 from modules.m06_graph_learning.gat_baseline import GATBaseline, GATv2Baseline
 from modules.m06_graph_learning.prior_propagation import (
@@ -93,7 +81,6 @@ from modules.m06_neuropropx import (
     NeuroPropXConfigFlags,
     NeuroPropXOutput,
 )
-from modules.m06_spatial_encoder.cnn3d import EncoderOutput, SpatialEncoder3D
 from modules.m07_stage_tgt import (
     PropensityHead,
     PropensityOutput,
@@ -111,7 +98,6 @@ class ModelSpec:
     Attributes:
         name: Short identifier, e.g. ``"A7"``.
         description: Human-readable label used in tables.
-        use_cnn: Include the 3D CNN spatial branch.
         graph_encoder: ``"none"`` | ``"prior"`` | ``"gat"`` | ``"gatv2"`` |
             ``"saeg_gatv2"``.
         use_neuropropx: Route node features through NeuroProp-X. Required for
@@ -125,7 +111,6 @@ class ModelSpec:
 
     name: str
     description: str
-    use_cnn: bool = True
     graph_encoder: str = "saeg_gatv2"
     use_neuropropx: bool = True
     use_srve: bool = True
@@ -170,7 +155,6 @@ class ModelSpec:
             use_structural=self.use_structural,
             use_learned_attention=self.use_learned_attention,
             use_anp=self.use_anp,
-            use_cnn=self.use_cnn,
             use_centrality=self.use_centrality,
         )
 
@@ -185,52 +169,45 @@ class ModelSpec:
 ABLATION_SPECS: Dict[str, ModelSpec] = {
     "A0": ModelSpec(
         name="A0", description="Morphometry only",
-        use_cnn=False, graph_encoder="none", use_neuropropx=False,
+        graph_encoder="none", use_neuropropx=False,
         use_srve=False, use_learned_attention=False, use_anp=False,
         use_centrality=False, use_stage_tgt=False,
     ),
     "A1": ModelSpec(
         name="A1", description="Morphometry + Anatomical Prior",
-        use_cnn=False, graph_encoder="prior", use_neuropropx=False,
+        graph_encoder="prior", use_neuropropx=False,
         use_srve=False, use_learned_attention=False, use_anp=False,
         use_centrality=False, use_stage_tgt=False,
     ),
     "A2": ModelSpec(
         name="A2", description="Morphometry + Standard GAT",
-        use_cnn=False, graph_encoder="gat", use_neuropropx=False,
+        graph_encoder="gat", use_neuropropx=False,
         use_srve=False, use_learned_attention=False, use_anp=False,
         use_centrality=False, use_stage_tgt=False,
     ),
     "A3": ModelSpec(
         name="A3",
         description="Morphometry + Anatomical Prior + Learned Attention",
-        use_cnn=False, graph_encoder="saeg_gatv2", use_neuropropx=True,
+        graph_encoder="saeg_gatv2", use_neuropropx=True,
         use_srve=False, use_learned_attention=True, use_anp=False,
         use_centrality=False, use_stage_tgt=False,
     ),
     "A4": ModelSpec(
         name="A4", description="A3 + SRVE",
-        use_cnn=False, graph_encoder="saeg_gatv2", use_neuropropx=True,
+        graph_encoder="saeg_gatv2", use_neuropropx=True,
         use_srve=True, use_learned_attention=True, use_anp=False,
         use_centrality=False, use_stage_tgt=False,
     ),
     "A5": ModelSpec(
         name="A5", description="A4 + ANP",
-        use_cnn=False, graph_encoder="saeg_gatv2", use_neuropropx=True,
+        graph_encoder="saeg_gatv2", use_neuropropx=True,
         use_srve=True, use_learned_attention=True, use_anp=True,
         use_centrality=True, use_stage_tgt=False,
     ),
-    # Excluded from ABLATION_LADDER: defined, never run by default.
-    "A6": ModelSpec(
-        name="A6", description="3D CNN + graph baseline (GATv2, no NeuroProp-X)",
-        use_cnn=True, graph_encoder="gatv2", use_neuropropx=False,
-        use_srve=False, use_learned_attention=False, use_anp=False,
-        use_centrality=False, use_stage_tgt=False,
-    ),
     "A7": ModelSpec(
         name="A7",
-        description="Full NeuroProp-X + SAEG-GATv2 + 3D CNN",
-        use_cnn=True, graph_encoder="saeg_gatv2", use_neuropropx=True,
+        description="Full: NeuroProp-X + SAEG-GATv2 + structural covariance + Stage-TGT",
+        graph_encoder="saeg_gatv2", use_neuropropx=True,
         use_srve=True, use_learned_attention=True, use_anp=True,
         use_centrality=True, use_stage_tgt=True, use_structural=True,
     ),
@@ -239,21 +216,21 @@ ABLATION_SPECS: Dict[str, ModelSpec] = {
     "A7_no_struct": ModelSpec(
         name="A7_no_struct",
         description="Full model without the structural-covariance term",
-        use_cnn=True, graph_encoder="saeg_gatv2", use_neuropropx=True,
+        graph_encoder="saeg_gatv2", use_neuropropx=True,
         use_srve=True, use_learned_attention=True, use_anp=True,
         use_centrality=True, use_stage_tgt=True, use_structural=False,
     ),
     "A7_no_tgt": ModelSpec(
         name="A7_no_tgt", description="Full model without Stage-TGT",
-        use_cnn=True, graph_encoder="saeg_gatv2", use_neuropropx=True,
+        graph_encoder="saeg_gatv2", use_neuropropx=True,
         use_srve=True, use_learned_attention=True, use_anp=True,
         use_centrality=True, use_stage_tgt=False,
     ),
 }
 
-#: The variants an ablation study runs, in ladder order. A6 is deliberately
-#: absent, so no run, table or figure includes it. ``A7_no_tgt`` is a separate
-#: orthogonal contrast rather than a rung, so it is excluded here too.
+#: The variants an ablation study runs, in ladder order. ``A7_no_struct`` and
+#: ``A7_no_tgt`` are separate orthogonal contrasts rather than rungs, so they
+#: are excluded here.
 ABLATION_LADDER: Tuple[str, ...] = ("A0", "A1", "A2", "A3", "A4", "A5", "A7")
 
 #: Section 18 baselines, expressed in the same spec language.
@@ -263,7 +240,7 @@ BASELINE_SPECS: Dict[str, ModelSpec] = {
     "morph_gat": ABLATION_SPECS["A2"],
     "morph_gatv2": ModelSpec(
         name="morph_gatv2", description="Morphometry + GATv2",
-        use_cnn=False, graph_encoder="gatv2", use_neuropropx=False,
+        graph_encoder="gatv2", use_neuropropx=False,
         use_srve=False, use_learned_attention=False, use_anp=False,
         use_centrality=False, use_stage_tgt=False,
     ),
@@ -279,7 +256,6 @@ class ModelOutput:
     fusion: FusionOutput
     graph: Optional[GraphEncoderOutput] = None
     neuropropx: Optional[NeuroPropXOutput] = None
-    spatial: Optional[EncoderOutput] = None
     stage_tgt: Optional[StageTransformerOutput] = None
     propensity: Optional[PropensityOutput] = None
 
@@ -361,24 +337,15 @@ class NeuroGenesisModel(nn.Module):
             morph_feature_names else [f"morph_{i}" for i in range(morph_dim)]
         self.n_roi = n_roi
 
-        # ── Spatial branch (M9) ───────────────────────────────────────────
-        if self.spec.use_cnn:
-            self.spatial_encoder = SpatialEncoder3D(
-                self.cfg.spatial_encoder, n_roi=n_roi
-            )
-            cnn_dim = self.cfg.spatial_encoder.embed_dim
-            self.spatial_projection = SpatialBranchProjection(
-                n_roi=n_roi,
-                embed_dim=cnn_dim,
-                out_dim=self.cfg.fusion.hidden_dim,
-                dropout=self.cfg.fusion.dropout,
-            )
-            spatial_dim = self.spatial_projection.out_dim
-        else:
-            self.spatial_encoder = None
-            self.spatial_projection = None
-            cnn_dim = 0
-            spatial_dim = 0
+        # ── Spatial branch: removed. The model is morphometry-only; there is
+        # no 3D CNN branch. ``spatial_encoder``/``spatial_projection`` stay as
+        # permanent ``None`` attributes (rather than being deleted) so the
+        # existing ``is not None`` guards elsewhere (component_parameters(),
+        # summary()) keep working unchanged.
+        self.spatial_encoder = None
+        self.spatial_projection = None
+        cnn_dim = 0
+        spatial_dim = 0
         self.cnn_dim = cnn_dim
 
         # ── NeuroProp-X (M11) ─────────────────────────────────────────────
@@ -396,7 +363,7 @@ class NeuroGenesisModel(nn.Module):
         else:
             self.neuropropx = None
             # Without NeuroProp-X the node representation is the plain
-            # concatenation H_i = [X_i_morph || E_i_3D].
+            # morphometric feature vector H_i = X_i_morph.
             node_dim = morph_dim + cnn_dim
             edge_dim = 0
         self.node_dim = node_dim
@@ -450,8 +417,6 @@ class NeuroGenesisModel(nn.Module):
     def forward(
         self,
         morph_features: torch.Tensor,
-        patches: Optional[torch.Tensor] = None,
-        cnn_embeddings: Optional[torch.Tensor] = None,
         return_trace: bool = False,
     ) -> ModelOutput:
         """Run the full pipeline.
@@ -459,53 +424,26 @@ class NeuroGenesisModel(nn.Module):
         Args:
             morph_features: ``(B, N, morph_dim)`` normalized morphometric
                 features.
-            patches: ``(B, N, D, H, W)`` ROI patches. Required when the spatial
-                branch is enabled unless ``cnn_embeddings`` is supplied.
-            cnn_embeddings: ``(B, N, cnn_dim)`` precomputed CNN embeddings, used
-                instead of running the encoder. Lets the graph stage train
-                against cached embeddings.
             return_trace: Record attention, gates and intermediate shapes.
 
         Returns:
             A :class:`ModelOutput`.
-
-        Raises:
-            ValueError: If the spatial branch is enabled but neither patches nor
-                embeddings were provided.
         """
         if morph_features.dim() == 2:
             morph_features = morph_features.unsqueeze(0)
 
-        spatial_out: Optional[EncoderOutput] = None
-        emb: Optional[torch.Tensor] = None
         z_3d: Optional[torch.Tensor] = None
-
-        if self.spec.use_cnn:
-            if cnn_embeddings is not None:
-                emb = cnn_embeddings
-                if emb.dim() == 2:
-                    emb = emb.unsqueeze(0)
-            elif patches is not None:
-                spatial_out = self.spatial_encoder(patches, trace=return_trace)
-                emb = spatial_out.embeddings
-            else:
-                raise ValueError(
-                    "The spatial branch is enabled but neither `patches` nor "
-                    "`cnn_embeddings` was provided."
-                )
-            z_3d = self.spatial_projection(emb)
 
         npx_out: Optional[NeuroPropXOutput] = None
         if self.neuropropx is not None:
             npx_out = self.neuropropx(
-                morph_features, emb, keep_features=return_trace
+                morph_features, None, keep_features=return_trace
             )
             node_x = npx_out.node_features
             adj = npx_out.adaptive_adjacency
             edge = npx_out.edge_features()
         else:
-            node_x = torch.cat([morph_features, emb], dim=-1) \
-                if emb is not None else morph_features
+            node_x = morph_features
             adj = None
             edge = None
 
@@ -533,7 +471,6 @@ class NeuroGenesisModel(nn.Module):
             fusion=fusion_out,
             graph=graph_out,
             neuropropx=npx_out,
-            spatial=spatial_out,
             stage_tgt=tgt_out,
             propensity=prop_out,
         )
@@ -580,11 +517,6 @@ class NeuroGenesisModel(nn.Module):
             "roi_order": list(ROI_ORDER),
             "stage_order": list(STAGE_ORDER),
         }
-        if self.spatial_encoder is not None:
-            out["spatial_encoder"] = {
-                "shared": self.cfg.spatial_encoder.shared_encoder,
-                "embed_dim": self.cfg.spatial_encoder.embed_dim,
-            }
         if self.neuropropx is not None:
             out["neuropropx"] = self.neuropropx.summary()
         out["graph_encoder"] = self.graph_encoder.summary()

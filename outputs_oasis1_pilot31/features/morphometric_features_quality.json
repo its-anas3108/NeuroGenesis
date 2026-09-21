@@ -1,0 +1,29 @@
+{
+  "n_sessions": 30,
+  "n_rows": 150,
+  "degraded": {},
+  "constant": [],
+  "non_finite": {
+    "atrophy_index": 150
+  },
+  "incomplete_sessions": [],
+  "usable_features": [
+    "voxel_count",
+    "brain_volume_mm3",
+    "gm_volume_mm3",
+    "mean_intensity",
+    "std_intensity",
+    "skewness",
+    "kurtosis",
+    "entropy",
+    "surface_area_vox",
+    "cortical_thickness_mm",
+    "gm_fraction",
+    "normalized_volume",
+    "surface_to_volume_ratio",
+    "atrophy_index"
+  ],
+  "warnings": [
+    "Features that are entirely missing: ['atrophy_index']. These carry no information and will be standardised to a constant zero."
+  ]
+}

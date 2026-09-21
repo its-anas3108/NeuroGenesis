@@ -1,0 +1,7 @@
+subject_id,session_id,MRI_path,stage,label,split,dataset_source
+OAS1_0003,OAS1_0003_MR1,C:/Users/avisy/Downloads/dataset/extracted/disc1/OAS1_0003_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0003_MR1_mpr_n4_anon_111_t88_gfc.hdr,MCI,1,test,OASIS-1
+OAS1_0010,OAS1_0010_MR1,C:/Users/avisy/Downloads/dataset/extracted/disc1/OAS1_0010_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0010_MR1_mpr_n4_anon_111_t88_gfc.hdr,CN,0,test,OASIS-1
+OAS1_0013,OAS1_0013_MR1,C:/Users/avisy/Downloads/dataset/extracted/disc1/OAS1_0013_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0013_MR1_mpr_n4_anon_111_t88_gfc.hdr,CN,0,test,OASIS-1
+OAS1_0030,OAS1_0030_MR1,C:/Users/avisy/Downloads/dataset/extracted/disc1/OAS1_0030_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0030_MR1_mpr_n4_anon_111_t88_gfc.hdr,CN,0,test,OASIS-1
+OAS1_0046,OAS1_0046_MR1,C:/Users/avisy/Downloads/dataset/extracted/disc2/OAS1_0046_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0046_MR1_mpr_n4_anon_111_t88_gfc.hdr,MCI,1,test,OASIS-1
+OAS1_0052,OAS1_0052_MR1,C:/Users/avisy/Downloads/dataset/extracted/disc2/OAS1_0052_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0052_MR1_mpr_n4_anon_111_t88_gfc.hdr,AD,2,test,OASIS-1

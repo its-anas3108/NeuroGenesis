@@ -1,0 +1,4 @@
+Method,Variant,Accuracy Mean+/-SD,Macro-F1 Mean+/-SD,AUC Mean+/-SD,95% CI (macro_f1),p-value (paired vs A7),Effect Size,Test
+Morphometry only,A0,0.2857 +/- 0.1650,0.2714 +/- 0.1787,0.5120 +/- 0.1467,"[0.1148, 0.4281]",1.0,-0.06666666666666667,wilcoxon_signed_rank
+A4 + ANP,A5,0.2419 +/- 0.1167,0.1946 +/- 0.1129,0.5369 +/- 0.2373,"[0.0957, 0.2935]",0.125,-1.0,wilcoxon_signed_rank
+Full: NeuroProp-X + SAEG-GATv2 + structural covariance + Stage-TGT,A7,0.3657 +/- 0.1263,0.3022 +/- 0.1574,0.5513 +/- 0.2199,"[0.1642, 0.4402]",,,reference

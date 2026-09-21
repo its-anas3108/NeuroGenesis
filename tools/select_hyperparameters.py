@@ -113,7 +113,7 @@ def evaluate_candidate(
 
     cfg = NeuroGenesisConfig.from_file(config_path)
     ctx = driver.Context(cfg)
-    cohort = ctx.trainable_cohort(require_patches=True)
+    cohort = ctx.trainable_cohort()
 
     model_probe = build_model(
         len(FEATURE_ORDER), cfg, variant, list(FEATURE_ORDER)
@@ -143,8 +143,7 @@ def evaluate_candidate(
             cudnn_benchmark=cfg.repro.cudnn_benchmark,
         )
         try:
-            spec = model_probe.spec
-            train_ds, val_ds, _ = ctx.build_datasets(split, spec.use_cnn)
+            train_ds, val_ds, _ = ctx.build_datasets(split)
             model = build_model(
                 len(FEATURE_ORDER), cfg, variant, list(FEATURE_ORDER)
             )

@@ -1,0 +1,194 @@
+{
+  "subject_id": "OAS1_0020_MR1",
+  "succeeded": true,
+  "atlas_name": "cort-maxprob-thr25-2mm",
+  "roi_order": [
+    "Broca_Area",
+    "Wernicke_Area",
+    "Insula",
+    "Inferior_Frontal_Gyrus",
+    "Superior_Temporal_Gyrus"
+  ],
+  "rois": [
+    {
+      "roi_name": "Broca_Area",
+      "label": "Broca's Area",
+      "voxel_count": 6631,
+      "volume_mm3": 20372.193359374996,
+      "bounding_box": [
+        [
+          18,
+          108
+        ],
+        [
+          67,
+          86
+        ],
+        [
+          58,
+          87
+        ]
+      ],
+      "centroid": [
+        66.27175388327552,
+        76.58226511838335,
+        72.57653445935756
+      ],
+      "patch_shape": [
+        48,
+        48,
+        48
+      ],
+      "mask_path": null,
+      "patch_path": null,
+      "empty": false,
+      "note": "bbox=((18, 108), (67, 86), (58, 87))"
+    },
+    {
+      "roi_name": "Wernicke_Area",
+      "label": "Wernicke's Area",
+      "voxel_count": 7226,
+      "volume_mm3": 22200.191406249996,
+      "bounding_box": [
+        [
+          13,
+          115
+        ],
+        [
+          38,
+          60
+        ],
+        [
+          52,
+          80
+        ]
+      ],
+      "centroid": [
+        63.8216163852754,
+        47.611126487683364,
+        67.43537226681428
+      ],
+      "patch_shape": [
+        48,
+        48,
+        48
+      ],
+      "mask_path": null,
+      "patch_path": null,
+      "empty": false,
+      "note": "bbox=((13, 115), (38, 60), (52, 80))"
+    },
+    {
+      "roi_name": "Insula",
+      "label": "Insula",
+      "voxel_count": 6161,
+      "volume_mm3": 18928.228515624996,
+      "bounding_box": [
+        [
+          30,
+          96
+        ],
+        [
+          48,
+          80
+        ],
+        [
+          50,
+          78
+        ]
+      ],
+      "centroid": [
+        62.378672293458855,
+        65.0446356111021,
+        63.55348157766596
+      ],
+      "patch_shape": [
+        48,
+        48,
+        48
+      ],
+      "mask_path": null,
+      "patch_path": null,
+      "empty": false,
+      "note": "bbox=((30, 96), (48, 80), (50, 78))"
+    },
+    {
+      "roi_name": "Inferior_Frontal_Gyrus",
+      "label": "Inferior Frontal Gyrus",
+      "voxel_count": 8479,
+      "volume_mm3": 26049.740234374996,
+      "bounding_box": [
+        [
+          18,
+          108
+        ],
+        [
+          67,
+          86
+        ],
+        [
+          58,
+          87
+        ]
+      ],
+      "centroid": [
+        65.85729449227503,
+        76.29578959782994,
+        71.3742186578606
+      ],
+      "patch_shape": [
+        48,
+        48,
+        48
+      ],
+      "mask_path": null,
+      "patch_path": null,
+      "empty": false,
+      "note": "bbox=((18, 108), (67, 86), (58, 87))"
+    },
+    {
+      "roi_name": "Superior_Temporal_Gyrus",
+      "label": "Superior Temporal Gyrus",
+      "voxel_count": 9486,
+      "volume_mm3": 29143.511718749996,
+      "bounding_box": [
+        [
+          13,
+          115
+        ],
+        [
+          38,
+          67
+        ],
+        [
+          47,
+          80
+        ]
+      ],
+      "centroid": [
+        62.86611849040692,
+        53.23550495467004,
+        63.20124393843559
+      ],
+      "patch_shape": [
+        48,
+        48,
+        48
+      ],
+      "mask_path": null,
+      "patch_path": null,
+      "empty": false,
+      "note": "bbox=((13, 115), (38, 67), (47, 80))"
+    }
+  ],
+  "n_empty_rois": 0,
+  "tensor_shape": [
+    5,
+    48,
+    48,
+    48
+  ],
+  "tensor_path": "outputs_oasis1/roi/patches/OAS1_0020_MR1/OAS1_0020_MR1_roi_tensor.npy",
+  "error": null,
+  "warnings": []
+}

@@ -1,0 +1,9 @@
+{
+  "dataset_source": "OASIS-1",
+  "source_description": "Washington University / OASIS \u2014 https://sites.wustl.edu/oasisbrains/home/oasis-1/",
+  "oasis1_root": "C:/Users/avisy/Downloads/dataset/extracted",
+  "volume_kind": "t88_gfc",
+  "volume_description": "PROCESSED/MPRAGE/T88_111 \u2014 Talairach-88 atlas space, 1 mm isotropic, averaged across acquisitions, N4 and gain-field corrected, skull present",
+  "is_synthetic": false,
+  "preprocessing_note": "OASIS applied N4 bias-field and gain-field correction before distribution (filename components 'n4' and 'gfc'). The pipeline's M3 stage applies N4 again; this duplication is harmless but is recorded rather than hidden."
+}

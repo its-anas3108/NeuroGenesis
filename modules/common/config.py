@@ -56,6 +56,11 @@ class PathsConfig:
     #: https://sites.wustl.edu/oasisbrains/home/oasis-1/ , but the
     #: experiment uses only locally supplied files and never downloads.
     oasis1_root: Optional[Path] = None
+    #: Root of a local ADNI raw-DICOM export (data.dataset_source="ADNI").
+    #: Set by configuration or --adni-root. ADNI cohorts carry no CDR/
+    #: diagnostic labels here, so this path supports inference-only smoke
+    #: testing of the pipeline, never training.
+    adni_root: Optional[Path] = None
     #: Nilearn atlas cache.
     atlas_dir: Path = Path("dataset/nilearn_data")
     #: Root of all generated artifacts.
@@ -141,22 +146,6 @@ class PreprocessConfig:
     save_nifti: bool = True
     save_figures: bool = True
     max_subjects: Optional[int] = None
-
-
-@dataclass
-class SpatialEncoderConfig:
-    """Lightweight 3D CNN ROI patch encoder (Section 5)."""
-
-    #: Channel widths of the three convolutional blocks.
-    channels: Tuple[int, int, int] = (16, 32, 64)
-    kernel_size: int = 3
-    #: Dimension of the per-ROI spatial embedding ``E_i_3D``.
-    embed_dim: int = 128
-    dropout: float = 0.2
-    #: Share one encoder across all five ROIs (True) or learn a separate
-    #: encoder per ROI (False). Sharing is the default: with only five patches
-    #: per subject, per-ROI encoders overfit immediately.
-    shared_encoder: bool = True
 
 
 @dataclass
@@ -360,7 +349,6 @@ class NeuroGenesisConfig:
     paths: PathsConfig = field(default_factory=PathsConfig)
     data: DataConfig = field(default_factory=DataConfig)
     preprocess: PreprocessConfig = field(default_factory=PreprocessConfig)
-    spatial_encoder: SpatialEncoderConfig = field(default_factory=SpatialEncoderConfig)
     neuropropx: NeuroPropXConfig = field(default_factory=NeuroPropXConfig)
     graph_learning: GraphLearningConfig = field(default_factory=GraphLearningConfig)
     fusion: FusionConfig = field(default_factory=FusionConfig)
@@ -431,10 +419,9 @@ class NeuroGenesisConfig:
         """
         problems: List[str] = []
 
-        if self.data.dataset_source != "OASIS-1":
+        if self.data.dataset_source not in ("OASIS-1", "ADNI"):
             problems.append(
-                "data.dataset_source must be 'OASIS-1'; this project "
-                f"accepts no other dataset, got "
+                "data.dataset_source must be 'OASIS-1' or 'ADNI', got "
                 f"{self.data.dataset_source!r}"
             )
         if self.data.allow_synthetic_data:
@@ -578,7 +565,6 @@ _SECTION_TYPES: Dict[str, Any] = {
     "PathsConfig": PathsConfig,
     "DataConfig": DataConfig,
     "PreprocessConfig": PreprocessConfig,
-    "SpatialEncoderConfig": SpatialEncoderConfig,
     "NeuroPropXConfig": NeuroPropXConfig,
     "GraphLearningConfig": GraphLearningConfig,
     "FusionConfig": FusionConfig,
@@ -602,7 +588,6 @@ __all__ = [
     "PathsConfig",
     "DataConfig",
     "PreprocessConfig",
-    "SpatialEncoderConfig",
     "NeuroPropXConfig",
     "GraphLearningConfig",
     "FusionConfig",

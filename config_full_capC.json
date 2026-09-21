@@ -54,17 +54,6 @@
     "save_figures": false,
     "max_subjects": null
   },
-  "spatial_encoder": {
-    "channels": [
-      8,
-      16,
-      32
-    ],
-    "kernel_size": 3,
-    "embed_dim": 16,
-    "dropout": 0.2,
-    "shared_encoder": true
-  },
   "neuropropx": {
     "alpha_logit_init": 0.0,
     "learn_alpha": true,

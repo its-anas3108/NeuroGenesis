@@ -16,10 +16,10 @@ Usage::
 
     tracker = RunStateTracker(outputs_root)
 
-    with tracker.stage("M9", subject_id="OAS1_0001_MR1") as st:
-        emb = encoder(patches)
-        st.record_artifact("embeddings", path)
-        st.record_metric("embed_dim", 128)
+    with tracker.stage("M8", subject_id="OAS1_0001_MR1") as st:
+        features = extractor.extract(patches)
+        st.record_artifact("features", path)
+        st.record_metric("n_features", 14)
 
 On a clean exit the stage is marked ``COMPLETED``; on an exception it is marked
 ``FAILED`` with the exception text preserved, and the exception is re-raised.
@@ -89,8 +89,6 @@ PIPELINE: List[ModuleSpec] = [
                "Crop context-padded 48x48x48 patches -> (5, 48, 48, 48) tensor."),
     ModuleSpec("M8", "Morphometric Feature Extraction", "subject",
                "Per-ROI volumetric, textural and intensity features."),
-    ModuleSpec("M9", "3D CNN Spatial Encoding", "subject",
-               "Lightweight 3D CNN -> one 128-d embedding per ROI patch."),
     ModuleSpec("M10", "Brain Graph Construction", "subject",
                "Subject-specific 5-node speech graph with the anatomical prior."),
     ModuleSpec("M11", "NeuroProp-X", "subject",
@@ -106,7 +104,7 @@ PIPELINE: List[ModuleSpec] = [
     ModuleSpec("M12", "SAEG-GATv2", "subject",
                "Stage-aware edge-gated GATv2 graph encoder."),
     ModuleSpec("M13", "Multimodal Fusion", "subject",
-               "Fuse the 3D CNN and graph embeddings."),
+               "Project the graph embedding into the shared representation Z_H."),
     ModuleSpec("M14", "Stage-TGT", "subject",
                "Stage prototypes, transformer and stage-transition propensity."),
     ModuleSpec("M15", "ROI Ranking", "subject",

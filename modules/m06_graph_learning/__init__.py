@@ -20,7 +20,6 @@ from modules.m06_graph_learning.classifier import (
 from modules.m06_graph_learning.fusion import (
     FusionOutput,
     MultimodalFusion,
-    SpatialBranchProjection,
 )
 from modules.m06_graph_learning.gat_baseline import GATBaseline, GATv2Baseline
 from modules.m06_graph_learning.saeg_gatv2 import GraphEncoderOutput, SAEGGATv2
@@ -34,7 +33,6 @@ __all__ = [
     "GraphEncoderOutput",
     "GATBaseline",
     "GATv2Baseline",
-    "SpatialBranchProjection",
     "MultimodalFusion",
     "FusionOutput",
     "StageClassifier",

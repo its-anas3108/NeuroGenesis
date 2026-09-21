@@ -112,10 +112,11 @@ def _is_negated(lowered: str, position: int) -> bool:
     return any(cue in window for cue in NEGATION_CUES)
 
 
-def _provenance_label(marker: Optional[Dict[str, Any]]) -> str:
+def _provenance_label(marker: Optional[Dict[str, Any]],
+                      dataset_source: str = "OASIS-1") -> str:
     """Return a short human label for the data provenance."""
     if not marker:
-        return "OASIS-1 (real)"
+        return f"{dataset_source} (real)"
     return {
         "synthetic_mri": "SYNTHETIC phantom MRI",
         "synthetic_patches": "SYNTHETIC ROI patches (smoke test)",
@@ -275,9 +276,16 @@ class ReportGenerator:
             f"{(data.dataset_provenance or {}).get('dataset_source', 'OASIS-1')} |",
             f"| Dataset source | "
             f"{(data.dataset_provenance or {}).get('source_description', 'Washington University / OASIS')} |",
-            f"| Data provenance | {_provenance_label(data.smoke_marker)} |",
+            f"| Data provenance | "
+            f"{_provenance_label(data.smoke_marker, (data.dataset_provenance or {}).get('dataset_source', 'OASIS-1'))} |",
             "",
         ]
+        caveats = (data.dataset_provenance or {}).get("caveats") or []
+        if caveats:
+            lines += ["> **DATA CAVEATS — READ BEFORE INTERPRETING THIS REPORT**"]
+            for caveat in caveats:
+                lines += [f"> - {caveat}"]
+            lines += [""]
         return lines
 
     def _section_prediction(self, data: ReportInputs) -> List[str]:
@@ -621,7 +629,6 @@ class ReportGenerator:
             f"AP-LAF attention={spec.get('use_learned_attention')}, "
             f"ANP={spec.get('use_anp')}) |",
             f"| Edge gate | {spec.get('use_edge_gate', 'n/a')} |",
-            f"| 3D CNN branch | {spec.get('use_cnn', 'n/a')} |",
             f"| Stage-TGT | {spec.get('use_stage_tgt', 'n/a')} |",
             f"| Trainable parameters | {summary.get('n_parameters', 'n/a'):,} |"
             if isinstance(summary.get("n_parameters"), int) else

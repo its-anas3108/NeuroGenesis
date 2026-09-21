@@ -1,0 +1,1781 @@
+{
+  "descriptions": {
+    "logistic_regression": "Morphometry + Logistic Regression",
+    "gradient_boosting": "Morphometry + Gradient Boosting (XGBoost substitute)",
+    "random_forest": "Morphometry + Random Forest",
+    "mlp": "Morphometry + MLP (scikit-learn)"
+  },
+  "environment": {
+    "logistic_regression": true,
+    "gradient_boosting": true,
+    "random_forest": true,
+    "mlp": true,
+    "xgboost": true
+  },
+  "caveats": [
+    "Baseline hyper-parameters are library defaults and were not tuned. A tuned baseline could perform better, so this comparison should be read as 'the proposed model versus reasonable off-the-shelf baselines', not 'versus the best achievable baseline'.",
+    "XGBoost is not installed in this environment; scikit-learn's GradientBoostingClassifier was substituted and is labelled as such.",
+    "GradientBoostingClassifier and MLPClassifier have no class-weight parameter, so those two baselines run without the imbalance correction that every other model in the comparison receives.",
+    "All baselines use the same subject-wise splits and the same training-split-fitted scaler as the deep variants."
+  ],
+  "aggregate": {
+    "logistic_regression": {
+      "accuracy": {
+        "mean": 0.6295238095238095,
+        "sd": 0.08305395344999218,
+        "ci_low": 0.5567238095238095,
+        "ci_high": 0.7023238095238095,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.7142857142857143,
+          0.5,
+          0.6666666666666666,
+          0.6666666666666666,
+          0.6
+        ]
+      },
+      "macro_f1": {
+        "mean": 0.5147619047619049,
+        "sd": 0.13729424698242879,
+        "ci_low": 0.39441819124634125,
+        "ci_high": 0.6351056182774685,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.7111111111111111,
+          0.3571428571428572,
+          0.48888888888888893,
+          0.5833333333333334,
+          0.43333333333333335
+        ]
+      },
+      "balanced_accuracy": {
+        "mean": 0.5777777777777777,
+        "sd": 0.11520245196293179,
+        "ci_low": 0.4767983763823801,
+        "ci_high": 0.6787571791731754,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.7222222222222222,
+          0.4444444444444444,
+          0.5555555555555555,
+          0.6666666666666666,
+          0.5
+        ]
+      },
+      "roc_auc_macro": {
+        "mean": 0.8266666666666668,
+        "sd": 0.14312430926028805,
+        "ci_low": 0.7012126782490937,
+        "ci_high": 0.9521206550842398,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.7944444444444444,
+          0.6555555555555556,
+          0.7388888888888889,
+          1.0,
+          0.9444444444444445
+        ]
+      }
+    },
+    "gradient_boosting": {
+      "accuracy": {
+        "mean": 0.5723809523809524,
+        "sd": 0.15812822375335875,
+        "ci_low": 0.43377545305122006,
+        "ci_high": 0.7109864517106848,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.42857142857142855,
+          0.5,
+          0.8333333333333334,
+          0.5,
+          0.6
+        ]
+      },
+      "macro_f1": {
+        "mean": 0.42714285714285716,
+        "sd": 0.1371069360658298,
+        "ci_low": 0.30696332888473127,
+        "ci_high": 0.547322385400983,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.4666666666666666,
+          0.35555555555555557,
+          0.6190476190476191,
+          0.24999999999999997,
+          0.4444444444444444
+        ]
+      },
+      "balanced_accuracy": {
+        "mean": 0.4666666666666666,
+        "sd": 0.12789849370245931,
+        "ci_low": 0.3545586940203637,
+        "ci_high": 0.5787746393129695,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.4444444444444444,
+          0.38888888888888884,
+          0.6666666666666666,
+          0.3333333333333333,
+          0.5
+        ]
+      },
+      "roc_auc_macro": {
+        "mean": 0.8122222222222222,
+        "sd": 0.15922480247407467,
+        "ci_low": 0.6726555292641072,
+        "ci_high": 0.9517889151803371,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.7888888888888889,
+          0.8425925925925926,
+          0.9333333333333332,
+          0.5518518518518518,
+          0.9444444444444445
+        ]
+      }
+    },
+    "random_forest": {
+      "accuracy": {
+        "mean": 0.6076190476190476,
+        "sd": 0.173584328999989,
+        "ci_low": 0.45546567470576355,
+        "ci_high": 0.7597724205323317,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.5714285714285714,
+          0.3333333333333333,
+          0.6666666666666666,
+          0.6666666666666666,
+          0.8
+        ]
+      },
+      "macro_f1": {
+        "mean": 0.5282539682539683,
+        "sd": 0.20699045661760213,
+        "ci_low": 0.34681883343122194,
+        "ci_high": 0.7096891030767147,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.5777777777777778,
+          0.24444444444444446,
+          0.48888888888888893,
+          0.5079365079365079,
+          0.8222222222222223
+        ]
+      },
+      "balanced_accuracy": {
+        "mean": 0.5777777777777777,
+        "sd": 0.20260647254233857,
+        "ci_low": 0.4001853744256212,
+        "ci_high": 0.7553701811299343,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.5555555555555555,
+          0.27777777777777773,
+          0.5555555555555555,
+          0.6666666666666666,
+          0.8333333333333334
+        ]
+      },
+      "roc_auc_macro": {
+        "mean": 0.8400000000000001,
+        "sd": 0.13119818201089134,
+        "ci_low": 0.7249997230277088,
+        "ci_high": 0.9550002769722914,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.85,
+          0.6388888888888888,
+          0.8222222222222223,
+          1.0,
+          0.888888888888889
+        ]
+      }
+    },
+    "mlp": {
+      "accuracy": {
+        "mean": 0.5657142857142857,
+        "sd": 0.24673376546473766,
+        "ci_low": 0.3494426047202175,
+        "ci_high": 0.781985966708354,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.42857142857142855,
+          0.3333333333333333,
+          0.8333333333333334,
+          0.8333333333333334,
+          0.4
+        ]
+      },
+      "macro_f1": {
+        "mean": 0.5015873015873016,
+        "sd": 0.32447799037584535,
+        "ci_low": 0.21716980286359983,
+        "ci_high": 0.7860048003110034,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.3333333333333333,
+          0.24444444444444446,
+          0.8666666666666667,
+          0.8412698412698413,
+          0.2222222222222222
+        ]
+      },
+      "balanced_accuracy": {
+        "mean": 0.5555555555555556,
+        "sd": 0.2859897261385278,
+        "ci_low": 0.3048745078987353,
+        "ci_high": 0.8062366032123758,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.4444444444444444,
+          0.27777777777777773,
+          0.8888888888888888,
+          0.8333333333333334,
+          0.3333333333333333
+        ]
+      },
+      "roc_auc_macro": {
+        "mean": 0.6583333333333333,
+        "sd": 0.21947179076367668,
+        "ci_low": 0.46595782676318626,
+        "ci_high": 0.8507088399034803,
+        "ci_clamped": false,
+        "n": 5,
+        "values": [
+          0.5333333333333333,
+          0.36481481481481487,
+          0.8055555555555555,
+          0.9212962962962963,
+          0.6666666666666666
+        ]
+      }
+    }
+  },
+  "runs": [
+    {
+      "name": "logistic_regression",
+      "repeat": 0,
+      "n_train": 16,
+      "n_test": 7,
+      "metrics": {
+        "n_samples": 7,
+        "accuracy": 0.7142857142857143,
+        "balanced_accuracy": 0.7222222222222222,
+        "macro_f1": 0.7111111111111111,
+        "macro_precision": 0.7777777777777777,
+        "macro_recall": 0.7222222222222222,
+        "roc_auc_macro": 0.7944444444444444,
+        "confusion_matrix": [
+          [
+            2,
+            1,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 3,
+            "precision": 0.6666666666666666,
+            "recall": 0.6666666666666666,
+            "specificity": 0.75,
+            "f1": 0.6666666666666666,
+            "auc": 0.5833333333333334
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.6666666666666666,
+            "recall": 1.0,
+            "specificity": 0.8,
+            "f1": 0.8,
+            "auc": 0.8
+          },
+          {
+            "stage": "AD",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.5,
+            "specificity": 1.0,
+            "f1": 0.6666666666666666,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "notes": []
+    },
+    {
+      "name": "logistic_regression",
+      "repeat": 1,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.5,
+        "balanced_accuracy": 0.4444444444444444,
+        "macro_f1": 0.3571428571428572,
+        "macro_precision": 0.7,
+        "macro_recall": 0.4444444444444444,
+        "roc_auc_macro": 0.6555555555555556,
+        "confusion_matrix": [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.3333333333333333,
+            "specificity": 1.0,
+            "f1": 0.5,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 5,
+            "precision": 0.4,
+            "recall": 1.0,
+            "specificity": 0.25,
+            "f1": 0.5714285714285715,
+            "auc": 0.5
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.8
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": []
+    },
+    {
+      "name": "logistic_regression",
+      "repeat": 2,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.6666666666666666,
+        "balanced_accuracy": 0.5555555555555555,
+        "macro_f1": 0.48888888888888893,
+        "macro_precision": 0.75,
+        "macro_recall": 0.5555555555555555,
+        "roc_auc_macro": 0.7388888888888889,
+        "confusion_matrix": [
+          [
+            2,
+            1,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 2,
+            "precision": 1.0,
+            "recall": 0.6666666666666666,
+            "specificity": 1.0,
+            "f1": 0.8,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 4,
+            "precision": 0.5,
+            "recall": 1.0,
+            "specificity": 0.5,
+            "f1": 0.6666666666666666,
+            "auc": 0.75
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.8
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": []
+    },
+    {
+      "name": "logistic_regression",
+      "repeat": 3,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.6666666666666666,
+        "balanced_accuracy": 0.6666666666666666,
+        "macro_f1": 0.5833333333333334,
+        "macro_precision": 0.8,
+        "macro_recall": 0.6666666666666666,
+        "roc_auc_macro": 1.0,
+        "confusion_matrix": [
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 5,
+            "precision": 0.6,
+            "recall": 1.0,
+            "specificity": 0.3333333333333333,
+            "f1": 0.7499999999999999,
+            "auc": 1.0
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 1.0
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "f1": 1.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "MCI: precision is undefined \u2014 the model made no MCI prediction (support 2).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": []
+    },
+    {
+      "name": "logistic_regression",
+      "repeat": 4,
+      "n_train": 18,
+      "n_test": 5,
+      "metrics": {
+        "n_samples": 5,
+        "accuracy": 0.6,
+        "balanced_accuracy": 0.5,
+        "macro_f1": 0.43333333333333335,
+        "macro_precision": 0.5833333333333333,
+        "macro_recall": 0.5,
+        "roc_auc_macro": 0.9444444444444445,
+        "confusion_matrix": [
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.6666666666666666,
+            "recall": 1.0,
+            "specificity": 0.6666666666666666,
+            "f1": 0.8,
+            "auc": 1.0
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 2,
+            "precision": 0.5,
+            "recall": 0.5,
+            "specificity": 0.6666666666666666,
+            "f1": 0.5,
+            "auc": 0.8333333333333334
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": []
+    },
+    {
+      "name": "gradient_boosting",
+      "repeat": 0,
+      "n_train": 16,
+      "n_test": 7,
+      "metrics": {
+        "n_samples": 7,
+        "accuracy": 0.42857142857142855,
+        "balanced_accuracy": 0.4444444444444444,
+        "macro_f1": 0.4666666666666666,
+        "macro_precision": 0.5555555555555555,
+        "macro_recall": 0.4444444444444444,
+        "roc_auc_macro": 0.7888888888888889,
+        "confusion_matrix": [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.3333333333333333,
+            "specificity": 0.5,
+            "f1": 0.3333333333333333,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "specificity": 0.6,
+            "f1": 0.4,
+            "auc": 0.8
+          },
+          {
+            "stage": "AD",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.5,
+            "specificity": 1.0,
+            "f1": 0.6666666666666666,
+            "auc": 0.9
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "notes": [
+        "XGBoost is not installed; scikit-learn's GradientBoostingClassifier was used instead. This is a different implementation with different defaults and must not be reported as XGBoost.",
+        "GradientBoostingClassifier has no class_weight parameter, so this baseline is the one model in the comparison without explicit imbalance correction. Its recall on the AD class should be read with that in mind."
+      ]
+    },
+    {
+      "name": "gradient_boosting",
+      "repeat": 1,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.5,
+        "balanced_accuracy": 0.38888888888888884,
+        "macro_f1": 0.35555555555555557,
+        "macro_precision": 0.5,
+        "macro_recall": 0.38888888888888884,
+        "roc_auc_macro": 0.8425925925925926,
+        "confusion_matrix": [
+          [
+            2,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 3,
+            "precision": 0.6666666666666666,
+            "recall": 0.6666666666666666,
+            "specificity": 0.6666666666666666,
+            "f1": 0.6666666666666666,
+            "auc": 0.7777777777777778
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "specificity": 0.5,
+            "f1": 0.4,
+            "auc": 0.75
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": [
+        "XGBoost is not installed; scikit-learn's GradientBoostingClassifier was used instead. This is a different implementation with different defaults and must not be reported as XGBoost.",
+        "GradientBoostingClassifier has no class_weight parameter, so this baseline is the one model in the comparison without explicit imbalance correction. Its recall on the AD class should be read with that in mind."
+      ]
+    },
+    {
+      "name": "gradient_boosting",
+      "repeat": 2,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.8333333333333334,
+        "balanced_accuracy": 0.6666666666666666,
+        "macro_f1": 0.6190476190476191,
+        "macro_precision": 0.875,
+        "macro_recall": 0.6666666666666666,
+        "roc_auc_macro": 0.9333333333333332,
+        "confusion_matrix": [
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 4,
+            "precision": 0.75,
+            "recall": 1.0,
+            "specificity": 0.6666666666666666,
+            "f1": 0.8571428571428571,
+            "auc": 1.0
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 2,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "f1": 1.0,
+            "auc": 1.0
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.8
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": [
+        "XGBoost is not installed; scikit-learn's GradientBoostingClassifier was used instead. This is a different implementation with different defaults and must not be reported as XGBoost.",
+        "GradientBoostingClassifier has no class_weight parameter, so this baseline is the one model in the comparison without explicit imbalance correction. Its recall on the AD class should be read with that in mind."
+      ]
+    },
+    {
+      "name": "gradient_boosting",
+      "repeat": 3,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.5,
+        "balanced_accuracy": 0.3333333333333333,
+        "macro_f1": 0.24999999999999997,
+        "macro_precision": 0.3,
+        "macro_recall": 0.3333333333333333,
+        "roc_auc_macro": 0.5518518518518518,
+        "confusion_matrix": [
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 5,
+            "precision": 0.6,
+            "recall": 1.0,
+            "specificity": 0.3333333333333333,
+            "f1": 0.7499999999999999,
+            "auc": 0.5555555555555556
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.5
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.8,
+            "f1": 0.0,
+            "auc": 0.6
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "MCI: precision is undefined \u2014 the model made no MCI prediction (support 2).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": [
+        "XGBoost is not installed; scikit-learn's GradientBoostingClassifier was used instead. This is a different implementation with different defaults and must not be reported as XGBoost.",
+        "GradientBoostingClassifier has no class_weight parameter, so this baseline is the one model in the comparison without explicit imbalance correction. Its recall on the AD class should be read with that in mind."
+      ]
+    },
+    {
+      "name": "gradient_boosting",
+      "repeat": 4,
+      "n_train": 18,
+      "n_test": 5,
+      "metrics": {
+        "n_samples": 5,
+        "accuracy": 0.6,
+        "balanced_accuracy": 0.5,
+        "macro_f1": 0.4444444444444444,
+        "macro_precision": 0.75,
+        "macro_recall": 0.5,
+        "roc_auc_macro": 0.9444444444444445,
+        "confusion_matrix": [
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 2,
+            "n_predicted": 4,
+            "precision": 0.5,
+            "recall": 1.0,
+            "specificity": 0.3333333333333333,
+            "f1": 0.6666666666666666,
+            "auc": 0.8333333333333334
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.5,
+            "specificity": 1.0,
+            "f1": 0.6666666666666666,
+            "auc": 1.0
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": [
+        "XGBoost is not installed; scikit-learn's GradientBoostingClassifier was used instead. This is a different implementation with different defaults and must not be reported as XGBoost.",
+        "GradientBoostingClassifier has no class_weight parameter, so this baseline is the one model in the comparison without explicit imbalance correction. Its recall on the AD class should be read with that in mind."
+      ]
+    },
+    {
+      "name": "random_forest",
+      "repeat": 0,
+      "n_train": 16,
+      "n_test": 7,
+      "metrics": {
+        "n_samples": 7,
+        "accuracy": 0.5714285714285714,
+        "balanced_accuracy": 0.5555555555555555,
+        "macro_f1": 0.5777777777777778,
+        "macro_precision": 0.6666666666666666,
+        "macro_recall": 0.5555555555555555,
+        "roc_auc_macro": 0.85,
+        "confusion_matrix": [
+          [
+            2,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 3,
+            "precision": 0.6666666666666666,
+            "recall": 0.6666666666666666,
+            "specificity": 0.75,
+            "f1": 0.6666666666666666,
+            "auc": 0.75
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "specificity": 0.6,
+            "f1": 0.4,
+            "auc": 0.9
+          },
+          {
+            "stage": "AD",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.5,
+            "specificity": 1.0,
+            "f1": 0.6666666666666666,
+            "auc": 0.9
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "notes": []
+    },
+    {
+      "name": "random_forest",
+      "repeat": 1,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.3333333333333333,
+        "balanced_accuracy": 0.27777777777777773,
+        "macro_f1": 0.24444444444444446,
+        "macro_precision": 0.375,
+        "macro_recall": 0.27777777777777773,
+        "roc_auc_macro": 0.6388888888888888,
+        "confusion_matrix": [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 2,
+            "precision": 0.5,
+            "recall": 0.3333333333333333,
+            "specificity": 0.6666666666666666,
+            "f1": 0.4,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 4,
+            "precision": 0.25,
+            "recall": 0.5,
+            "specificity": 0.25,
+            "f1": 0.3333333333333333,
+            "auc": 0.25
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": []
+    },
+    {
+      "name": "random_forest",
+      "repeat": 2,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.6666666666666666,
+        "balanced_accuracy": 0.5555555555555555,
+        "macro_f1": 0.48888888888888893,
+        "macro_precision": 0.75,
+        "macro_recall": 0.5555555555555555,
+        "roc_auc_macro": 0.8222222222222223,
+        "confusion_matrix": [
+          [
+            2,
+            1,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 2,
+            "precision": 1.0,
+            "recall": 0.6666666666666666,
+            "specificity": 1.0,
+            "f1": 0.8,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 4,
+            "precision": 0.5,
+            "recall": 1.0,
+            "specificity": 0.5,
+            "f1": 0.6666666666666666,
+            "auc": 1.0
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.8
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": []
+    },
+    {
+      "name": "random_forest",
+      "repeat": 3,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.6666666666666666,
+        "balanced_accuracy": 0.6666666666666666,
+        "macro_f1": 0.5079365079365079,
+        "macro_precision": 0.625,
+        "macro_recall": 0.6666666666666666,
+        "roc_auc_macro": 1.0,
+        "confusion_matrix": [
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 4,
+            "precision": 0.75,
+            "recall": 1.0,
+            "specificity": 0.6666666666666666,
+            "f1": 0.8571428571428571,
+            "auc": 1.0
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 1.0
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 2,
+            "precision": 0.5,
+            "recall": 1.0,
+            "specificity": 0.8,
+            "f1": 0.6666666666666666,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "MCI: precision is undefined \u2014 the model made no MCI prediction (support 2).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": []
+    },
+    {
+      "name": "random_forest",
+      "repeat": 4,
+      "n_train": 18,
+      "n_test": 5,
+      "metrics": {
+        "n_samples": 5,
+        "accuracy": 0.8,
+        "balanced_accuracy": 0.8333333333333334,
+        "macro_f1": 0.8222222222222223,
+        "macro_precision": 0.8888888888888888,
+        "macro_recall": 0.8333333333333334,
+        "roc_auc_macro": 0.888888888888889,
+        "confusion_matrix": [
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.6666666666666666,
+            "recall": 1.0,
+            "specificity": 0.6666666666666666,
+            "f1": 0.8,
+            "auc": 0.8333333333333334
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.5,
+            "specificity": 1.0,
+            "f1": 0.6666666666666666,
+            "auc": 0.8333333333333334
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "f1": 1.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "notes": []
+    },
+    {
+      "name": "mlp",
+      "repeat": 0,
+      "n_train": 16,
+      "n_test": 7,
+      "metrics": {
+        "n_samples": 7,
+        "accuracy": 0.42857142857142855,
+        "balanced_accuracy": 0.4444444444444444,
+        "macro_f1": 0.3333333333333333,
+        "macro_precision": 0.41666666666666663,
+        "macro_recall": 0.4444444444444444,
+        "roc_auc_macro": 0.5333333333333333,
+        "confusion_matrix": [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 3,
+            "precision": 0.3333333333333333,
+            "recall": 0.3333333333333333,
+            "specificity": 0.5,
+            "f1": 0.3333333333333333,
+            "auc": 0.5
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 4,
+            "precision": 0.5,
+            "recall": 1.0,
+            "specificity": 0.6,
+            "f1": 0.6666666666666666,
+            "auc": 0.6
+          },
+          {
+            "stage": "AD",
+            "support": 2,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.5
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 2).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": [
+        "MLPClassifier has no class_weight parameter; the class imbalance is uncorrected for this baseline."
+      ]
+    },
+    {
+      "name": "mlp",
+      "repeat": 1,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.3333333333333333,
+        "balanced_accuracy": 0.27777777777777773,
+        "macro_f1": 0.24444444444444446,
+        "macro_precision": 0.375,
+        "macro_recall": 0.27777777777777773,
+        "roc_auc_macro": 0.36481481481481487,
+        "confusion_matrix": [
+          [
+            1,
+            2,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 2,
+            "precision": 0.5,
+            "recall": 0.3333333333333333,
+            "specificity": 0.6666666666666666,
+            "f1": 0.4,
+            "auc": 0.4444444444444444
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 4,
+            "precision": 0.25,
+            "recall": 0.5,
+            "specificity": 0.25,
+            "f1": 0.3333333333333333,
+            "auc": 0.25
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 0.4
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": [
+        "MLPClassifier has no class_weight parameter; the class imbalance is uncorrected for this baseline."
+      ]
+    },
+    {
+      "name": "mlp",
+      "repeat": 2,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.8333333333333334,
+        "balanced_accuracy": 0.8888888888888888,
+        "macro_f1": 0.8666666666666667,
+        "macro_precision": 0.8888888888888888,
+        "macro_recall": 0.8888888888888888,
+        "roc_auc_macro": 0.8055555555555555,
+        "confusion_matrix": [
+          [
+            2,
+            1,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 2,
+            "precision": 1.0,
+            "recall": 0.6666666666666666,
+            "specificity": 1.0,
+            "f1": 0.8,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 3,
+            "precision": 0.6666666666666666,
+            "recall": 1.0,
+            "specificity": 0.75,
+            "f1": 0.8,
+            "auc": 0.75
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "f1": 1.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "notes": [
+        "MLPClassifier has no class_weight parameter; the class imbalance is uncorrected for this baseline."
+      ]
+    },
+    {
+      "name": "mlp",
+      "repeat": 3,
+      "n_train": 17,
+      "n_test": 6,
+      "metrics": {
+        "n_samples": 6,
+        "accuracy": 0.8333333333333334,
+        "balanced_accuracy": 0.8333333333333334,
+        "macro_f1": 0.8412698412698413,
+        "macro_precision": 0.9166666666666666,
+        "macro_recall": 0.8333333333333334,
+        "roc_auc_macro": 0.9212962962962963,
+        "confusion_matrix": [
+          [
+            3,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 3,
+            "n_predicted": 4,
+            "precision": 0.75,
+            "recall": 1.0,
+            "specificity": 0.6666666666666666,
+            "f1": 0.8571428571428571,
+            "auc": 0.8888888888888888
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 0.5,
+            "specificity": 1.0,
+            "f1": 0.6666666666666666,
+            "auc": 0.875
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "f1": 1.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 3,
+          "roc_auc_macro": 3
+        },
+        "notes": []
+      },
+      "notes": [
+        "MLPClassifier has no class_weight parameter; the class imbalance is uncorrected for this baseline."
+      ]
+    },
+    {
+      "name": "mlp",
+      "repeat": 4,
+      "n_train": 18,
+      "n_test": 5,
+      "metrics": {
+        "n_samples": 5,
+        "accuracy": 0.4,
+        "balanced_accuracy": 0.3333333333333333,
+        "macro_f1": 0.2222222222222222,
+        "macro_precision": 0.25,
+        "macro_recall": 0.3333333333333333,
+        "roc_auc_macro": 0.6666666666666666,
+        "confusion_matrix": [
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "per_class": [
+          {
+            "stage": "CN",
+            "support": 2,
+            "n_predicted": 4,
+            "precision": 0.5,
+            "recall": 1.0,
+            "specificity": 0.3333333333333333,
+            "f1": 0.6666666666666666,
+            "auc": 0.6666666666666666
+          },
+          {
+            "stage": "MCI",
+            "support": 2,
+            "n_predicted": 1,
+            "precision": 0.0,
+            "recall": 0.0,
+            "specificity": 0.6666666666666666,
+            "f1": 0.0,
+            "auc": 0.3333333333333333
+          },
+          {
+            "stage": "AD",
+            "support": 1,
+            "n_predicted": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "f1": 0.0,
+            "auc": 1.0
+          }
+        ],
+        "n_classes_averaged": {
+          "balanced_accuracy": 3,
+          "macro_f1": 3,
+          "macro_precision": 2,
+          "roc_auc_macro": 3
+        },
+        "notes": [
+          "AD: precision is undefined \u2014 the model made no AD prediction (support 1).",
+          "macro_precision was averaged over 2 of 3 classes; the remaining class(es) were undefined on this split."
+        ]
+      },
+      "notes": [
+        "MLPClassifier has no class_weight parameter; the class imbalance is uncorrected for this baseline."
+      ]
+    }
+  ],
+  "failures": []
+}

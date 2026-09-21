@@ -25,8 +25,7 @@ Missing patches
 ---------------
 
 A session whose patch tensor is absent is *excluded* and named in
-:attr:`ROIPatchDataset.skipped`, never silently replaced by zeros. A zero patch
-would train the CNN on a blank volume labelled AD.
+:attr:`ROIPatchDataset.skipped`, never silently replaced by zeros.
 """
 
 from __future__ import annotations
@@ -58,20 +57,12 @@ class Sample:
     morph: torch.Tensor
     #: ``(N_ROI, D, H, W)`` ROI patches, or ``None`` when patches are not used.
     patches: Optional[torch.Tensor] = None
-    #: ``(N_ROI, embed_dim)`` precomputed CNN embeddings, or ``None``.
-    cnn_embedding: Optional[torch.Tensor] = None
 
 
 def patch_tensor_path(outputs_root: Path, session_id: str) -> Path:
     """Return the canonical path of a session's ROI patch tensor."""
     return (Path(outputs_root) / "roi" / "patches" / session_id
             / f"{session_id}_roi_tensor.npy")
-
-
-def embedding_path(outputs_root: Path, session_id: str) -> Path:
-    """Return the canonical path of a session's cached CNN embeddings."""
-    return (Path(outputs_root) / "cnn_embeddings" / session_id
-            / f"{session_id}_cnn_embeddings.npy")
 
 
 class ROIPatchDataset(Dataset):
@@ -85,10 +76,8 @@ class ROIPatchDataset(Dataset):
         morph_array: ``(len(session_ids), N_ROI, N_FEATURES)`` standardised
             features, aligned to ``session_ids`` in order.
         outputs_root: Root ``outputs/`` directory, for locating cached tensors.
-        load_patches: Load ROI patch volumes. Set ``False`` for the
-            morphometry-only variants (A0-A5), which never touch the patches.
-        load_embeddings: Load cached CNN embeddings instead of raw patches. Lets
-            the graph stage train without re-running the CNN each epoch.
+        load_patches: Load ROI patch volumes. The model has no branch that
+            consumes them; this stays ``False`` in current use.
         patch_size: Expected patch shape, validated on load.
         strict: Raise on a missing artifact instead of skipping the session.
 
@@ -103,14 +92,12 @@ class ROIPatchDataset(Dataset):
         cohort: pd.DataFrame,
         morph_array: np.ndarray,
         outputs_root: Path,
-        load_patches: bool = True,
-        load_embeddings: bool = False,
+        load_patches: bool = False,
         patch_size: Tuple[int, int, int] = (48, 48, 48),
         strict: bool = False,
     ) -> None:
         self.outputs_root = Path(outputs_root)
         self.load_patches = load_patches
-        self.load_embeddings = load_embeddings
         self.patch_size = tuple(patch_size)
         self.strict = strict
 
@@ -142,13 +129,9 @@ class ROIPatchDataset(Dataset):
                 row = row.iloc[0]
 
             patch_file = patch_tensor_path(self.outputs_root, sid)
-            embed_file = embedding_path(self.outputs_root, sid)
 
             if load_patches and not patch_file.exists():
                 self._skip(sid, f"ROI patch tensor not found: {patch_file}")
-                continue
-            if load_embeddings and not embed_file.exists():
-                self._skip(sid, f"CNN embeddings not found: {embed_file}")
                 continue
 
             self.records.append({
@@ -157,7 +140,6 @@ class ROIPatchDataset(Dataset):
                 "label": int(row["label"]),
                 "morph_index": i,
                 "patch_file": patch_file if load_patches else None,
-                "embed_file": embed_file if load_embeddings else None,
             })
 
         self.morph_array = morph_array
@@ -211,25 +193,12 @@ class ROIPatchDataset(Dataset):
                 np.ascontiguousarray(array, dtype=np.float32)
             )
 
-        embedding = None
-        if rec["embed_file"] is not None:
-            array = np.load(rec["embed_file"])
-            if array.ndim != 2 or array.shape[0] != N_ROI:
-                raise ValueError(
-                    f"{rec['session_id']}: embeddings have shape "
-                    f"{tuple(array.shape)}, expected ({N_ROI}, embed_dim)"
-                )
-            embedding = torch.from_numpy(
-                np.ascontiguousarray(array, dtype=np.float32)
-            )
-
         return Sample(
             session_id=rec["session_id"],
             subject_id=rec["subject_id"],
             label=rec["label"],
             morph=morph,
             patches=patches,
-            cnn_embedding=embedding,
         )
 
     # ── Introspection ─────────────────────────────────────────────────────
@@ -264,7 +233,6 @@ class ROIPatchDataset(Dataset):
             "class_counts": self.class_counts(),
             "n_features": self.n_features,
             "loads_patches": self.load_patches,
-            "loads_embeddings": self.load_embeddings,
             "patch_size": list(self.patch_size),
             "roi_order": list(ROI_ORDER),
         }
@@ -273,26 +241,21 @@ class ROIPatchDataset(Dataset):
 def collate_samples(batch: List[Sample]) -> Dict[str, Any]:
     """Collate :class:`Sample` objects into batched tensors.
 
-    A custom collate is needed because ``patches`` and ``cnn_embedding`` may be
-    ``None``, which the default collate cannot handle.
+    A custom collate is needed because ``patches`` may be ``None``, which the
+    default collate cannot handle.
 
     Args:
         batch: List of samples.
 
     Returns:
-        Dict with ``morph``, ``patches``, ``cnn_embedding``, ``labels``,
-        ``session_ids`` and ``subject_ids``. Optional tensors are ``None`` when
-        absent from the samples.
+        Dict with ``morph``, ``patches``, ``labels``, ``session_ids`` and
+        ``subject_ids``. ``patches`` is ``None`` when absent from the samples.
     """
     return {
         "morph": torch.stack([s.morph for s in batch]),
         "patches": (
             torch.stack([s.patches for s in batch])
             if batch and batch[0].patches is not None else None
-        ),
-        "cnn_embedding": (
-            torch.stack([s.cnn_embedding for s in batch])
-            if batch and batch[0].cnn_embedding is not None else None
         ),
         "labels": torch.tensor([s.label for s in batch], dtype=torch.long),
         "session_ids": [s.session_id for s in batch],
@@ -348,5 +311,4 @@ __all__ = [
     "collate_samples",
     "make_loader",
     "patch_tensor_path",
-    "embedding_path",
 ]

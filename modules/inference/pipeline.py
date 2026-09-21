@@ -7,8 +7,8 @@ record the design specifies, plus the XAI signals and the report inputs.
 
 .. code-block:: text
 
-    cached ROI patches + morphometric features
-        -> 3D CNN -> NeuroProp-X -> SAEG-GATv2 -> fusion
+    morphometric features
+        -> NeuroProp-X -> SAEG-GATv2 -> fusion
         -> current stage -> Stage-TGT -> ROI ranking -> XAI -> report
 
 Every artifact is loaded, never recomputed
@@ -41,10 +41,8 @@ from modules.common.logging_utils import get_logger
 from modules.common.roi_constants import ROI_ORDER, STAGE_ORDER
 from modules.common.run_state import RunStateTracker
 from modules.m04_feature_extraction import FEATURE_ORDER, MorphometricScaler
-from modules.m06_spatial_encoder.patch_dataset import patch_tensor_path
 from modules.m08_xai import (
     FeatureAttributor,
-    cnn_occlusion_importance,
     compute_roi_ranking,
     explain_graph,
     explain_neuropropx,
@@ -117,24 +115,17 @@ class InferencePipeline:
         self.features = scaler.transform(scaler.add_atrophy_index(features_raw))
         self.features_raw = features_raw
         self._attributor: Optional[FeatureAttributor] = None
-        self._current_patches: Optional[torch.Tensor] = None
-        #: The current subject's CNN embedding, computed once per subject.
-        self._current_embedding: Optional[torch.Tensor] = None
 
     # ── Inputs ────────────────────────────────────────────────────────────
 
-    def load_subject(self, subject_id: str
-                     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], List[str]]:
-        """Load one subject's standardised features and ROI patches.
+    def load_subject(self, subject_id: str) -> Tuple[torch.Tensor, List[str]]:
+        """Load one subject's standardised morphometric features.
 
         Returns:
-            ``(morph, patches, warnings)``. ``patches`` is ``None`` when the
-            variant has no CNN branch or the tensor is absent.
+            ``(morph, warnings)``.
 
         Raises:
             KeyError: If the subject has no feature rows.
-            FileNotFoundError: If the CNN branch is active but no patch tensor
-                exists — inference on a zero-filled patch would be meaningless.
         """
         warnings: List[str] = []
         array, missing = self.scaler.to_tensor_array(self.features, [subject_id])
@@ -149,21 +140,7 @@ class InferencePipeline:
                 "feature-extraction stage first."
             )
         morph = torch.from_numpy(array)
-
-        patches = None
-        if self.model.spec.use_cnn:
-            path = patch_tensor_path(self.outputs_root, subject_id)
-            if not path.exists():
-                raise FileNotFoundError(
-                    f"The model variant uses the 3D CNN branch but no ROI patch "
-                    f"tensor exists at {path}. Run the preprocessing and ROI "
-                    "patch stages first."
-                )
-            volume = np.load(path)
-            patches = torch.from_numpy(
-                np.ascontiguousarray(volume, dtype=np.float32)
-            ).unsqueeze(0)
-        return morph, patches, warnings
+        return morph, warnings
 
     def _background(self) -> Optional[np.ndarray]:
         """Build the attribution background from the training split."""
@@ -189,34 +166,12 @@ class InferencePipeline:
         n_roi, n_feat = background.shape[1], background.shape[2]
 
         def predict(flat: np.ndarray) -> np.ndarray:
-            """Predict class probabilities from flattened morphometric input.
-
-            The CNN branch is held fixed while the morphometric input varies,
-            which is what isolates the morphometric contribution; varying both
-            would attribute the CNN's behaviour to morphometric features.
-
-            Because it is fixed, the CNN embedding is computed **once per
-            subject** in :meth:`run` and reused here. Re-running the encoder for
-            every perturbed row would repeat the same 3D convolution hundreds of
-            times and, at the default fan-out, allocate tens of gigabytes.
-            """
+            """Predict class probabilities from flattened morphometric input."""
             tensor = torch.from_numpy(
                 np.asarray(flat, dtype=np.float32).reshape(-1, n_roi, n_feat)
             )
-            batch = tensor.shape[0]
-            embeddings = None
-            if self.model.spec.use_cnn:
-                if self._current_embedding is None:
-                    raise RuntimeError(
-                        "The CNN branch is active but no cached embedding is "
-                        "available. InferencePipeline.run() computes it; call "
-                        "that before requesting attribution."
-                    )
-                embeddings = self._current_embedding.expand(batch, -1, -1)
             with torch.no_grad():
-                out = self.model(
-                    morph_features=tensor, cnn_embeddings=embeddings
-                )
+                out = self.model(morph_features=tensor)
             return out.classification.probabilities.cpu().numpy()
 
         self._attributor = FeatureAttributor(
@@ -233,7 +188,6 @@ class InferencePipeline:
         self,
         subject_id: str,
         explain: bool = True,
-        occlusion: bool = True,
         tracker: Optional[RunStateTracker] = None,
     ) -> InferenceResult:
         """Run inference and explanation for one subject.
@@ -241,27 +195,14 @@ class InferencePipeline:
         Args:
             subject_id: Session identifier.
             explain: Compute attribution, attention and ROI ranking.
-            occlusion: Additionally compute the 3D CNN occlusion attribution.
-                Costs ``N_ROI + 1`` forward passes.
             tracker: Optional run-state tracker to record M12-M16 and M19.
 
         Returns:
             An :class:`InferenceResult`.
         """
         result = InferenceResult(subject_id=subject_id)
-        morph, patches, warnings = self.load_subject(subject_id)
+        morph, warnings = self.load_subject(subject_id)
         result.warnings.extend(warnings)
-        self._current_patches = patches
-
-        # Compute the subject's CNN embedding once. Attribution holds the
-        # spatial branch fixed, so this is both the correct semantics and the
-        # difference between hundreds of 3D convolutions and one.
-        self._current_embedding = None
-        if patches is not None and self.model.spatial_encoder is not None:
-            with torch.no_grad():
-                self._current_embedding = self.model.spatial_encoder(
-                    patches
-                ).embeddings
 
         def stage(code: str):
             """Return a stage context manager, or a no-op when untracked."""
@@ -272,39 +213,18 @@ class InferencePipeline:
             return tracker.stage(code, subject_id)
 
         with torch.no_grad():
-            output = self.model(
-                morph_features=morph, patches=patches, return_trace=True
-            )
+            output = self.model(morph_features=morph, return_trace=True)
         result.output = output
 
-        # M10 and M11.x execute inside the single forward pass above, so their
+        # M11.x execute inside the single forward pass above, so their
         # state is recorded from the produced tensors rather than by wrapping
         # separate calls. Recording them is not cosmetic: leaving them
         # NOT_STARTED would tell the dashboard that NeuroProp-X never ran.
-        with stage("M9") as record:
-            if record is not None:
-                if output.spatial is not None:
-                    record.record_metric(
-                        "embed_dim", int(output.spatial.embeddings.shape[-1])
-                    )
-                    record.record_metric(
-                        "layer_trace",
-                        [t.name for t in output.spatial.trace],
-                    )
-                else:
-                    record.note(
-                        "This model variant has no 3D CNN branch."
-                    )
-
         with stage("M10") as record:
             if record is not None:
                 record.record_metric("n_nodes", len(ROI_ORDER))
                 record.record_metric("roi_order", list(ROI_ORDER))
-                record.record_metric(
-                    "node_input_dim", int(morph.shape[-1])
-                    + (int(output.spatial.embeddings.shape[-1])
-                       if output.spatial is not None else 0),
-                )
+                record.record_metric("node_input_dim", int(morph.shape[-1]))
 
         if output.neuropropx is not None:
             npx = output.neuropropx
@@ -379,7 +299,15 @@ class InferencePipeline:
                 record.record_metric("z_h_dim", int(output.z_h.shape[-1]))
 
         row = self.cohort[self.cohort["session_id"].astype(str) == subject_id]
-        true_stage = str(row.iloc[0]["stage"]) if not row.empty else None
+        stage_value = row.iloc[0]["stage"] if not row.empty else None
+        # "UNLABELED" (the ADNI cohort's stage marker, m01_dataset.adni_manager)
+        # is not a real ground-truth label; treat it the same as no label at
+        # all rather than rendering it as a fake "clinically diagnosed" value.
+        has_real_stage = (
+            stage_value is not None and pd.notna(stage_value)
+            and str(stage_value) != "UNLABELED"
+        )
+        true_stage = str(stage_value) if has_real_stage else None
 
         record_dict = output.subject_record(0, subject_id)
         record_dict["reference_stage"] = true_stage
@@ -401,7 +329,6 @@ class InferencePipeline:
 
         attribution = None
         attribution_per_roi: Optional[Dict[str, float]] = None
-        occlusion_result = None
 
         if explain:
             with stage("M16") as record:
@@ -423,28 +350,6 @@ class InferencePipeline:
                         "background set was supplied."
                     )
 
-                if occlusion and patches is not None:
-                    def predict_patches(volume: np.ndarray) -> np.ndarray:
-                        tensor = torch.from_numpy(
-                            np.asarray(volume, dtype=np.float32)
-                        )
-                        batch = tensor.shape[0]
-                        with torch.no_grad():
-                            out = self.model(
-                                morph_features=morph.expand(batch, -1, -1),
-                                patches=tensor,
-                            )
-                        return out.classification.probabilities.cpu().numpy()
-
-                    try:
-                        occlusion_result = cnn_occlusion_importance(
-                            predict_patches,
-                            patches[0].numpy(),
-                            int(output.classification.predictions[0]),
-                        )
-                    except (ValueError, RuntimeError) as exc:
-                        result.warnings.append(f"Occlusion analysis failed: {exc}")
-
                 if record is not None:
                     record.record_metric(
                         "attribution_method",
@@ -456,10 +361,6 @@ class InferencePipeline:
                     vulnerability=npx_expl.regional_vulnerability or None,
                     attention=graph_expl.node_importance or None,
                     attribution=attribution_per_roi,
-                    cnn_importance=(
-                        occlusion_result["importance"] if occlusion_result
-                        else None
-                    ),
                     cfg=self.cfg.ranking,
                     group=true_stage,
                 )
@@ -479,7 +380,6 @@ class InferencePipeline:
             "graph": graph_expl.to_dict(),
             "neuropropx": npx_expl.to_dict(),
             "attribution": attribution.to_dict() if attribution else None,
-            "cnn_occlusion": occlusion_result,
         }
         result.record = record_dict
 

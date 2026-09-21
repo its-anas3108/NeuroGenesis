@@ -20,7 +20,6 @@ OUTPUT_LAYOUT: Dict[str, str] = {
     "roi": "roi",
     "roi_patches": "roi/patches",
     "roi_masks": "roi/masks",
-    "cnn_embeddings": "cnn_embeddings",
     "graph": "graph",
     # NeuroProp-X
     "neuropropx": "neuropropx",

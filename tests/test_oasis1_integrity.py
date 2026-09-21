@@ -207,12 +207,19 @@ def test_config_rejects_enabled_synthetic_data() -> None:
     assert any("allow_synthetic_data" in p for p in problems), problems
 
 
-def test_config_rejects_a_non_oasis_dataset() -> None:
-    """No other dataset name is accepted."""
+def test_config_accepts_adni_as_a_dataset_source() -> None:
+    """ADNI is a valid dataset_source (inference-only; see integrity tests)."""
     cfg = NeuroGenesisConfig()
     cfg.data.dataset_source = "ADNI"
+    assert cfg.validate() == []
+
+
+def test_config_rejects_an_unknown_dataset_source() -> None:
+    """No dataset name outside {OASIS-1, ADNI} is accepted."""
+    cfg = NeuroGenesisConfig()
+    cfg.data.dataset_source = "SOME_OTHER_DATASET"
     problems = cfg.validate()
-    assert any("OASIS-1" in p for p in problems), problems
+    assert any("OASIS-1" in p or "ADNI" in p for p in problems), problems
 
 
 # ──────────────────────────────────────────────────────────────────────────────

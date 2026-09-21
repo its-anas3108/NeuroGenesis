@@ -15,9 +15,6 @@ values used for the prediction, not a reconstruction of them.
 representation ``P``, taken directly from the module outputs, plus the AP-LAF
 ``alpha`` and adjacency triple.
 
-**D. 3D CNN** — an occlusion-based ROI-level attribution. See
-:func:`cnn_occlusion_importance` for what it can and cannot say.
-
 Everything connects back to the CN/MCI/AD prediction (Section 60): each signal is
 reported together with the predicted stage and its probability, and the
 class-specific variants are computed per target class.
@@ -266,93 +263,9 @@ def explain_neuropropx(output: ModelOutput, model: Any = None,
     return explanation
 
 
-def cnn_occlusion_importance(
-    predict_fn: Callable[[np.ndarray], np.ndarray],
-    patches: np.ndarray,
-    target_index: int,
-    baseline: str = "mean",
-) -> Dict[str, Any]:
-    """ROI-level occlusion attribution for the 3D CNN branch (Section 15D).
-
-    Each ROI patch is replaced in turn by a constant baseline and the drop in the
-    target-class probability is recorded. A large drop means the CNN's reading of
-    that patch was load-bearing for the prediction.
-
-    **What this measures, and what it does not.** Occlusion at whole-ROI
-    granularity attributes importance to *a region*, not to a structure inside
-    it. It says "the model needed Broca's patch", not "the model responded to
-    atrophy in the pars opercularis". Voxel-level saliency would be needed for
-    the latter, and on 48-cubed patches from 154 training subjects such maps are
-    dominated by noise, so they are deliberately not produced here.
-
-    Occlusion attribution is also not additive: because the branches interact
-    through fusion, the individual drops need not sum to the total.
-
-    Args:
-        predict_fn: Maps ``(n, N_ROI, D, H, W)`` patch batches to
-            ``(n, N_STAGE)`` probabilities.
-        patches: ``(N_ROI, D, H, W)`` patches for one subject.
-        target_index: Class whose probability is being explained.
-        baseline: ``"mean"`` replaces the patch with its own mean intensity,
-            ``"zero"`` with zeros. ``"mean"`` is the default because a zero patch
-            is far outside the training distribution and would measure
-            out-of-distribution sensitivity rather than the region's
-            contribution.
-
-    Returns:
-        Dict with per-ROI importance, the baseline probability and notes.
-
-    Raises:
-        ValueError: If the patch tensor is mis-shaped or the baseline is unknown.
-    """
-    patches = np.asarray(patches, dtype=np.float32)
-    if patches.ndim != 4 or patches.shape[0] != N_ROI:
-        raise ValueError(
-            f"patches must have shape ({N_ROI}, D, H, W); got {patches.shape}"
-        )
-    if baseline not in ("mean", "zero"):
-        raise ValueError(f"baseline must be 'mean' or 'zero', got {baseline!r}")
-
-    base_prob = float(predict_fn(patches[None, ...])[0, target_index])
-
-    occluded = np.repeat(patches[None, ...], N_ROI, axis=0)
-    for i in range(N_ROI):
-        fill = float(patches[i].mean()) if baseline == "mean" else 0.0
-        occluded[i, i] = fill
-
-    probs = predict_fn(occluded)[:, target_index]
-    importance = {
-        ROI_ORDER[i]: float(base_prob - probs[i]) for i in range(N_ROI)
-    }
-
-    return {
-        "method": "roi_occlusion",
-        "baseline": baseline,
-        "target_stage": STAGE_ORDER[target_index],
-        "baseline_probability": base_prob,
-        "importance": importance,
-        "ranking": [
-            {"rank": r + 1, "roi": roi, "roi_short": roi_short(roi),
-             "importance": v}
-            for r, (roi, v) in enumerate(
-                sorted(importance.items(), key=lambda kv: kv[1], reverse=True)
-            )
-        ],
-        "notes": [
-            "Whole-ROI occlusion attributes importance to a region, not to a "
-            "structure within it.",
-            "Occlusion attributions are not additive: the branches interact "
-            "through fusion, so the individual drops need not sum to the total.",
-            "Voxel-level saliency is deliberately not produced: on 48-cubed "
-            "patches from this sample size such maps are dominated by noise.",
-        ],
-    }
-
-
 __all__ = [
     "GraphExplanation",
     "NeuroPropXExplanation",
     "explain_graph",
     "explain_neuropropx",
-    "cnn_occlusion_importance",
 ]

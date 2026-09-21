@@ -1,0 +1,42 @@
+{
+  "scope": "cohort",
+  "updated_at": "2026-09-17 17:34:15",
+  "stages": {
+    "M18": {
+      "code": "M18",
+      "status": "COMPLETED",
+      "started_at": "2026-09-17 17:34:06",
+      "finished_at": "2026-09-17 17:34:15",
+      "duration_s": 9.4463,
+      "error": null,
+      "traceback": null,
+      "artifacts": {
+        "results_json": "outputs_oasis1_pilot31/ablation/ablation_results.json",
+        "table2_main_performance": "outputs_oasis1_pilot31/ablation/table2_main_performance.csv",
+        "table4_ablation": "outputs_oasis1_pilot31/ablation/table4_ablation.csv",
+        "table9_model_comparison": "outputs_oasis1_pilot31/ablation/table9_model_comparison.csv",
+        "table3_class_wise": "outputs_oasis1_pilot31/ablation/table3_class_wise.csv"
+      },
+      "metrics": {
+        "n_variants": 3,
+        "n_repeats": 5
+      },
+      "notes": []
+    },
+    "M17": {
+      "code": "M17",
+      "status": "COMPLETED",
+      "started_at": "2026-09-02 02:54:29",
+      "finished_at": "2026-09-02 02:54:30",
+      "duration_s": 1.2799,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "n_tests_run": 195,
+        "n_significant": 31
+      },
+      "notes": []
+    }
+  }
+}

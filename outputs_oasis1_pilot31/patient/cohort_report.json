@@ -1,0 +1,50 @@
+{
+  "dataset_source": "OASIS-1",
+  "oasis1_root": "C:/Users/avisy/Downloads/dataset/extracted",
+  "volume_kind": "t88_gfc",
+  "is_synthetic": false,
+  "metadata_csv": "dataset/oasis_cross-sectional.csv",
+  "mri_dir": "C:/Users/avisy/Downloads/dataset/extracted",
+  "n_metadata_rows": 436,
+  "n_labeled_sessions": 235,
+  "n_labeled_subjects": 235,
+  "n_mri_files_found": 436,
+  "n_sessions_with_mri": 235,
+  "n_mri_without_label": 201,
+  "stage_counts": {
+    "CN": 135,
+    "MCI": 70,
+    "AD": 30
+  },
+  "stage_counts_with_mri": {
+    "CN": 135,
+    "MCI": 70,
+    "AD": 30
+  },
+  "is_processable": true,
+  "can_train": true,
+  "label_report": {
+    "n_input_rows": 436,
+    "n_labeled": 235,
+    "n_missing_cdr": 201,
+    "n_unmapped_cdr": 0,
+    "n_excluded_age": 0,
+    "stage_counts": {
+      "CN": 135,
+      "MCI": 70,
+      "AD": 30
+    },
+    "subject_counts": {
+      "CN": 135,
+      "MCI": 70,
+      "AD": 30
+    },
+    "unmapped_cdr_values": [],
+    "missing_cdr_policy": "exclude",
+    "imbalance_ratio": 4.5,
+    "warnings": []
+  },
+  "warnings": [
+    "201 MRI file(s) have no matching row in the metadata table and are therefore unlabeled: ['OAS1_0004_MR1', 'OAS1_0005_MR1', 'OAS1_0006_MR1', 'OAS1_0007_MR1', 'OAS1_0009_MR1']"
+  ]
+}

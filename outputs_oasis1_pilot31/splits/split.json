@@ -1,0 +1,121 @@
+{
+  "seed": 42,
+  "repeat": null,
+  "fold": null,
+  "n_folds": null,
+  "val_fraction": 0.15,
+  "test_fraction": 0.2,
+  "stratum_rule": "most advanced stage across a subject's sessions",
+  "session_counts": {
+    "train": {
+      "CN": 9,
+      "MCI": 6,
+      "AD": 4
+    },
+    "val": {
+      "CN": 2,
+      "MCI": 2,
+      "AD": 1
+    },
+    "test": {
+      "CN": 3,
+      "MCI": 2,
+      "AD": 1
+    }
+  },
+  "subject_counts": {
+    "train": {
+      "CN": 9,
+      "MCI": 6,
+      "AD": 4
+    },
+    "val": {
+      "CN": 2,
+      "MCI": 2,
+      "AD": 1
+    },
+    "test": {
+      "CN": 3,
+      "MCI": 2,
+      "AD": 1
+    }
+  },
+  "stratum_conflicts": {},
+  "warnings": [],
+  "subjects": {
+    "train": [
+      "OAS1_0001",
+      "OAS1_0002",
+      "OAS1_0011",
+      "OAS1_0015",
+      "OAS1_0016",
+      "OAS1_0018",
+      "OAS1_0019",
+      "OAS1_0021",
+      "OAS1_0023",
+      "OAS1_0026",
+      "OAS1_0028",
+      "OAS1_0031",
+      "OAS1_0032",
+      "OAS1_0033",
+      "OAS1_0039",
+      "OAS1_0041",
+      "OAS1_0044",
+      "OAS1_0053",
+      "OAS1_0056"
+    ],
+    "val": [
+      "OAS1_0020",
+      "OAS1_0022",
+      "OAS1_0034",
+      "OAS1_0035",
+      "OAS1_0042"
+    ],
+    "test": [
+      "OAS1_0003",
+      "OAS1_0010",
+      "OAS1_0013",
+      "OAS1_0030",
+      "OAS1_0046",
+      "OAS1_0052"
+    ]
+  },
+  "sessions": {
+    "train": [
+      "OAS1_0001_MR1",
+      "OAS1_0002_MR1",
+      "OAS1_0011_MR1",
+      "OAS1_0015_MR1",
+      "OAS1_0016_MR1",
+      "OAS1_0018_MR1",
+      "OAS1_0019_MR1",
+      "OAS1_0021_MR1",
+      "OAS1_0023_MR1",
+      "OAS1_0026_MR1",
+      "OAS1_0028_MR1",
+      "OAS1_0031_MR1",
+      "OAS1_0032_MR1",
+      "OAS1_0033_MR1",
+      "OAS1_0039_MR1",
+      "OAS1_0041_MR1",
+      "OAS1_0044_MR1",
+      "OAS1_0053_MR1",
+      "OAS1_0056_MR1"
+    ],
+    "val": [
+      "OAS1_0020_MR1",
+      "OAS1_0022_MR1",
+      "OAS1_0034_MR1",
+      "OAS1_0035_MR1",
+      "OAS1_0042_MR1"
+    ],
+    "test": [
+      "OAS1_0003_MR1",
+      "OAS1_0010_MR1",
+      "OAS1_0013_MR1",
+      "OAS1_0030_MR1",
+      "OAS1_0046_MR1",
+      "OAS1_0052_MR1"
+    ]
+  }
+}

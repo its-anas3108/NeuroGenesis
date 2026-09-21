@@ -1,0 +1,232 @@
+# NeuroGenesis subject report
+
+Stage-aware speech-network analysis of structural MRI: CN / MCI / AD classification, regional vulnerability, and stage-transition propensity.
+
+| Field | Value |
+|---|---|
+| Subject ID | `OAS1_0016_MR1` |
+| Generated | 2026-09-21 23:26:10 |
+| Experiment | `oasis1_pilot31` |
+| Dataset | OASIS-1 |
+| Dataset source | Washington University / OASIS — https://sites.wustl.edu/oasisbrains/home/oasis-1/ |
+| Data provenance | OASIS-1 (real) |
+
+## 1. Current stage classification
+
+**Model-assigned stage: AD** (Alzheimer's-type dementia)
+
+| Stage | Probability |
+|---|---|
+| CN | 0.1095 |
+| MCI | 0.3232 |
+| AD | 0.5674  **<-- assigned** |
+
+Reference CDR-derived stage for this session: **MCI**. The model's assignment differs from it.
+
+### Model confidence
+
+- Top-class probability: 0.5674
+- Margin over runner-up: 0.2442
+- Normalised predictive entropy: 0.8454 (0 = fully confident, 1 = uniform)
+
+_Confidence indicators are derived from softmax outputs and are not calibrated probabilities of correctness. A low-entropy prediction indicates that the model separated the classes confidently in its own representation, not that the classification is verified._
+
+## 2. NeuroProp-X regional vulnerability
+
+Model-derived vulnerability `RV_i = sigmoid(w_v^T xhat_i + b_v)`, measuring how informative each speech-related region is for the current CN/MCI/AD discrimination.
+
+| Rank | Region | Vulnerability | Function |
+|---|---|---|---|
+| 1 | Insula | 0.6542 | Articulatory planning, phonological awareness |
+| 2 | STG | 0.5360 | Auditory-verbal processing, spectrotemporal analysis |
+| 3 | Wernicke | 0.4928 | Speech comprehension, auditory word recognition |
+| 4 | Broca | 0.2412 | Speech production, phonological encoding |
+| 5 | IFG | 0.1081 | Syntactic processing, verbal working memory |
+
+> Vulnerability is a model-derived discriminative score. It is not a probability that the region will degenerate.
+
+AP-LAF anatomical-prior weight `alpha` = 0.3319 — the share of the adaptive adjacency's mass contributed by the anatomical prior, with the remainder from learned attention.
+
+## 3. Inter-regional pathways
+
+### Most attended pathways (SAEG-GATv2 gated attention)
+
+| Pathway | Attention | Edge gate | Anatomical tract |
+|---|---|---|---|
+| Broca -> Insula | 0.1961 | 0.8036 | Short_Arcuate_Fibres |
+| STG -> Insula | 0.1934 | 0.8078 | Extreme_Capsule_System |
+| IFG -> Insula | 0.1933 | 0.8020 | Inferior_Fronto_Occipital_Fasciculus |
+| Wernicke -> Insula | 0.1882 | 0.8057 | Extreme_Capsule_System |
+| Wernicke -> IFG | 0.1699 | 0.7928 | no prior edge |
+
+### Highest propagation-representation pathways (NeuroProp-X ANP)
+
+| Pathway | Propagation score |
+|---|---|
+| Insula -> STG | 0.6686 |
+| STG -> Insula | 0.6676 |
+| Insula -> Wernicke | 0.6659 |
+| STG -> Wernicke | 0.6611 |
+| Wernicke -> STG | 0.6605 |
+
+> Propagation scores are a learned edge-level representation combining endpoint vulnerability with adaptive connectivity. They are not biological disease-spread probabilities.
+
+## 4. Stage-transition propensity
+
+| Quantity | Value |
+|---|---|
+| Reference stage | AD |
+| Advanced-stage alignment | 0.7669 |
+| AD-associated propensity | 0.4999 |
+| Stage-transition propensity | undefined |
+| Transition target | none |
+
+_The reference stage is the most advanced stage in the vocabulary, so stage-transition propensity is undefined. Advanced-stage alignment is reported in its place._
+
+Stage alignment distribution:
+
+- CN: 0.2206
+- MCI: 0.0250
+- AD: 0.7544
+
+### Stage geometry quality
+
+- CN < MCI < AD prototype ordering respected: **True**
+
+> Stage-transition propensity is a model-derived measure of how closely the subject's current structural representation aligns with a more advanced disease-stage representation. It is derived from a single cross-sectional scan. It is not a clinically validated conversion probability, not a prediction of future diagnosis, and not a biological estimate of disease onset.
+
+## 5. Unified ROI ranking
+
+Signal weights actually applied: attention = 0.30, attribution = 0.30, vulnerability = 0.40.
+
+| Rank | Region | Combined score | vulnerability | attention | attribution |
+|---|---|---|---|---|---|
+| 1 | STG | 0.7187 | 0.7836 | 0.5465 | 0.8043 |
+| 2 | Insula | 0.7000 | 1.0000 | 1.0000 | 0.0000 |
+| 3 | Broca | 0.5119 | 0.2438 | 0.3813 | 1.0000 |
+| 4 | Wernicke | 0.4465 | 0.7046 | 0.0000 | 0.5490 |
+| 5 | IFG | 0.3557 | 0.0000 | 0.5727 | 0.6129 |
+
+## 6. Explainable AI
+
+### Feature attribution — method: **SHAP (Kernel)**
+
+| Region | Feature | Attribution | Direction |
+|---|---|---|---|
+| IFG | std_intensity | 0.0525 | increases |
+| STG | surface_to_volume_ratio | 0.0493 | increases |
+| Broca | std_intensity | 0.0391 | increases |
+| Wernicke | surface_to_volume_ratio | 0.0380 | increases |
+| Broca | entropy | 0.0223 | increases |
+| Insula | kurtosis | 0.0172 | increases |
+| STG | atrophy_index | 0.0123 | increases |
+| Wernicke | normalized_volume | 0.0115 | increases |
+| Broca | mean_intensity | 0.0095 | increases |
+| Insula | voxel_count | 0.0061 | increases |
+
+- Kernel SHAP with a k-means-summarised background drawn from the training split. Shapley values assume feature independence, which correlated morphometric features violate to some degree.
+
+### Node importance (incoming attention mass)
+
+| Region | Incoming attention |
+|---|---|
+| Insula | 0.9719 |
+| IFG | 0.8273 |
+| STG | 0.8185 |
+| Broca | 0.7626 |
+| Wernicke | 0.6336 |
+
+## 7. Stage-wise statistical context (cohort level)
+
+- Group sizes: {'CN': 14, 'MCI': 10, 'AD': 6}
+- Tests run: 195 (skipped: 15)
+- FDR-significant: 31
+- Multiple-comparison correction: benjamini_hochberg, applied across all ROI x feature x contrast tests as one family
+
+Largest FDR-significant stage differences:
+
+| Region | Feature | Contrast | FDR p | Effect size | Trend |
+|---|---|---|---|---|---|
+| Broca | voxel_count | MCI vs AD | 2.46e-02 | -1.998 (hedges_g) | decrease |
+| Broca | voxel_count | CN vs AD | 2.46e-02 | -1.805 (hedges_g) | decrease |
+| Broca | brain_volume_mm3 | MCI vs AD | 2.46e-02 | -1.998 (hedges_g) | decrease |
+| Broca | brain_volume_mm3 | CN vs AD | 2.46e-02 | -1.805 (hedges_g) | decrease |
+| Broca | gm_volume_mm3 | MCI vs AD | 4.85e-02 | -0.800 (rank_biserial) | decrease |
+| Broca | gm_volume_mm3 | CN vs AD | 2.46e-02 | -0.857 (rank_biserial) | decrease |
+| Broca | skewness | CN vs AD | 3.87e-02 | 1.496 (hedges_g) | increase |
+| Broca | surface_area_vox | CN vs MCI | 3.67e-02 | -0.700 (rank_biserial) | decrease |
+
+> Benjamini-Hochberg FDR was applied across all 195 tests in one family (every ROI x feature x contrast), not per contrast.
+
+> 15 cell(s) were not tested because a group fell below the minimum of 5 or the feature was constant. Those cells carry no p-value rather than a fabricated one.
+
+> The smallest stage group has 6 subject(s). Effect-size estimates at this sample size have wide confidence intervals, and a non-significant result should not be read as evidence of no difference.
+
+## 8. Ablation results (cohort level)
+
+| Configuration                                                      | Variant   | Accuracy          | Macro-F1          | Balanced Accuracy   | ROC-AUC           |
+|:-------------------------------------------------------------------|:----------|:------------------|:------------------|:--------------------|:------------------|
+| Baseline (morphometry only)                                        | A0        | 0.2857 +/- 0.1650 | 0.2714 +/- 0.1787 | 0.3333 +/- 0.2187   | 0.5120 +/- 0.1467 |
+| + Anatomical Prior                                                 | A1        | not run           | not run           | not run             | not run           |
+| + Standard GAT                                                     | A2        | not run           | not run           | not run             | not run           |
+| + Learned Attention (AP-LAF)                                       | A3        | not run           | not run           | not run             | not run           |
+| + SRVE                                                             | A4        | not run           | not run           | not run             | not run           |
+| + ANP                                                              | A5        | 0.2419 +/- 0.1167 | 0.1946 +/- 0.1129 | 0.2444 +/- 0.1694   | 0.5369 +/- 0.2373 |
+| Full: NeuroProp-X + SAEG-GATv2 + structural covariance + Stage-TGT | A7        | 0.3657 +/- 0.1263 | 0.3022 +/- 0.1574 | 0.3889 +/- 0.1884   | 0.5513 +/- 0.2199 |
+
+> Confidence intervals and p-values describe variability across repeated splits of one fixed cohort. The same subjects appear in every repeat, so these are not confidence intervals over the population of Alzheimer's patients.
+
+> Comparisons against the reference variant are paired across identical splits and use the Wilcoxon signed-rank test, which does not assume normality of the paired differences.
+
+> With a small AD class, a non-significant difference is not evidence that two variants perform equally.
+
+## 9. Model version and configuration
+
+| Field | Value |
+|---|---|
+| Variant | `A7` — Full: NeuroProp-X + SAEG-GATv2 + structural covariance + Stage-TGT |
+| Graph encoder | saeg_gatv2 |
+| NeuroProp-X | True (SRVE=True, AP-LAF attention=True, ANP=True) |
+| Edge gate | True |
+| Stage-TGT | True |
+| Trainable parameters | 132,136 |
+| Node feature width | 19 |
+| Shared representation width | 64 |
+| Checkpoint | `outputs_oasis1_pilot31/checkpoints/A7.pt` |
+
+Parameters by component:
+
+- spatial_encoder: 0
+- spatial_projection: 0
+- neuropropx: 1,946
+- graph_encoder: 37,128
+- fusion: 25,024
+- classifier: 195
+- stage_tgt: 67,648
+- propensity_head: 195
+
+## 10. Dataset
+
+| Field | Value |
+|---|---|
+| Dataset | **OASIS-1** |
+| Source | Washington University / OASIS — https://sites.wustl.edu/oasisbrains/home/oasis-1/ |
+| Volume | PROCESSED/MPRAGE/T88_111 — Talairach-88 atlas space, 1 mm isotropic, averaged across acquisitions, N4 and gain-field corrected, skull present |
+| Synthetic data | DISABLED |
+
+> OASIS applied N4 bias-field and gain-field correction before distribution (filename components 'n4' and 'gfc'). The pipeline's M3 stage applies N4 again; this duplication is harmless but is recorded rather than hidden.
+
+## 10. Limitations
+
+- The dataset is **OASIS-1 cross-sectional** (Washington University / OASIS). Findings apply to that cohort and have not been replicated on any independent dataset.
+- The study is **cross-sectional**. Every subject contributes one scan, so no within-subject change is measured and no statement about the future can be supported.
+- The MCI class is derived from CDR = 0.5, documented in OASIS-1 as 'very mild dementia'. It is a conventional cross-sectional stand-in for MCI, not an independent clinical MCI diagnosis.
+- The labelled OASIS-1 cohort contains 30 AD sessions. Point estimates from a single split are unreliable at this size, which is why every comparison is reported over repeated splits with confidence intervals.
+- The anatomical prior uses expert-assigned ordinal tract weights, not measured diffusion tractography. Its contribution is tested empirically by ablations A1 and A3 rather than assumed.
+- Grey-matter volume is an intensity-threshold proxy, and cortical thickness is a volume-to-surface proxy. Neither is a tissue-class segmentation or a FreeSurfer measurement.
+- Confidence indicators come from softmax outputs and are not calibrated probabilities of correctness.
+- The system has not been clinically validated and is not a medical device.
+
+## Disclaimer
+
+> These results are model-derived associations and stage-propensity estimates produced by a research system from a single cross-sectional structural MRI scan. They are not a confirmed clinical diagnosis, not a validated prediction of future disease conversion, and not a basis for any clinical decision. Regional vulnerability, propagation scores and stage-transition propensity describe how informative each region and pathway is for the model's current discrimination between CN, MCI and AD; they are not measurements of biological degeneration or disease spread. This system has not been clinically validated.

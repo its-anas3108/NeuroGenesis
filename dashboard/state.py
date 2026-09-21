@@ -194,15 +194,6 @@ class DashboardState:
             / f"{subject_id}_roi_tensor.npy"
         )
 
-    def cnn_embeddings(self, subject_id: str
-                       ) -> Tuple[Optional[np.ndarray], Optional[Dict[str, Any]]]:
-        """Return cached CNN embeddings and their summary."""
-        root = self.outputs / "cnn_embeddings" / subject_id
-        return (
-            _read_npy(root / f"{subject_id}_cnn_embeddings.npy"),
-            _read_json(root / f"{subject_id}_cnn_embeddings.json"),
-        )
-
     # ── NeuroProp-X artifacts ─────────────────────────────────────────────
 
     def neuropropx(self, subject_id: str) -> Dict[str, Any]:

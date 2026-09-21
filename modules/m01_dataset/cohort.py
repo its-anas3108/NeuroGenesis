@@ -205,6 +205,9 @@ def build_cohort(
         FileNotFoundError: If the metadata CSV is missing. Without CDR values
             there are no labels, so proceeding would be meaningless.
     """
+    if data.dataset_source == "ADNI":
+        return _build_adni_cohort(paths, data)
+
     csv_path = Path(paths.metadata_csv)
     if not csv_path.exists():
         raise FileNotFoundError(
@@ -312,6 +315,68 @@ def build_cohort(
     cohort = labeled[ordered].reset_index(drop=True)
 
     logger.info("Cohort assembled:\n%s", report.summary())
+    return cohort, report
+
+
+def _build_adni_cohort(
+    paths: PathsConfig, data: DataConfig,
+) -> Tuple[pd.DataFrame, CohortReport]:
+    """Assemble the ADNI cohort table: an honestly unlabeled cohort.
+
+    No CDR/diagnosis metadata exists for this local export, so no
+    ``map_labels``-equivalent step runs here — every session is stamped
+    ``stage="UNLABELED"``. ``CohortReport.can_train`` therefore evaluates
+    ``False`` automatically (``stage_counts_with_mri`` stays empty), which is
+    exactly the guard that keeps this cohort out of training.
+
+    Raises:
+        FileNotFoundError: If ``paths.adni_root`` is not configured.
+    """
+    from modules.m01_dataset.adni_manager import ADNIDataManager
+
+    if not paths.adni_root:
+        raise FileNotFoundError(
+            "data.dataset_source is 'ADNI' but paths.adni_root is not set. "
+            "Pass --adni-root <path> or set paths.adni_root in the config."
+        )
+
+    manager = ADNIDataManager(
+        adni_root=Path(paths.adni_root),
+        cache_dir=Path(paths.outputs_dir) / "adni_nifti",
+    )
+    index = manager.usable_index(deep=getattr(data, "deep_validation", True))
+
+    rows = [{
+        "session_id": str(row["session_id"]),
+        "subject_id": str(row["subject_id"]),
+        "stage": "UNLABELED",
+        "label": None,
+        "mri_path": row["mri_path"],
+        "has_mri": bool(row["usable"]),
+    } for _, row in index.iterrows()]
+    cohort = pd.DataFrame(
+        rows, columns=["session_id", "subject_id", "stage", "label",
+                       "mri_path", "has_mri"],
+    )
+
+    report = CohortReport(
+        metadata_csv=None,
+        mri_dir=str(paths.adni_root),
+        dataset_source="ADNI",
+        oasis1_root=None,
+        volume_kind=None,
+        n_metadata_rows=0,
+        n_labeled_sessions=0,
+        n_labeled_subjects=0,
+        n_mri_files_found=len(index),
+        n_sessions_with_mri=int(cohort["has_mri"].sum()),
+        n_mri_without_label=0,
+        stage_counts={},
+        stage_counts_with_mri={},
+        label_report=None,
+        warnings=list(manager.provenance()["caveats"]),
+    )
+    logger.info("ADNI cohort assembled:\n%s", report.summary())
     return cohort, report
 
 

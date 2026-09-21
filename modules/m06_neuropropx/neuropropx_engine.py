@@ -78,7 +78,6 @@ class NeuroPropXConfigFlags:
         use_structural: Enable the AP-LAF structural-covariance operand,
             a per-subject correlation between ROI morphometric profiles.
             When ``False``, ``A_star`` mixes only the prior and attention.
-        use_cnn: Include the 3D CNN embedding block in ``X_star``.
         use_centrality: Include the centrality block in ``X_star``.
     """
 
@@ -86,7 +85,6 @@ class NeuroPropXConfigFlags:
     use_learned_attention: bool = True
     use_structural: bool = True
     use_anp: bool = True
-    use_cnn: bool = True
     use_centrality: bool = True
 
     def as_dict(self) -> Dict[str, bool]:
@@ -99,8 +97,8 @@ class NeuroPropX(nn.Module):
 
     Args:
         morph_dim: Width of the per-ROI morphometric feature vector.
-        cnn_dim: Width of the per-ROI 3D CNN embedding. Ignored when
-            ``flags.use_cnn`` is ``False``.
+        cnn_dim: Width of the per-ROI secondary embedding, if any. ``0`` when
+            there is none.
         cfg: NeuroProp-X hyper-parameters.
         flags: Component enable flags for ablation.
         morph_feature_names: Optional morphometric feature names, forwarded to
@@ -126,7 +124,7 @@ class NeuroPropX(nn.Module):
         self.flags = flags or NeuroPropXConfigFlags()
         self.n_roi = n_roi
         self.morph_dim = morph_dim
-        self.cnn_dim = cnn_dim if self.flags.use_cnn else 0
+        self.cnn_dim = cnn_dim
 
         #: Width of the node representation ``H`` that SRVE and AP-LAF consume.
         self.input_dim = self.morph_dim + self.cnn_dim
@@ -240,8 +238,9 @@ class NeuroPropX(nn.Module):
         if self.cnn_dim:
             if cnn_embeddings is None:
                 raise ValueError(
-                    f"cnn_dim={self.cnn_dim} but cnn_embeddings is None. Pass "
-                    "flags.use_cnn=False to run without the spatial branch."
+                    f"cnn_dim={self.cnn_dim} but cnn_embeddings is None. "
+                    "Construct NeuroPropX with cnn_dim=0 to run without a "
+                    "secondary embedding branch."
                 )
             c = cnn_embeddings.unsqueeze(0) if cnn_embeddings.dim() == 2 \
                 else cnn_embeddings

@@ -167,27 +167,9 @@ class Trainer:
 
     def _forward(self, batch: Dict[str, Any],
                  return_trace: bool = False) -> ModelOutput:
-        """Move a batch to the device and run the model.
-
-        Precomputed CNN embeddings take precedence over raw patches when both
-        are present: they are cheaper and, being produced in eval mode, are
-        deterministic.
-        """
+        """Move a batch to the device and run the model."""
         morph = batch["morph"].to(self.device)
-        patches = (
-            batch["patches"].to(self.device)
-            if batch.get("patches") is not None else None
-        )
-        embeddings = (
-            batch["cnn_embedding"].to(self.device)
-            if batch.get("cnn_embedding") is not None else None
-        )
-        return self.model(
-            morph_features=morph,
-            patches=patches if embeddings is None else None,
-            cnn_embeddings=embeddings,
-            return_trace=return_trace,
-        )
+        return self.model(morph_features=morph, return_trace=return_trace)
 
     # ── Fit ───────────────────────────────────────────────────────────────
 
@@ -434,7 +416,6 @@ class Trainer:
                         "loss": asdict(self.cfg.loss),
                         "graph_learning": asdict(self.cfg.graph_learning),
                         "neuropropx": asdict(self.cfg.neuropropx),
-                        "spatial_encoder": asdict(self.cfg.spatial_encoder),
                         "stage_tgt": asdict(self.cfg.stage_tgt),
                         "fusion": asdict(self.cfg.fusion),
                     },

@@ -3,7 +3,6 @@
 from modules.m08_xai.graph_explainer import (
     GraphExplanation,
     NeuroPropXExplanation,
-    cnn_occlusion_importance,
     explain_graph,
     explain_neuropropx,
 )
@@ -29,7 +28,6 @@ __all__ = [
     "NeuroPropXExplanation",
     "explain_graph",
     "explain_neuropropx",
-    "cnn_occlusion_importance",
     "ROIRanking",
     "compute_roi_ranking",
     "normalize_signal",

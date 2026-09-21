@@ -1,0 +1,249 @@
+{
+  "subject_id": "OAS1_0035_MR1",
+  "source_path": "C:/Users/avisy/Downloads/dataset/extracted/disc1/OAS1_0035_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0035_MR1_mpr_n4_anon_111_t88_gfc.hdr",
+  "succeeded": true,
+  "metadata": {
+    "patient_id": "OAS1_0035_MR1",
+    "filepath": "C:\\Users\\avisy\\Downloads\\dataset\\extracted\\disc1\\OAS1_0035_MR1\\PROCESSED\\MPRAGE\\T88_111\\OAS1_0035_MR1_mpr_n4_anon_111_t88_gfc.hdr",
+    "shape": [
+      176,
+      208,
+      176
+    ],
+    "voxel_dims_mm": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "voxel_vol_mm3": 1.0,
+    "dtype": "float32",
+    "min_intensity": 0.0,
+    "max_intensity": 3820.0,
+    "mean_intensity": 555.4368896484375,
+    "std_intensity": 655.4888916015625,
+    "total_voxels": 6443008,
+    "non_zero_voxels": 4780082,
+    "intensity_range": [
+      0.0,
+      3820.0
+    ],
+    "nonzero_voxels": 4780082,
+    "source_dtype": "float32"
+  },
+  "qc": {
+    "patient_id": "OAS1_0035_MR1",
+    "quality_score": 80.63,
+    "motion_score": 91.76542225699953,
+    "dropout_score": 100.0,
+    "ringing_score": 17.538022839679225,
+    "snr_db": 258.75784458924204,
+    "saturation_fraction": 3.1041401780038144e-07,
+    "n_dropout_slices": 0,
+    "passed": true,
+    "flags": [
+      "Gibbs ringing detected (score=17.5)"
+    ],
+    "raw_metrics": {
+      "motion": {
+        "slice_mean_variance": 30222.8125,
+        "max_diff": 12.551849365234375,
+        "median_diff": 4.7420654296875,
+        "motion_ratio": 2.6469155486000933
+      },
+      "dropout": {
+        "n_dropout_slices": 0,
+        "dropout_fraction": 0.0,
+        "z_threshold": 2.5,
+        "dropped_slice_indices": []
+      },
+      "ringing": {
+        "hf_near_edge_mean": 137.5380859375,
+        "hf_global_mean": 58.50323204858398,
+        "ringing_ratio": 2.350948505260044
+      },
+      "snr": {
+        "signal_mean": 866.7467651367188,
+        "noise_std": 0.0,
+        "snr_linear": 8667467651367.1875,
+        "snr_db": 258.75784458924204
+      },
+      "saturation": {
+        "max_intensity": 3820.0,
+        "saturated_voxels": 2,
+        "saturation_fraction": 3.1041401780038144e-07
+      }
+    }
+  },
+  "qc_passed": true,
+  "stages": [
+    {
+      "name": "original",
+      "description": "Loaded T1 volume",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        3820.0
+      ],
+      "mean_intensity": 555.4368896484375,
+      "nonzero_voxels": 4780082,
+      "seconds": null,
+      "path": null
+    },
+    {
+      "name": "n4_bias_corrected",
+      "description": "N4 bias field correction",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        3602.52294921875
+      ],
+      "mean_intensity": 512.3758544921875,
+      "nonzero_voxels": 4780082,
+      "seconds": 37.653,
+      "path": null
+    },
+    {
+      "name": "wm_normalized",
+      "description": "White-matter KDE peak normalization",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        9.062400817871094
+      ],
+      "mean_intensity": 1.2889175415039062,
+      "nonzero_voxels": 4780082,
+      "seconds": 124.477,
+      "path": null
+    },
+    {
+      "name": "clahe",
+      "description": "CLAHE adaptive histogram equalization",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        1.0
+      ],
+      "mean_intensity": 0.328939825296402,
+      "nonzero_voxels": 6442823,
+      "seconds": 0.981,
+      "path": null
+    },
+    {
+      "name": "anisotropic_diffusion",
+      "description": "Perona-Malik edge-preserving denoising",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.007886071689426899,
+        0.9893288016319275
+      ],
+      "mean_intensity": 0.328939825296402,
+      "nonzero_voxels": 6443008,
+      "seconds": 2.934,
+      "path": null
+    },
+    {
+      "name": "intensity_normalized",
+      "description": "Min-max intensity normalization",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        1.0
+      ],
+      "mean_intensity": 0.3271242678165436,
+      "nonzero_voxels": 6443006,
+      "seconds": 0.035,
+      "path": null
+    },
+    {
+      "name": "skull_stripped",
+      "description": "Brain extraction",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        0.9889262914657593
+      ],
+      "mean_intensity": 0.14414943754673004,
+      "nonzero_voxels": 1878960,
+      "seconds": null,
+      "path": null
+    },
+    {
+      "name": "standardized",
+      "description": "Resampled to (128, 128, 128)",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "intensity_range": [
+        -0.0,
+        0.9889262914657593
+      ],
+      "mean_intensity": 0.14451970160007477,
+      "nonzero_voxels": 709825,
+      "seconds": null,
+      "path": null
+    }
+  ],
+  "final_path": "outputs_oasis1/preprocessing/OAS1_0035_MR1/OAS1_0035_MR1_standardized.nii.gz",
+  "brain_mask_path": "outputs_oasis1/preprocessing/OAS1_0035_MR1/OAS1_0035_MR1_brain_mask.nii.gz",
+  "final_affine": [
+    [
+      -1.375,
+      0.0,
+      0.0,
+      87.5
+    ],
+    [
+      0.0,
+      1.625,
+      0.0,
+      -103.5
+    ],
+    [
+      0.0,
+      0.0,
+      1.375,
+      -87.5
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "wm_peak": 397.5241394042969,
+  "brain_voxels_before": 6443006,
+  "brain_voxels_after": 1878960,
+  "error": null,
+  "warnings": []
+}

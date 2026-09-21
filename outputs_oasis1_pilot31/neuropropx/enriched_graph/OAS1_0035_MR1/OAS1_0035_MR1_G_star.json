@@ -1,0 +1,117 @@
+{
+  "roi_order": [
+    "Broca_Area",
+    "Wernicke_Area",
+    "Insula",
+    "Inferior_Frontal_Gyrus",
+    "Superior_Temporal_Gyrus"
+  ],
+  "n_nodes": 5,
+  "node_feature_dim": 19,
+  "component_slices": {
+    "morphometry": [
+      0,
+      14
+    ],
+    "regional_vulnerability": [
+      14,
+      15
+    ],
+    "centrality": [
+      15,
+      19
+    ]
+  },
+  "alpha": 0.3319053053855896,
+  "beta": {
+    "beta1_source_vulnerability": 0.5012543201446533,
+    "beta2_target_vulnerability": 0.4985736906528473,
+    "beta3_adaptive_adjacency": 0.4980437457561493,
+    "beta4_topology": -0.0013426708756014705,
+    "bias": 0.0016660596011206508
+  },
+  "active_components": {
+    "use_srve": true,
+    "use_learned_attention": true,
+    "use_structural": true,
+    "use_anp": true,
+    "use_centrality": true
+  },
+  "regional_vulnerability": {
+    "Broca_Area": 0.510529100894928,
+    "Wernicke_Area": 0.4680255353450775,
+    "Insula": 0.7438319325447083,
+    "Inferior_Frontal_Gyrus": 0.4328019917011261,
+    "Superior_Temporal_Gyrus": 0.7660733461380005
+  },
+  "vulnerability_ranking": [
+    {
+      "rank": 1,
+      "roi": "Superior_Temporal_Gyrus",
+      "roi_short": "STG",
+      "vulnerability": 0.7660733461380005
+    },
+    {
+      "rank": 2,
+      "roi": "Insula",
+      "roi_short": "Insula",
+      "vulnerability": 0.7438319325447083
+    },
+    {
+      "rank": 3,
+      "roi": "Broca_Area",
+      "roi_short": "Broca",
+      "vulnerability": 0.510529100894928
+    },
+    {
+      "rank": 4,
+      "roi": "Wernicke_Area",
+      "roi_short": "Wernicke",
+      "vulnerability": 0.4680255353450775
+    },
+    {
+      "rank": 5,
+      "roi": "Inferior_Frontal_Gyrus",
+      "roi_short": "IFG",
+      "vulnerability": 0.4328019917011261
+    }
+  ],
+  "top_pathways": [
+    {
+      "source": "Superior_Temporal_Gyrus",
+      "target": "Insula",
+      "source_short": "STG",
+      "target_short": "Insula",
+      "propagation_score": 0.7147101163864136
+    },
+    {
+      "source": "Insula",
+      "target": "Superior_Temporal_Gyrus",
+      "source_short": "Insula",
+      "target_short": "STG",
+      "propagation_score": 0.7015976905822754
+    },
+    {
+      "source": "Broca_Area",
+      "target": "Insula",
+      "source_short": "Broca",
+      "target_short": "Insula",
+      "propagation_score": 0.6761391162872314
+    },
+    {
+      "source": "Wernicke_Area",
+      "target": "Superior_Temporal_Gyrus",
+      "source_short": "Wernicke",
+      "target_short": "STG",
+      "propagation_score": 0.6716355085372925
+    },
+    {
+      "source": "Wernicke_Area",
+      "target": "Insula",
+      "source_short": "Wernicke",
+      "target_short": "Insula",
+      "propagation_score": 0.6711072325706482
+    }
+  ],
+  "interpretation_note": "Regional vulnerability and propagation scores are model-derived quantities that describe how informative each speech-related region and inter-regional pathway is for the current CN/MCI/AD discrimination. They are not biological probabilities of future degeneration and not measurements of disease spread."
+}

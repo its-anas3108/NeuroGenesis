@@ -1,0 +1,257 @@
+{
+  "subject_id": "OAS1_0026_MR1",
+  "source_path": "C:/Users/avisy/Downloads/dataset/extracted/disc1/OAS1_0026_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0026_MR1_mpr_n3_anon_111_t88_gfc.hdr",
+  "succeeded": true,
+  "metadata": {
+    "patient_id": "OAS1_0026_MR1",
+    "filepath": "C:\\Users\\avisy\\Downloads\\dataset\\extracted\\disc1\\OAS1_0026_MR1\\PROCESSED\\MPRAGE\\T88_111\\OAS1_0026_MR1_mpr_n3_anon_111_t88_gfc.hdr",
+    "shape": [
+      176,
+      208,
+      176
+    ],
+    "voxel_dims_mm": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "voxel_vol_mm3": 1.0,
+    "dtype": "float32",
+    "min_intensity": 0.0,
+    "max_intensity": 3845.0,
+    "mean_intensity": 481.5978698730469,
+    "std_intensity": 554.3325805664062,
+    "total_voxels": 6443008,
+    "non_zero_voxels": 4691111,
+    "intensity_range": [
+      0.0,
+      3845.0
+    ],
+    "nonzero_voxels": 4691111,
+    "source_dtype": "float32"
+  },
+  "qc": {
+    "patient_id": "OAS1_0026_MR1",
+    "quality_score": 67.5,
+    "motion_score": 64.10454050282037,
+    "dropout_score": 85.79545454545455,
+    "ringing_score": 18.0888624866284,
+    "snr_db": 257.67720353168943,
+    "saturation_fraction": 3.1041401780038144e-07,
+    "n_dropout_slices": 5,
+    "passed": true,
+    "flags": [
+      "Motion artifacts suspected (score=64.1)",
+      "5 axial slice(s) with signal dropout",
+      "Gibbs ringing detected (score=18.1)"
+    ],
+    "raw_metrics": {
+      "motion": {
+        "slice_mean_variance": 25027.90625,
+        "max_diff": 34.640838623046875,
+        "median_diff": 4.23529052734375,
+        "motion_ratio": 8.179091899435926
+      },
+      "dropout": {
+        "n_dropout_slices": 5,
+        "dropout_fraction": 0.028409090909090908,
+        "z_threshold": 2.5,
+        "dropped_slice_indices": [
+          171,
+          172,
+          173,
+          174,
+          175
+        ]
+      },
+      "ringing": {
+        "hf_near_edge_mean": 105.1875991821289,
+        "hf_global_mean": 46.45824913842773,
+        "ringing_ratio": 2.264131798611486
+      },
+      "snr": {
+        "signal_mean": 765.3501586914062,
+        "noise_std": 0.0,
+        "snr_linear": 7653501586914.0625,
+        "snr_db": 257.67720353168943
+      },
+      "saturation": {
+        "max_intensity": 3845.0,
+        "saturated_voxels": 2,
+        "saturation_fraction": 3.1041401780038144e-07
+      }
+    }
+  },
+  "qc_passed": true,
+  "stages": [
+    {
+      "name": "original",
+      "description": "Loaded T1 volume",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        3845.0
+      ],
+      "mean_intensity": 481.5978698730469,
+      "nonzero_voxels": 4691111,
+      "seconds": null,
+      "path": null
+    },
+    {
+      "name": "n4_bias_corrected",
+      "description": "N4 bias field correction",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        4665.3037109375
+      ],
+      "mean_intensity": 549.6301879882812,
+      "nonzero_voxels": 4691111,
+      "seconds": 245.073,
+      "path": null
+    },
+    {
+      "name": "wm_normalized",
+      "description": "White-matter KDE peak normalization",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        3.061237335205078
+      ],
+      "mean_intensity": 0.360651433467865,
+      "nonzero_voxels": 4691111,
+      "seconds": 65.558,
+      "path": null
+    },
+    {
+      "name": "clahe",
+      "description": "CLAHE adaptive histogram equalization",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        1.0
+      ],
+      "mean_intensity": 0.3199431598186493,
+      "nonzero_voxels": 6442790,
+      "seconds": 1.048,
+      "path": null
+    },
+    {
+      "name": "anisotropic_diffusion",
+      "description": "Perona-Malik edge-preserving denoising",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.003882721997797489,
+        0.9799596667289734
+      ],
+      "mean_intensity": 0.3199431598186493,
+      "nonzero_voxels": 6443008,
+      "seconds": 2.865,
+      "path": null
+    },
+    {
+      "name": "intensity_normalized",
+      "description": "Min-max intensity normalization",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        1.0
+      ],
+      "mean_intensity": 0.32380688190460205,
+      "nonzero_voxels": 6443007,
+      "seconds": 0.029,
+      "path": null
+    },
+    {
+      "name": "skull_stripped",
+      "description": "Brain extraction",
+      "shape": [
+        176,
+        208,
+        176
+      ],
+      "intensity_range": [
+        0.0,
+        0.9967778325080872
+      ],
+      "mean_intensity": 0.1528123915195465,
+      "nonzero_voxels": 1878960,
+      "seconds": null,
+      "path": null
+    },
+    {
+      "name": "standardized",
+      "description": "Resampled to (128, 128, 128)",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "intensity_range": [
+        -0.0,
+        0.9967778325080872
+      ],
+      "mean_intensity": 0.15318821370601654,
+      "nonzero_voxels": 710714,
+      "seconds": null,
+      "path": null
+    }
+  ],
+  "final_path": "outputs_oasis1/preprocessing/OAS1_0026_MR1/OAS1_0026_MR1_standardized.nii.gz",
+  "brain_mask_path": "outputs_oasis1/preprocessing/OAS1_0026_MR1/OAS1_0026_MR1_brain_mask.nii.gz",
+  "final_affine": [
+    [
+      -1.375,
+      0.0,
+      0.0,
+      87.5
+    ],
+    [
+      0.0,
+      1.625,
+      0.0,
+      -103.5
+    ],
+    [
+      0.0,
+      0.0,
+      1.375,
+      -87.5
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "wm_peak": 1523.9927978515625,
+  "brain_voxels_before": 6443007,
+  "brain_voxels_after": 1878960,
+  "error": null,
+  "warnings": []
+}

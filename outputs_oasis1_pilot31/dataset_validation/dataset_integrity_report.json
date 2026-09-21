@@ -1,0 +1,52 @@
+{
+  "dataset_source": "OASIS-1",
+  "synthetic_data_enabled": false,
+  "generated_at": "2026-09-17T17:31:27",
+  "passed": true,
+  "n_checks": 6,
+  "n_failed": 0,
+  "checks": [
+    {
+      "name": "dataset_source is OASIS-1",
+      "passed": true,
+      "detail": "configured dataset_source = 'OASIS-1'",
+      "offenders": [],
+      "n_offenders": 0
+    },
+    {
+      "name": "synthetic data disabled",
+      "passed": true,
+      "detail": "data.allow_synthetic_data must be False for research runs",
+      "offenders": [],
+      "n_offenders": 0
+    },
+    {
+      "name": "run provenance is not synthetic",
+      "passed": true,
+      "detail": "no provenance marker present",
+      "offenders": [],
+      "n_offenders": 0
+    },
+    {
+      "name": "all samples originate from validated OASIS-1 records",
+      "passed": true,
+      "detail": "30/30 session(s) matched a validated OASIS-1 record",
+      "offenders": [],
+      "n_offenders": 0
+    },
+    {
+      "name": "session identifiers are OASIS-1 formatted",
+      "passed": true,
+      "detail": "every training session ID must begin with 'OAS1_'",
+      "offenders": [],
+      "n_offenders": 0
+    },
+    {
+      "name": "no subject appears in more than one split",
+      "passed": true,
+      "detail": "30 subject(s) checked",
+      "offenders": [],
+      "n_offenders": 0
+    }
+  ]
+}

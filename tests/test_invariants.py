@@ -315,12 +315,11 @@ def test_ablation_variants_preserve_downstream_shapes() -> None:
     set_all_seeds(0)
     cfg = NeuroGenesisConfig()
     morph = torch.randn(2, N_ROI, len(FEATURE_ORDER))
-    patches = torch.rand(2, N_ROI, 48, 48, 48)
 
     for variant, spec in ABLATION_SPECS.items():
         model = build_model(len(FEATURE_ORDER), cfg, variant,
                             list(FEATURE_ORDER))
-        out = model(morph, patches if spec.use_cnn else None)
+        out = model(morph)
         assert out.logits.shape == (2, len(STAGE_ORDER)), (
             f"{variant} emitted {tuple(out.logits.shape)}"
         )
@@ -355,10 +354,7 @@ def test_gradients_reach_every_trainable_parameter() -> None:
         cfg.loss, class_weights=np.ones(len(STAGE_ORDER)),
         d_model=model.fusion.out_dim,
     )
-    out = model(
-        torch.randn(3, N_ROI, len(FEATURE_ORDER)),
-        torch.rand(3, N_ROI, 48, 48, 48),
-    )
+    out = model(torch.randn(3, N_ROI, len(FEATURE_ORDER)))
     criterion(out, torch.tensor([0, 1, 2])).total.backward()
 
     dead = [

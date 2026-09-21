@@ -1,0 +1,856 @@
+{
+  "subject_id": "OAS1_0031_MR1",
+  "generated_at": "2026-09-21T23:26:22",
+  "experiment_id": "oasis1_pilot31",
+  "data_provenance": "oasis1",
+  "is_synthetic": false,
+  "current_stage": "AD",
+  "class_probabilities": {
+    "CN": 0.1857934296131134,
+    "MCI": 0.2985537052154541,
+    "AD": 0.5156528949737549
+  },
+  "confidence": {
+    "top_probability": 0.5156528949737549,
+    "margin": 0.21709918975830078,
+    "entropy": 1.0151338577270508,
+    "normalized_entropy": 0.9240146575801886,
+    "note": "Confidence indicators are derived from softmax outputs and are not calibrated probabilities of correctness. A low-entropy prediction indicates that the model separated the classes confidently in its own representation, not that the classification is verified."
+  },
+  "reference_stage": "AD",
+  "ad_associated_propensity": 0.5247952938079834,
+  "stage_transition_propensity": null,
+  "stage_propensity_detail": {
+    "reference_stage": "AD",
+    "stage_alignment": {
+      "CN": 0.16413208842277527,
+      "MCI": 0.015475026331841946,
+      "AD": 0.8203928470611572
+    },
+    "advanced_stage_alignment": 0.8281303644180298,
+    "ad_associated_propensity": 0.5247952938079834,
+    "ad_axis_projection": 0.5948031544685364,
+    "stage_transition_propensity": null,
+    "transition_target_stage": null,
+    "transition_note": "The reference stage is the most advanced stage in the vocabulary, so stage-transition propensity is undefined. Advanced-stage alignment is reported in its place.",
+    "definitions": {
+      "advanced_stage_alignment": "Expected ordinal position under the stage-alignment distribution: 0 = fully CN-aligned, 1 = fully AD-aligned.",
+      "ad_associated_propensity": "d_CN / (d_CN + d_AD): distance to the CN prototype relative to distance to the AD prototype. 0 = on the CN prototype, 1 = on the AD prototype. Answers 'how far toward the AD representation', which is a different question from the classifier's P(AD).",
+      "ad_axis_projection": "Diagnostic only: the scalar projection onto the CN-to-AD axis. Sensitive to a common-mode offset of the representation cloud, so it is not the reported propensity.",
+      "stage_transition_propensity": "Alignment mass at stages strictly more advanced than the reference stage, normalised against the reference stage."
+    },
+    "disclaimer": "Stage-transition propensity is a model-derived measure of how closely the subject's current structural representation aligns with a more advanced disease-stage representation. It is derived from a single cross-sectional scan. It is not a clinically validated conversion probability, not a prediction of future diagnosis, and not a biological estimate of disease onset."
+  },
+  "stage_geometry": {
+    "pairwise_distances": {
+      "CN-MCI": 4.893706798553467,
+      "CN-AD": 5.4641032218933105,
+      "MCI-AD": 5.452593803405762
+    },
+    "norms": {
+      "CN": 3.8692712783813477,
+      "MCI": 4.139159202575684,
+      "AD": 4.131478786468506
+    },
+    "ordering_respected": true,
+    "ordering_check": "MCI lies between CN and AD when both adjacent distances are shorter than the CN-AD distance.",
+    "temperature": 8.0,
+    "d_model": 64
+  },
+  "regional_vulnerability": {
+    "Broca_Area": 0.30090028047561646,
+    "Wernicke_Area": 0.5335562825202942,
+    "Insula": 0.9389340877532959,
+    "Inferior_Frontal_Gyrus": 0.1838064342737198,
+    "Superior_Temporal_Gyrus": 0.13873820006847382
+  },
+  "roi_ranking": [
+    {
+      "rank": 1,
+      "roi": "Insula",
+      "roi_short": "Insula",
+      "score": 1.0,
+      "vulnerability_normalized": 1.0,
+      "attention_normalized": 1.0,
+      "attribution_normalized": 1.0
+    },
+    {
+      "rank": 2,
+      "roi": "Wernicke_Area",
+      "roi_short": "Wernicke",
+      "score": 0.35646559613772755,
+      "vulnerability_normalized": 0.4934017888971328,
+      "attention_normalized": 0.0,
+      "attribution_normalized": 0.5303496019295814
+    },
+    {
+      "rank": 3,
+      "roi": "Broca_Area",
+      "roi_short": "Broca",
+      "score": 0.31731006806603373,
+      "vulnerability_normalized": 0.20265297898033485,
+      "attention_normalized": 0.7874962549129993,
+      "attribution_normalized": 0.0
+    },
+    {
+      "rank": 4,
+      "roi": "Inferior_Frontal_Gyrus",
+      "roi_short": "IFG",
+      "score": 0.24236348046988393,
+      "vulnerability_normalized": 0.05632150189579238,
+      "attention_normalized": 0.5946742458596908,
+      "attribution_normalized": 0.1381086865121993
+    },
+    {
+      "rank": 5,
+      "roi": "Superior_Temporal_Gyrus",
+      "roi_short": "STG",
+      "score": 0.17973983321206183,
+      "vulnerability_normalized": 0.0,
+      "attention_normalized": 0.21200913468331545,
+      "attribution_normalized": 0.38712364269022403
+    }
+  ],
+  "important_edges": [
+    {
+      "source": "Inferior_Frontal_Gyrus",
+      "target": "Insula",
+      "pathway": "IFG -> Insula",
+      "attention": 0.2070026695728302,
+      "gate": 0.8060317635536194,
+      "anatomical_tract": "Inferior_Fronto_Occipital_Fasciculus"
+    },
+    {
+      "source": "Broca_Area",
+      "target": "Insula",
+      "pathway": "Broca -> Insula",
+      "attention": 0.20271997153759003,
+      "gate": 0.807439386844635,
+      "anatomical_tract": "Short_Arcuate_Fibres"
+    },
+    {
+      "source": "Superior_Temporal_Gyrus",
+      "target": "Insula",
+      "pathway": "STG -> Insula",
+      "attention": 0.19972893595695496,
+      "gate": 0.806018590927124,
+      "anatomical_tract": "Extreme_Capsule_System"
+    },
+    {
+      "source": "Wernicke_Area",
+      "target": "Insula",
+      "pathway": "Wernicke -> Insula",
+      "attention": 0.19036665558815002,
+      "gate": 0.8086555600166321,
+      "anatomical_tract": "Extreme_Capsule_System"
+    },
+    {
+      "source": "Inferior_Frontal_Gyrus",
+      "target": "Broca_Area",
+      "pathway": "IFG -> Broca",
+      "attention": 0.18516375124454498,
+      "gate": 0.8033776879310608,
+      "anatomical_tract": "Within_IFG_Fibres"
+    }
+  ],
+  "top_pathways": [
+    {
+      "source": "Insula",
+      "target": "Wernicke_Area",
+      "source_short": "Insula",
+      "target_short": "Wernicke",
+      "propagation_score": 0.7037932872772217
+    },
+    {
+      "source": "Wernicke_Area",
+      "target": "Insula",
+      "source_short": "Wernicke",
+      "target_short": "Insula",
+      "propagation_score": 0.6952139735221863
+    },
+    {
+      "source": "Insula",
+      "target": "Broca_Area",
+      "source_short": "Insula",
+      "target_short": "Broca",
+      "propagation_score": 0.6724950671195984
+    },
+    {
+      "source": "Broca_Area",
+      "target": "Insula",
+      "source_short": "Broca",
+      "target_short": "Insula",
+      "propagation_score": 0.6695030927658081
+    },
+    {
+      "source": "Inferior_Frontal_Gyrus",
+      "target": "Insula",
+      "source_short": "IFG",
+      "target_short": "Insula",
+      "propagation_score": 0.6543282866477966
+    }
+  ],
+  "adaptive_adjacency": [
+    [
+      0.2998589277267456,
+      0.20378389954566956,
+      0.1737287938594818,
+      0.249141663312912,
+      0.07348667085170746
+    ],
+    [
+      0.20610526204109192,
+      0.3215499520301819,
+      0.17784753441810608,
+      0.10106362402439117,
+      0.19343358278274536
+    ],
+    [
+      0.1977158933877945,
+      0.25789278745651245,
+      0.4110734760761261,
+      0.07675344496965408,
+      0.05656442791223526
+    ],
+    [
+      0.2972191274166107,
+      0.12228687107563019,
+      0.15540671348571777,
+      0.281427800655365,
+      0.14365947246551514
+    ],
+    [
+      0.1447898894548416,
+      0.2674594819545746,
+      0.1368705779314041,
+      0.13332776725292206,
+      0.31755226850509644
+    ]
+  ],
+  "propagation_matrix": [
+    [
+      0.6107690334320068,
+      0.6268346905708313,
+      0.6695030927658081,
+      0.5907954573631287,
+      0.5639887452125549
+    ],
+    [
+      0.6272582411766052,
+      0.666841447353363,
+      0.6952139735221863,
+      0.6011178493499756,
+      0.6067627668380737
+    ],
+    [
+      0.6724950671195984,
+      0.7037932872772217,
+      0.7584065794944763,
+      0.6459342241287231,
+      0.6384758949279785
+    ],
+    [
+      0.5964120626449585,
+      0.6033344864845276,
+      0.6543282866477966,
+      0.5804548263549805,
+      0.5581411719322205
+    ],
+    [
+      0.5724931359291077,
+      0.6151683330535889,
+      0.6470956802368164,
+      0.5568258762359619,
+      0.5738648176193237
+    ]
+  ],
+  "alpha": 0.3319053053855896,
+  "explanations": {
+    "attribution_method": "shap_kernel",
+    "top_features": [
+      {
+        "roi": "Insula",
+        "roi_short": "Insula",
+        "feature": "entropy",
+        "value": 0.05212871217072891,
+        "magnitude": 0.05212871217072891,
+        "direction": "increases"
+      },
+      {
+        "roi": "Wernicke_Area",
+        "roi_short": "Wernicke",
+        "feature": "surface_to_volume_ratio",
+        "value": 0.04714334375145799,
+        "magnitude": 0.04714334375145799,
+        "direction": "increases"
+      },
+      {
+        "roi": "Insula",
+        "roi_short": "Insula",
+        "feature": "surface_to_volume_ratio",
+        "value": 0.03959168814432651,
+        "magnitude": 0.03959168814432651,
+        "direction": "increases"
+      },
+      {
+        "roi": "Superior_Temporal_Gyrus",
+        "roi_short": "STG",
+        "feature": "std_intensity",
+        "value": 0.01989191171621096,
+        "magnitude": 0.01989191171621096,
+        "direction": "increases"
+      },
+      {
+        "roi": "Superior_Temporal_Gyrus",
+        "roi_short": "STG",
+        "feature": "surface_to_volume_ratio",
+        "value": 0.017251643606678926,
+        "magnitude": 0.017251643606678926,
+        "direction": "increases"
+      },
+      {
+        "roi": "Inferior_Frontal_Gyrus",
+        "roi_short": "IFG",
+        "feature": "std_intensity",
+        "value": 0.015160715246201497,
+        "magnitude": 0.015160715246201497,
+        "direction": "increases"
+      },
+      {
+        "roi": "Insula",
+        "roi_short": "Insula",
+        "feature": "kurtosis",
+        "value": 0.00562077635839357,
+        "magnitude": 0.00562077635839357,
+        "direction": "increases"
+      },
+      {
+        "roi": "Wernicke_Area",
+        "roi_short": "Wernicke",
+        "feature": "atrophy_index",
+        "value": 0.005417144430386009,
+        "magnitude": 0.005417144430386009,
+        "direction": "increases"
+      },
+      {
+        "roi": "Broca_Area",
+        "roi_short": "Broca",
+        "feature": "surface_to_volume_ratio",
+        "value": 0.001992192246759228,
+        "magnitude": 0.001992192246759228,
+        "direction": "increases"
+      },
+      {
+        "roi": "Superior_Temporal_Gyrus",
+        "roi_short": "STG",
+        "feature": "normalized_volume",
+        "value": 0.0017604831019429243,
+        "magnitude": 0.0017604831019429243,
+        "direction": "increases"
+      }
+    ],
+    "attribution_notes": [
+      "Kernel SHAP with a k-means-summarised background drawn from the training split. Shapley values assume feature independence, which correlated morphometric features violate to some degree."
+    ],
+    "node_importance": {
+      "Broca_Area": 0.9113713502883911,
+      "Wernicke_Area": 0.5941212773323059,
+      "Insula": 0.9969804286956787,
+      "Inferior_Frontal_Gyrus": 0.8336912393569946,
+      "Superior_Temporal_Gyrus": 0.6795310974121094
+    }
+  },
+  "statistics_summary": {
+    "n_tests_run": 195,
+    "n_tests_skipped": 15,
+    "n_significant_fdr": 31,
+    "group_sizes": {
+      "CN": 14,
+      "MCI": 10,
+      "AD": 6
+    },
+    "fdr_method": "benjamini_hochberg",
+    "test_counts": {
+      "students_t": 139,
+      "mann_whitney_u": 38,
+      "welch_t": 18,
+      "insufficient_data": 15
+    },
+    "notes": [
+      "Benjamini-Hochberg FDR was applied across all 195 tests in one family (every ROI x feature x contrast), not per contrast.",
+      "15 cell(s) were not tested because a group fell below the minimum of 5 or the feature was constant. Those cells carry no p-value rather than a fabricated one.",
+      "The smallest stage group has 6 subject(s). Effect-size estimates at this sample size have wide confidence intervals, and a non-significant result should not be read as evidence of no difference."
+    ]
+  },
+  "dataset": "OASIS-1",
+  "dataset_provenance": {
+    "dataset_source": "OASIS-1",
+    "source_description": "Washington University / OASIS \u2014 https://sites.wustl.edu/oasisbrains/home/oasis-1/",
+    "oasis1_root": "C:/Users/avisy/Downloads/dataset/extracted",
+    "volume_kind": "t88_gfc",
+    "volume_description": "PROCESSED/MPRAGE/T88_111 \u2014 Talairach-88 atlas space, 1 mm isotropic, averaged across acquisitions, N4 and gain-field corrected, skull present",
+    "is_synthetic": false,
+    "preprocessing_note": "OASIS applied N4 bias-field and gain-field correction before distribution (filename components 'n4' and 'gfc'). The pipeline's M3 stage applies N4 again; this duplication is harmless but is recorded rather than hidden."
+  },
+  "model": {
+    "spec": {
+      "name": "A7",
+      "description": "Full: NeuroProp-X + SAEG-GATv2 + structural covariance + Stage-TGT",
+      "graph_encoder": "saeg_gatv2",
+      "use_neuropropx": true,
+      "use_srve": true,
+      "use_structural": true,
+      "use_learned_attention": true,
+      "use_anp": true,
+      "use_centrality": true,
+      "use_stage_tgt": true,
+      "use_edge_gate": true
+    },
+    "dimensions": {
+      "morph_dim": 14,
+      "cnn_dim": 0,
+      "node_dim": 19,
+      "graph_embedding_dim": 128,
+      "z_h_dim": 64,
+      "n_roi": 5,
+      "n_classes": 3
+    },
+    "n_parameters": 132136,
+    "component_parameters": {
+      "spatial_encoder": 0,
+      "spatial_projection": 0,
+      "neuropropx": 1946,
+      "graph_encoder": 37128,
+      "fusion": 25024,
+      "classifier": 195,
+      "stage_tgt": 67648,
+      "propensity_head": 195
+    },
+    "roi_order": [
+      "Broca_Area",
+      "Wernicke_Area",
+      "Insula",
+      "Inferior_Frontal_Gyrus",
+      "Superior_Temporal_Gyrus"
+    ],
+    "stage_order": [
+      "CN",
+      "MCI",
+      "AD"
+    ],
+    "neuropropx": {
+      "name": "NeuroProp-X",
+      "full_name": "Stage-Aware Regional Vulnerability and Adaptive Graph Propagation",
+      "status": "proposed framework",
+      "stages": {
+        "M11.1_SRVE": {
+          "full_name": "Stage-Aware Regional Vulnerability Estimation",
+          "active": true,
+          "formula": "RV_i = sigmoid(w_v^T xhat_i + b_v)",
+          "learned_weights": {
+            "kurtosis": 0.5827852487564087,
+            "atrophy_index": -0.4495306611061096,
+            "surface_to_volume_ratio": 0.30454161763191223,
+            "std_intensity": -0.29116567969322205,
+            "normalized_volume": 0.21422232687473297,
+            "entropy": -0.1693967580795288,
+            "gm_fraction": 0.13720788061618805,
+            "surface_area_vox": 0.11719395220279694,
+            "voxel_count": 0.08170391619205475,
+            "cortical_thickness_mm": 0.06362108886241913,
+            "mean_intensity": 0.06095673143863678,
+            "gm_volume_mm3": 0.056762561202049255,
+            "skewness": -0.05348429083824158,
+            "brain_volume_mm3": 0.02614547498524189
+          },
+          "learned_bias": {
+            "Broca_Area": -0.0024198407772928476,
+            "Wernicke_Area": 0.006485874764621258,
+            "Insula": -0.0033741150982677937,
+            "Inferior_Frontal_Gyrus": 0.005628375336527824,
+            "Superior_Temporal_Gyrus": 0.0033927729818969965
+          }
+        },
+        "M11.2_AP_LAF": {
+          "full_name": "Anatomical-Prior and Learned-Attention Fusion",
+          "active": true,
+          "formula": "A_star = w_prior*A_prior + w_att*A_att + w_struct*A_struct",
+          "mix_weights": {
+            "prior": 0.3319053053855896,
+            "attention": 0.3333185911178589,
+            "structural": 0.3347760736942291
+          },
+          "structural_term": "Pearson correlation between ROI morphometric profiles, row-softmaxed. Subject-specific and measured rather than learned.",
+          "alpha": 0.3319053053855896,
+          "alpha_is_learned": true,
+          "attention_active": true,
+          "attention_mechanism": "GATv2 dynamic attention: e_ij = a^T LeakyReLU(W[h_i || h_j])",
+          "masked_to_prior_support": false,
+          "prior_normalisation": "A_prior is row-normalised (with self-loops) before mixing so that both operands are row-stochastic and alpha is interpretable as the share of adjacency mass from anatomy.",
+          "n_nodes": 5
+        },
+        "M11.3_ANP": {
+          "full_name": "Adaptive Neurodegeneration Propagation",
+          "active": true,
+          "formula": "P_ij = sigmoid(beta1*RV_i + beta2*RV_j + beta3*A_star_ij + beta4*T_ij + b)",
+          "coefficients": {
+            "beta1_source_vulnerability": 0.5012543201446533,
+            "beta2_target_vulnerability": 0.4985736906528473,
+            "beta3_adaptive_adjacency": 0.4980437457561493,
+            "beta4_topology": -0.0013426708756014705,
+            "bias": 0.0016660596011206508
+          },
+          "topology_active": true,
+          "topology_definition": "T_ij = (out-strength_i * in-strength_j) normalised by the per-subject maximum over all node pairs.",
+          "label": "Model-derived propagation representation. This is a learned edge-level score combining endpoint regional vulnerability with adaptive graph connectivity. It is not a biological disease-spread probability.",
+          "n_nodes": 5
+        },
+        "M11.4_SAGR": {
+          "full_name": "Stage-Aware Graph Representation",
+          "active": true,
+          "formula": "X_i_star = [X_i_morph || E_i_3D || RV_i || centrality]",
+          "out_dim": 19,
+          "component_slices": {
+            "morphometry": [
+              0,
+              14
+            ],
+            "regional_vulnerability": [
+              14,
+              15
+            ],
+            "centrality": [
+              15,
+              19
+            ]
+          },
+          "centrality_features": [
+            "out_strength",
+            "in_strength",
+            "strength_balance",
+            "eigenvector_centrality"
+          ],
+          "n_nodes": 5
+        }
+      },
+      "dimensions": {
+        "morph_dim": 14,
+        "cnn_dim": 0,
+        "node_input_dim": 14,
+        "node_output_dim": 19,
+        "edge_feature_dim": 3,
+        "n_nodes": 5
+      },
+      "flags": {
+        "use_srve": true,
+        "use_learned_attention": true,
+        "use_structural": true,
+        "use_anp": true,
+        "use_centrality": true
+      },
+      "n_parameters": 1946,
+      "novelty_statement": "The proposed contribution is the specific SRVE + AP-LAF + ANP + SAGR formulation, its integration of local 3D ROI representation with a disease-aware graph representation, and its ablation-based validation. The underlying techniques (logistic scoring, attention-based adjacency learning, learned edge features) are established and are not claimed as new.",
+      "interpretation_note": "Regional vulnerability and propagation scores are model-derived quantities that describe how informative each speech-related region and inter-regional pathway is for the current CN/MCI/AD discrimination. They are not biological probabilities of future degeneration and not measurements of disease spread."
+    },
+    "graph_encoder": {
+      "name": "SAEG-GATv2",
+      "full_name": "Stage-Aware Edge-Gated Graph Attention Network v2",
+      "foundation": "GATv2 (Brody et al., 2022) \u2014 established prior work, not claimed as novel",
+      "proposed_elements": [
+        "NeuroProp-X enriched node input X*",
+        "three-channel NeuroProp-X edge feature E_ij = [A_prior_ij, A_att_ij, P_ij]",
+        "edge gate g_ij = sigmoid(w_g^T E_ij + b_g) applied to dynamic attention as alpha_tilde_ij = g_ij * alpha_ij"
+      ],
+      "edge_gate_active": true,
+      "n_layers": 2,
+      "heads": 4,
+      "hidden_dim": 64,
+      "readout": "mean_max",
+      "graph_embedding_dim": 128,
+      "n_parameters": 37128,
+      "architecture": [
+        {
+          "stage": "input G*",
+          "shape": [
+            5,
+            19
+          ],
+          "detail": "X_star (19-d nodes), A_star, E_ij (3-d edges)"
+        },
+        {
+          "stage": "SAEG-GATv2 layer 1",
+          "shape": [
+            5,
+            64
+          ],
+          "heads": 4,
+          "head_dim": 16,
+          "attention": "dynamic (GATv2)",
+          "edge_gate": true,
+          "head_combination": "concat",
+          "n_params": 3780
+        },
+        {
+          "stage": "SAEG-GATv2 layer 2",
+          "shape": [
+            5,
+            64
+          ],
+          "heads": 4,
+          "head_dim": 64,
+          "attention": "dynamic (GATv2)",
+          "edge_gate": true,
+          "head_combination": "mean",
+          "n_params": 33092
+        },
+        {
+          "stage": "graph readout (mean_max)",
+          "shape": [
+            128
+          ],
+          "detail": "mean pooling || max pooling"
+        }
+      ]
+    },
+    "fusion": {
+      "method": "concatenation followed by a two-layer MLP with LayerNorm and dropout",
+      "formula": "Z_F = [Z_3D || Z_G];  Z_H = MLP(Z_F)",
+      "spatial_dim": 0,
+      "graph_dim": 128,
+      "fused_dim": 128,
+      "hidden_dim": 128,
+      "out_dim": 64,
+      "dropout": 0.3,
+      "shared_with": "current-stage classifier and Stage-TGT",
+      "n_parameters": 25024
+    },
+    "classifier": {
+      "formula": "p = softmax(W_c Z_H + b_c)",
+      "in_dim": 64,
+      "classes": [
+        "CN",
+        "MCI",
+        "AD"
+      ],
+      "depth": "single linear layer",
+      "rationale": "Representation learning happens upstream; a deeper head would add capacity where the label signal is thinnest and would obscure interpretability.",
+      "n_parameters": 195
+    },
+    "stage_tgt": {
+      "name": "Stage-TGT",
+      "full_name": "Stage-Temporal Graph Transformer",
+      "sequence_axis": "ordered disease stages CN -> MCI -> AD (clinical severity order, not observed time)",
+      "tokens": [
+        "CN",
+        "MCI",
+        "AD",
+        "subject (Z_H)"
+      ],
+      "sequence_length": 4,
+      "d_model": 64,
+      "n_heads": 4,
+      "n_layers": 2,
+      "ff_dim": 128,
+      "positional_embeddings": "learned, over the ordered stage tokens; these make the stage axis ordered rather than a permutation-invariant set",
+      "requires_longitudinal_data": false,
+      "does_not_do": [
+        "forecast future MRI",
+        "simulate future scans",
+        "estimate validated MCI-to-AD conversion probability"
+      ],
+      "prototypes": {
+        "formula": "d_s = ||Z_H - c_s||^2 ;  q_s = softmax(-d_s / T)",
+        "stages": [
+          "CN",
+          "MCI",
+          "AD"
+        ],
+        "d_model": 64,
+        "temperature_is_learned": false,
+        "space": "shared representation Z_H (same space the classifier decides in)",
+        "ordering_constraint": "imposed softly by the ordinal stage-order loss, not hard-wired into the geometry",
+        "geometry": {
+          "pairwise_distances": {
+            "CN-MCI": 4.893706798553467,
+            "CN-AD": 5.4641032218933105,
+            "MCI-AD": 5.452593803405762
+          },
+          "norms": {
+            "CN": 3.8692712783813477,
+            "MCI": 4.139159202575684,
+            "AD": 4.131478786468506
+          },
+          "ordering_respected": true,
+          "ordering_check": "MCI lies between CN and AD when both adjacent distances are shorter than the CN-AD distance.",
+          "temperature": 8.0,
+          "d_model": 64
+        },
+        "n_parameters": 192
+      },
+      "n_parameters": 67648,
+      "disclaimer": "Stage-transition propensity is a model-derived measure of how closely the subject's current structural representation aligns with a more advanced disease-stage representation. It is derived from a single cross-sectional scan. It is not a clinically validated conversion probability, not a prediction of future diagnosis, and not a biological estimate of disease onset."
+    },
+    "propensity_head": {
+      "outputs": [
+        "stage_alignment (learned softmax over ordered stages)",
+        "advanced_stage_alignment (expected ordinal position)",
+        "ad_associated_propensity (relative proximity to the AD prototype versus the CN prototype)",
+        "ad_axis_projection (diagnostic)",
+        "stage_transition_propensity (alignment mass beyond the reference stage)"
+      ],
+      "learned_parameters": "the alignment head only; both geometric quantities are read off the prototype geometry and have no parameters of their own",
+      "undefined_case": "stage_transition_propensity is reported as None when the reference stage is AD, the most advanced stage in the vocabulary",
+      "d_model": 64,
+      "n_parameters": 195,
+      "disclaimer": "Stage-transition propensity is a model-derived measure of how closely the subject's current structural representation aligns with a more advanced disease-stage representation. It is derived from a single cross-sectional scan. It is not a clinically validated conversion probability, not a prediction of future diagnosis, and not a biological estimate of disease onset."
+    }
+  },
+  "config": {
+    "paths": {
+      "project_root": ".",
+      "mri_dir": "dataset/OASIS",
+      "metadata_csv": "dataset/oasis_cross-sectional.csv",
+      "oasis1_root": "C:/Users/avisy/Downloads/dataset/extracted",
+      "adni_root": null,
+      "atlas_dir": "dataset/nilearn_data",
+      "outputs_dir": "outputs_oasis1_pilot31",
+      "experiment_id": "oasis1_pilot31"
+    },
+    "data": {
+      "dataset_source": "OASIS-1",
+      "oasis1_volume_kind": "t88_gfc",
+      "allow_synthetic_data": false,
+      "deep_validation": true,
+      "cdr_to_stage": {
+        "0.0": "CN",
+        "0.5": "MCI",
+        "1.0": "AD",
+        "2.0": "AD"
+      },
+      "missing_cdr_policy": "exclude",
+      "min_age": null,
+      "max_age": null,
+      "val_fraction": 0.15,
+      "test_fraction": 0.2,
+      "split_scheme": "folds",
+      "n_folds": 5,
+      "n_repeats": 10
+    },
+    "preprocess": {
+      "target_shape": [
+        128,
+        128,
+        128
+      ],
+      "interpolator": "linear",
+      "gaussian_sigma": 1.0,
+      "aniso_iterations": 10,
+      "aniso_conductance": 3.0,
+      "clahe_clip_limit": 0.03,
+      "morph_radius": 4,
+      "min_quality_score": 50.0,
+      "skip_failed_qc": false,
+      "gm_threshold": 0.3,
+      "atlas_name": "cort-maxprob-thr25-2mm",
+      "patch_size": [
+        48,
+        48,
+        48
+      ],
+      "context_pad": 4,
+      "save_nifti": true,
+      "save_figures": false,
+      "max_subjects": null
+    },
+    "neuropropx": {
+      "alpha_logit_init": 0.0,
+      "learn_alpha": true,
+      "attention_hidden": 64,
+      "structural_temperature": 0.5,
+      "anp_use_topology": true,
+      "sagr_use_centrality": true
+    },
+    "graph_learning": {
+      "hidden_dim": 64,
+      "heads": 4,
+      "n_layers": 2,
+      "dropout": 0.2,
+      "negative_slope": 0.2,
+      "readout": "mean_max",
+      "use_edge_gate": true
+    },
+    "fusion": {
+      "hidden_dim": 128,
+      "out_dim": 64,
+      "dropout": 0.3
+    },
+    "stage_tgt": {
+      "d_model": 64,
+      "n_heads": 4,
+      "n_layers": 2,
+      "ff_dim": 128,
+      "dropout": 0.1,
+      "enabled": true
+    },
+    "loss": {
+      "lambda_proto": 1.0,
+      "lambda_order": 0.5,
+      "lambda_align": 0.3,
+      "order_margin": 0.5,
+      "imbalance": "class_weighted",
+      "label_smoothing": 0.0
+    },
+    "train": {
+      "epochs": 120,
+      "batch_size": 16,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "monitor": "balanced_accuracy",
+      "early_stopping_patience": 25,
+      "tie_break_on_geometry": true,
+      "tie_break_tolerance": 1e-06,
+      "grad_clip": 1.0,
+      "device": "auto",
+      "num_workers": 0
+    },
+    "augmentation": {
+      "enabled": false,
+      "max_rotation_degrees": 5.0,
+      "max_translation_voxels": 3.0,
+      "intensity_scale": 0.05,
+      "probability": 0.5
+    },
+    "ranking": {
+      "lambda_vulnerability": 0.4,
+      "lambda_attention": 0.3,
+      "lambda_shap": 0.3
+    },
+    "stats": {
+      "alpha": 0.05,
+      "fdr_method": "benjamini_hochberg",
+      "normality_test": "shapiro",
+      "normality_alpha": 0.05,
+      "min_group_n": 5
+    },
+    "repro": {
+      "seed": 42,
+      "deterministic": true,
+      "cudnn_benchmark": false
+    }
+  },
+  "checkpoint": "outputs_oasis1_pilot31/checkpoints/A7.pt",
+  "figures": {},
+  "roi_order": [
+    "Broca_Area",
+    "Wernicke_Area",
+    "Insula",
+    "Inferior_Frontal_Gyrus",
+    "Superior_Temporal_Gyrus"
+  ],
+  "stage_order": [
+    "CN",
+    "MCI",
+    "AD"
+  ],
+  "disclaimer": "These results are model-derived associations and stage-propensity estimates produced by a research system from a single cross-sectional structural MRI scan. They are not a confirmed clinical diagnosis, not a validated prediction of future disease conversion, and not a basis for any clinical decision. Regional vulnerability, propagation scores and stage-transition propensity describe how informative each region and pathway is for the model's current discrimination between CN, MCI and AD; they are not measurements of biological degeneration or disease spread. This system has not been clinically validated."
+}

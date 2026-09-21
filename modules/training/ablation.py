@@ -267,9 +267,9 @@ class AblationStudy:
             test splits.
         outputs_root: Root outputs directory.
         cfg: Framework configuration.
-        dataset_factory: Callable ``(split, spec_uses_cnn) -> (train_ds, val_ds,
-            test_ds)``. Injected so this class does not need to know how datasets
-            are assembled and so the caller controls the per-repeat scaler fit.
+        dataset_factory: Callable ``(split) -> (train_ds, val_ds, test_ds)``.
+            Injected so this class does not need to know how datasets are
+            assembled and so the caller controls the per-repeat scaler fit.
     """
 
     def __init__(
@@ -371,9 +371,7 @@ class AblationStudy:
                     cudnn_benchmark=self.cfg.repro.cudnn_benchmark,
                 )
                 try:
-                    train_ds, val_ds, test_ds = self.dataset_factory(
-                        split, spec.use_cnn
-                    )
+                    train_ds, val_ds, test_ds = self.dataset_factory(split)
                     model = build_model(
                         len(FEATURE_ORDER), self.cfg, variant, list(FEATURE_ORDER)
                     )
@@ -570,7 +568,7 @@ class AblationStudy:
             ("A3", "+ Learned Attention (AP-LAF)"),
             ("A4", "+ SRVE"),
             ("A5", "+ ANP"),
-            ("A7", "Full NeuroProp-X + SAEG-GATv2 + 3D CNN"),
+            ("A7", "Full: NeuroProp-X + SAEG-GATv2 + structural covariance + Stage-TGT"),
         ]
         rows = []
         for variant, label in ladder:

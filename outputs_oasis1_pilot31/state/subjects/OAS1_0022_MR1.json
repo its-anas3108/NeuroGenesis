@@ -1,0 +1,482 @@
+{
+  "scope": "subject",
+  "subject_id": "OAS1_0022_MR1",
+  "updated_at": "2026-09-21 23:26:16",
+  "stages": {
+    "M1": {
+      "code": "M1",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 10:04:28",
+      "finished_at": "2026-08-27 10:04:28",
+      "duration_s": 0.4862,
+      "error": null,
+      "traceback": null,
+      "artifacts": {
+        "source": "C:/Users/avisy/Downloads/dataset/extracted/disc1/OAS1_0022_MR1/PROCESSED/MPRAGE/T88_111/OAS1_0022_MR1_mpr_n4_anon_111_t88_gfc.hdr"
+      },
+      "metrics": {
+        "shape": [
+          176,
+          208,
+          176
+        ],
+        "affine": [
+          [
+            -1.0,
+            0.0,
+            0.0,
+            87.5
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            -103.5
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            -87.5
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      "notes": []
+    },
+    "M2": {
+      "code": "M2",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 10:04:28",
+      "finished_at": "2026-08-27 10:04:32",
+      "duration_s": 3.3494,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "quality_score": 67.54,
+        "passed": true
+      },
+      "notes": []
+    },
+    "M3": {
+      "code": "M3",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 10:04:32",
+      "finished_at": "2026-08-27 10:14:32",
+      "duration_s": 600.1977,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "stages": [
+          "original",
+          "n4_bias_corrected",
+          "wm_normalized",
+          "clahe",
+          "anisotropic_diffusion",
+          "intensity_normalized"
+        ]
+      },
+      "notes": []
+    },
+    "M4": {
+      "code": "M4",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 10:14:32",
+      "finished_at": "2026-08-27 10:14:46",
+      "duration_s": 14.3576,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "voxels_before": 6443007,
+        "voxels_after": 1878960,
+        "brain_fraction": 0.2916278067057819
+      },
+      "notes": [
+        "The Nilearn backend uses compute_brain_mask, which derives the mask from an MNI template via the image affine rather than from voxel intensities. On atlas-registered input such as OASIS-1 T88, every subject shares a shape and affine and therefore receives an identical mask. The voxel counts above describe that template envelope and are NOT a subject-specific brain volume. Regional morphometry is unaffected: it is measured inside the ROI patches by intensity threshold, and was verified to vary across subjects."
+      ]
+    },
+    "M5": {
+      "code": "M5",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 10:14:46",
+      "finished_at": "2026-08-27 10:14:53",
+      "duration_s": 6.2378,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "shape_before": [
+          176,
+          208,
+          176
+        ],
+        "shape_after": [
+          128,
+          128,
+          128
+        ],
+        "affine_after": [
+          [
+            -1.375,
+            0.0,
+            0.0,
+            87.5
+          ],
+          [
+            0.0,
+            1.625,
+            0.0,
+            -103.5
+          ],
+          [
+            0.0,
+            0.0,
+            1.375,
+            -87.5
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      "notes": []
+    },
+    "M6": {
+      "code": "M6",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 10:14:54",
+      "finished_at": "2026-08-27 10:15:22",
+      "duration_s": 28.4342,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "atlas": "cort-maxprob-thr25-2mm",
+        "n_rois": 5,
+        "roi_names": [
+          "Broca_Area",
+          "Inferior_Frontal_Gyrus",
+          "Insula",
+          "Superior_Temporal_Gyrus",
+          "Wernicke_Area"
+        ]
+      },
+      "notes": []
+    },
+    "M7": {
+      "code": "M7",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 10:15:22",
+      "finished_at": "2026-08-27 10:15:22",
+      "duration_s": 0.2203,
+      "error": null,
+      "traceback": null,
+      "artifacts": {
+        "roi_tensor": "outputs_oasis1/roi/patches/OAS1_0022_MR1/OAS1_0022_MR1_roi_tensor.npy"
+      },
+      "metrics": {
+        "tensor_shape": [
+          5,
+          48,
+          48,
+          48
+        ],
+        "roi_order": [
+          "Broca_Area",
+          "Wernicke_Area",
+          "Insula",
+          "Inferior_Frontal_Gyrus",
+          "Superior_Temporal_Gyrus"
+        ]
+      },
+      "notes": []
+    },
+    "M8": {
+      "code": "M8",
+      "status": "COMPLETED",
+      "started_at": "2026-08-27 10:15:22",
+      "finished_at": "2026-08-27 10:15:23",
+      "duration_s": 0.1631,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "n_rois": 5
+      },
+      "notes": []
+    },
+    "M9": {
+      "code": "M9",
+      "status": "COMPLETED",
+      "started_at": "2026-09-02 02:56:27",
+      "finished_at": "2026-09-02 02:56:27",
+      "duration_s": 0.0,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "embed_dim": 128,
+        "layer_trace": [
+          "input",
+          "block1 (Conv3d-BN-ReLU-MaxPool)",
+          "block2 (Conv3d-BN-ReLU-MaxPool)",
+          "block3 (Conv3d-BN-ReLU)",
+          "global_avg_pool",
+          "projection (Linear)"
+        ]
+      },
+      "notes": []
+    },
+    "M10": {
+      "code": "M10",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:15",
+      "duration_s": 0.0,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "n_nodes": 5,
+        "roi_order": [
+          "Broca_Area",
+          "Wernicke_Area",
+          "Insula",
+          "Inferior_Frontal_Gyrus",
+          "Superior_Temporal_Gyrus"
+        ],
+        "node_input_dim": 14
+      },
+      "notes": []
+    },
+    "M11": {
+      "code": "M11",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:15",
+      "duration_s": 0.0001,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "X_star_dim": 19,
+        "edge_feature_dim": 3,
+        "active_components": {
+          "use_srve": true,
+          "use_learned_attention": true,
+          "use_structural": true,
+          "use_anp": true,
+          "use_centrality": true
+        }
+      },
+      "notes": []
+    },
+    "M11.1": {
+      "code": "M11.1",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:15",
+      "duration_s": 0.0001,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "regional_vulnerability": {
+          "Broca_Area": 0.22557982802391052,
+          "Wernicke_Area": 0.38555046916007996,
+          "Insula": 0.4199316203594208,
+          "Inferior_Frontal_Gyrus": 0.4478847086429596,
+          "Superior_Temporal_Gyrus": 0.3081601858139038
+        }
+      },
+      "notes": []
+    },
+    "M11.2": {
+      "code": "M11.2",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:15",
+      "duration_s": 0.0001,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "alpha": 0.3319053053855896
+      },
+      "notes": []
+    },
+    "M11.3": {
+      "code": "M11.3",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:15",
+      "duration_s": 0.0002,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "beta": {
+          "beta1_source_vulnerability": 0.5012543201446533,
+          "beta2_target_vulnerability": 0.4985736906528473,
+          "beta3_adaptive_adjacency": 0.4980437457561493,
+          "beta4_topology": -0.0013426708756014705,
+          "bias": 0.0016660596011206508
+        },
+        "propagation_range": [
+          0.5711633563041687,
+          0.6493130922317505
+        ]
+      },
+      "notes": []
+    },
+    "M11.4": {
+      "code": "M11.4",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:15",
+      "duration_s": 0.031,
+      "error": null,
+      "traceback": null,
+      "artifacts": {
+        "vulnerability_npy": "outputs_oasis1_pilot31/neuropropx/vulnerability/OAS1_0022_MR1/OAS1_0022_MR1_regional_vulnerability.npy",
+        "vulnerability_csv": "outputs_oasis1_pilot31/neuropropx/vulnerability/OAS1_0022_MR1/OAS1_0022_MR1_regional_vulnerability.csv",
+        "A_prior_npy": "outputs_oasis1_pilot31/neuropropx/adaptive_adjacency/OAS1_0022_MR1/OAS1_0022_MR1_A_prior.npy",
+        "A_prior_csv": "outputs_oasis1_pilot31/neuropropx/adaptive_adjacency/OAS1_0022_MR1/OAS1_0022_MR1_A_prior.csv",
+        "A_att_npy": "outputs_oasis1_pilot31/neuropropx/adaptive_adjacency/OAS1_0022_MR1/OAS1_0022_MR1_A_att.npy",
+        "A_att_csv": "outputs_oasis1_pilot31/neuropropx/adaptive_adjacency/OAS1_0022_MR1/OAS1_0022_MR1_A_att.csv",
+        "A_star_npy": "outputs_oasis1_pilot31/neuropropx/adaptive_adjacency/OAS1_0022_MR1/OAS1_0022_MR1_A_star.npy",
+        "A_star_csv": "outputs_oasis1_pilot31/neuropropx/adaptive_adjacency/OAS1_0022_MR1/OAS1_0022_MR1_A_star.csv",
+        "propagation_npy": "outputs_oasis1_pilot31/neuropropx/propagation/OAS1_0022_MR1/OAS1_0022_MR1_propagation_score.npy",
+        "propagation_csv": "outputs_oasis1_pilot31/neuropropx/propagation/OAS1_0022_MR1/OAS1_0022_MR1_propagation_score.csv",
+        "X_star_npy": "outputs_oasis1_pilot31/neuropropx/enriched_graph/OAS1_0022_MR1/OAS1_0022_MR1_X_star.npy",
+        "edge_features_npy": "outputs_oasis1_pilot31/neuropropx/enriched_graph/OAS1_0022_MR1/OAS1_0022_MR1_edge_features.npy",
+        "metadata_json": "outputs_oasis1_pilot31/neuropropx/enriched_graph/OAS1_0022_MR1/OAS1_0022_MR1_G_star.json"
+      },
+      "metrics": {
+        "component_slices": {
+          "morphometry": [
+            0,
+            14
+          ],
+          "regional_vulnerability": [
+            14,
+            15
+          ],
+          "centrality": [
+            15,
+            19
+          ]
+        }
+      },
+      "notes": []
+    },
+    "M12": {
+      "code": "M12",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:15",
+      "duration_s": 0.0,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "graph_embedding_dim": 128,
+        "attention_shape": [
+          1,
+          4,
+          5,
+          5
+        ],
+        "edge_gate_active": true
+      },
+      "notes": []
+    },
+    "M13": {
+      "code": "M13",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:15",
+      "duration_s": 0.0,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "z_h_dim": 64
+      },
+      "notes": []
+    },
+    "M14": {
+      "code": "M14",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:15",
+      "duration_s": 0.0002,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "ad_associated_propensity": 0.4675648510456085
+      },
+      "notes": []
+    },
+    "M16": {
+      "code": "M16",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:15",
+      "finished_at": "2026-09-21 23:26:16",
+      "duration_s": 1.1359,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "attribution_method": "shap_kernel"
+      },
+      "notes": []
+    },
+    "M15": {
+      "code": "M15",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:16",
+      "finished_at": "2026-09-21 23:26:16",
+      "duration_s": 0.0003,
+      "error": null,
+      "traceback": null,
+      "artifacts": {},
+      "metrics": {
+        "signals_used": [
+          "attention",
+          "attribution",
+          "vulnerability"
+        ]
+      },
+      "notes": []
+    },
+    "M19": {
+      "code": "M19",
+      "status": "COMPLETED",
+      "started_at": "2026-09-21 23:26:16",
+      "finished_at": "2026-09-21 23:26:16",
+      "duration_s": 0.014,
+      "error": null,
+      "traceback": null,
+      "artifacts": {
+        "markdown": "outputs_oasis1_pilot31/reports/OAS1_0022_MR1/OAS1_0022_MR1_report.md",
+        "html": "outputs_oasis1_pilot31/reports/OAS1_0022_MR1/OAS1_0022_MR1_report.html",
+        "json": "outputs_oasis1_pilot31/reports/OAS1_0022_MR1/OAS1_0022_MR1_report.json"
+      },
+      "metrics": {},
+      "notes": []
+    }
+  }
+}

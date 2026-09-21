@@ -47,7 +47,6 @@ from modules.model import build_model  # noqa: E402
 CAPACITY: Dict[str, Dict[str, Any]] = {
     "capA": {},
     "capB": {
-        "spatial_encoder.embed_dim": 32,
         "graph_learning.hidden_dim": 32,
         "fusion.hidden_dim": 64,
         "fusion.out_dim": 32,
@@ -56,8 +55,6 @@ CAPACITY: Dict[str, Dict[str, Any]] = {
         "stage_tgt.n_layers": 1,
     },
     "capC": {
-        "spatial_encoder.embed_dim": 16,
-        "spatial_encoder.channels": [8, 16, 32],
         "graph_learning.hidden_dim": 24,
         "fusion.hidden_dim": 48,
         "fusion.out_dim": 24,
