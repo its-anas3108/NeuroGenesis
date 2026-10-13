@@ -1,0 +1,27 @@
+{
+  "dataset_source": "ADNI",
+  "synthetic_data_enabled": false,
+  "n_requested": 2,
+  "n_succeeded": 2,
+  "n_failed": 0,
+  "class_counts_processed": {
+    "UNLABELED": 2
+  },
+  "failures": [],
+  "subjects": [
+    {
+      "subject_id": "002_S_0295_I13722",
+      "mri_path": "outputs_adni_smoke/adni_nifti/mni/002_S_0295_I13722.nii.gz",
+      "status": "resumed",
+      "failed_stage": null,
+      "error": null
+    },
+    {
+      "subject_id": "002_S_0413_I14437",
+      "mri_path": "outputs_adni_smoke/adni_nifti/mni/002_S_0413_I14437.nii.gz",
+      "status": "resumed",
+      "failed_stage": null,
+      "error": null
+    }
+  ]
+}

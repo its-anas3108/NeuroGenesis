@@ -1,0 +1,42 @@
+{
+  "pipeline": "NeuroGenesis Phase 1",
+  "timestamp": "2026-09-17T17:42:09.694288",
+  "elapsed_s": 94.52,
+  "subjects_loaded": 2,
+  "subjects_qc_passed": 2,
+  "feature_tables": 2,
+  "graphs_built": 2,
+  "outputs": {
+    "original": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_diagram\\original",
+    "processed": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_diagram\\processed",
+    "segmented": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_diagram\\segmented",
+    "roi_patches": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_diagram\\roi_patches",
+    "tensors": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_diagram\\tensors",
+    "graphs": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_diagram\\graphs",
+    "features": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_diagram\\features"
+  },
+  "config": {
+    "dataset_dir": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_smoke\\adni_nifti\\mni",
+    "output_dir": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_diagram",
+    "dataset_mode": "synthetic",
+    "oasis_mri_dir": "dataset\\OASIS",
+    "oasis_csv_path": "None",
+    "target_shape": "(128, 128, 128)",
+    "interpolator": "linear",
+    "gaussian_sigma": "1.0",
+    "aniso_iterations": "10",
+    "aniso_conductance": "3.0",
+    "clahe_clip_limit": "0.03",
+    "morph_radius": "4",
+    "patch_size": "(48, 48, 48)",
+    "context_pad": "4",
+    "min_quality_score": "50.0",
+    "skip_failed_qc": "False",
+    "gm_threshold": "0.3",
+    "atlas_name": "cort-maxprob-thr25-2mm",
+    "atlas_dir": "dataset\\nilearn_data",
+    "save_nifti": "True",
+    "save_figures": "True",
+    "max_subjects": "2"
+  }
+}

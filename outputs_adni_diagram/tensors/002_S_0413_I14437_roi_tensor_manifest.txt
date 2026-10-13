@@ -1,0 +1,10 @@
+Patient ID : 002_S_0413_I14437
+Tensor shape: (5, 48, 48, 48)  [N_rois, D, H, W]
+Patch size  : (48, 48, 48)
+
+ROI Index Mapping:
+  [0] Broca_Area
+  [1] Wernicke_Area
+  [2] Insula
+  [3] Inferior_Frontal_Gyrus
+  [4] Superior_Temporal_Gyrus

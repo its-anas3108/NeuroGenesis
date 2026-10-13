@@ -1,0 +1,44 @@
+{
+  "patient_id": "002_S_0413_I14437",
+  "quality_score": 65.0,
+  "motion_score": 0.0,
+  "dropout_score": 100.0,
+  "ringing_score": 100.0,
+  "snr_db": 253.91288272996724,
+  "saturation_fraction": 9.087728385974e-07,
+  "n_dropout_slices": 0,
+  "passed": true,
+  "flags": [
+    "Motion artifacts suspected (score=0.0)"
+  ],
+  "raw_metrics": {
+    "motion": {
+      "slice_mean_variance": 8997.1865234375,
+      "max_diff": 119.16876220703125,
+      "median_diff": 0.0,
+      "motion_ratio": 119168762.20703125
+    },
+    "dropout": {
+      "n_dropout_slices": 0,
+      "dropout_fraction": 0.0,
+      "z_threshold": 2.5,
+      "dropped_slice_indices": []
+    },
+    "ringing": {
+      "hf_near_edge_mean": 0.0,
+      "hf_global_mean": 1e-06,
+      "ringing_ratio": 0.0
+    },
+    "snr": {
+      "signal_mean": 496.1855773925781,
+      "noise_std": 0.0,
+      "snr_linear": 4961855773925.781,
+      "snr_db": 253.91288272996724
+    },
+    "saturation": {
+      "max_intensity": 9632.8994140625,
+      "saturated_voxels": 1,
+      "saturation_fraction": 9.087728385974e-07
+    }
+  }
+}

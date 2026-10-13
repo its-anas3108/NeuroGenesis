@@ -1,0 +1,1216 @@
+[
+  {
+    "subject_id": "002_S_0295_I13722",
+    "current_stage": "CN",
+    "class_probabilities": {
+      "CN": 0.7910063862800598,
+      "MCI": 0.04203580692410469,
+      "AD": 0.16695775091648102
+    },
+    "confidence": {
+      "top_probability": 0.7910063862800598,
+      "margin": 0.62404865026474,
+      "entropy": 0.6175289154052734,
+      "normalized_entropy": 0.5620990423782057,
+      "note": "Confidence indicators are derived from softmax outputs and are not calibrated probabilities of correctness. A low-entropy prediction indicates that the model separated the classes confidently in its own representation, not that the classification is verified."
+    },
+    "ad_associated_propensity": 0.4844902455806732,
+    "stage_transition_propensity": 0.646273136138916,
+    "regional_vulnerability": {
+      "Broca_Area": 0.991974413394928,
+      "Wernicke_Area": 0.06996036320924759,
+      "Insula": 0.7037085294723511,
+      "Inferior_Frontal_Gyrus": 0.9898948073387146,
+      "Superior_Temporal_Gyrus": 0.38894692063331604
+    },
+    "roi_ranking": [
+      {
+        "rank": 1,
+        "roi": "Insula",
+        "roi_short": "Insula",
+        "score": 0.8213439782091179,
+        "vulnerability_normalized": 0.687351961865956,
+        "attention_normalized": 1.0
+      },
+      {
+        "rank": 2,
+        "roi": "Inferior_Frontal_Gyrus",
+        "roi_short": "IFG",
+        "score": 0.6145829224871161,
+        "vulnerability_normalized": 0.9977444963492752,
+        "attention_normalized": 0.10370082400423718
+      },
+      {
+        "rank": 3,
+        "roi": "Broca_Area",
+        "roi_short": "Broca",
+        "score": 0.5714285714285715,
+        "vulnerability_normalized": 1.0,
+        "attention_normalized": 0.0
+      },
+      {
+        "rank": 4,
+        "roi": "Superior_Temporal_Gyrus",
+        "roi_short": "STG",
+        "score": 0.4542815703226699,
+        "vulnerability_normalized": 0.345967132886781,
+        "attention_normalized": 0.5987008202371884
+      },
+      {
+        "rank": 5,
+        "roi": "Wernicke_Area",
+        "roi_short": "Wernicke",
+        "score": 0.21048497738640656,
+        "vulnerability_normalized": 0.0,
+        "attention_normalized": 0.49113161390161525
+      }
+    ],
+    "important_edges": [
+      {
+        "source": "Superior_Temporal_Gyrus",
+        "target": "Insula",
+        "pathway": "STG -> Insula",
+        "attention": 0.18209770321846008,
+        "gate": 0.8065884709358215,
+        "anatomical_tract": "Extreme_Capsule_System"
+      },
+      {
+        "source": "Broca_Area",
+        "target": "Insula",
+        "pathway": "Broca -> Insula",
+        "attention": 0.17857128381729126,
+        "gate": 0.8113086819648743,
+        "anatomical_tract": "Short_Arcuate_Fibres"
+      },
+      {
+        "source": "Wernicke_Area",
+        "target": "Insula",
+        "pathway": "Wernicke -> Insula",
+        "attention": 0.17779380083084106,
+        "gate": 0.8017180562019348,
+        "anatomical_tract": "Extreme_Capsule_System"
+      },
+      {
+        "source": "Inferior_Frontal_Gyrus",
+        "target": "Insula",
+        "pathway": "IFG -> Insula",
+        "attention": 0.17734915018081665,
+        "gate": 0.8113238215446472,
+        "anatomical_tract": "Inferior_Fronto_Occipital_Fasciculus"
+      },
+      {
+        "source": "Broca_Area",
+        "target": "Superior_Temporal_Gyrus",
+        "pathway": "Broca -> STG",
+        "attention": 0.1742704063653946,
+        "gate": 0.8015264272689819,
+        "anatomical_tract": null
+      }
+    ],
+    "explanations": {
+      "graph": {
+        "node_importance": {
+          "Broca_Area": 0.7376412153244019,
+          "Wernicke_Area": 0.8153511881828308,
+          "Insula": 0.8958675861358643,
+          "Inferior_Frontal_Gyrus": 0.7540494203567505,
+          "Superior_Temporal_Gyrus": 0.8323714733123779
+        },
+        "edge_attention": [
+          [
+            0.1423931121826172,
+            0.16703924536705017,
+            0.17857128381729126,
+            0.14794738590717316,
+            0.1742704063653946
+          ],
+          [
+            0.148331418633461,
+            0.16237486898899078,
+            0.17779380083084106,
+            0.14954213798046112,
+            0.16342778503894806
+          ],
+          [
+            0.15437954664230347,
+            0.1604369878768921,
+            0.1800556629896164,
+            0.1533723920583725,
+            0.15989433228969574
+          ],
+          [
+            0.14732694625854492,
+            0.1610674262046814,
+            0.17734915018081665,
+            0.15488716959953308,
+            0.16969656944274902
+          ],
+          [
+            0.1452101767063141,
+            0.16443265974521637,
+            0.18209770321846008,
+            0.14830031991004944,
+            0.1650824248790741
+          ]
+        ],
+        "edge_gate": [
+          [
+            0.8173354268074036,
+            0.8068807125091553,
+            0.8113086819648743,
+            0.8163094520568848,
+            0.8015264272689819
+          ],
+          [
+            0.8070906400680542,
+            0.8000335097312927,
+            0.8017180562019348,
+            0.7976624965667725,
+            0.8010649681091309
+          ],
+          [
+            0.8145415782928467,
+            0.8050957918167114,
+            0.8172550201416016,
+            0.8043860197067261,
+            0.7986488342285156
+          ],
+          [
+            0.8178926706314087,
+            0.7980849146842957,
+            0.8113238215446472,
+            0.8184154033660889,
+            0.8072799444198608
+          ],
+          [
+            0.8011012673377991,
+            0.805467963218689,
+            0.8065884709358215,
+            0.8010761737823486,
+            0.8104106783866882
+          ]
+        ],
+        "top_edges": [
+          {
+            "source": "Superior_Temporal_Gyrus",
+            "target": "Insula",
+            "pathway": "STG -> Insula",
+            "attention": 0.18209770321846008,
+            "gate": 0.8065884709358215,
+            "anatomical_tract": "Extreme_Capsule_System"
+          },
+          {
+            "source": "Broca_Area",
+            "target": "Insula",
+            "pathway": "Broca -> Insula",
+            "attention": 0.17857128381729126,
+            "gate": 0.8113086819648743,
+            "anatomical_tract": "Short_Arcuate_Fibres"
+          },
+          {
+            "source": "Wernicke_Area",
+            "target": "Insula",
+            "pathway": "Wernicke -> Insula",
+            "attention": 0.17779380083084106,
+            "gate": 0.8017180562019348,
+            "anatomical_tract": "Extreme_Capsule_System"
+          },
+          {
+            "source": "Inferior_Frontal_Gyrus",
+            "target": "Insula",
+            "pathway": "IFG -> Insula",
+            "attention": 0.17734915018081665,
+            "gate": 0.8113238215446472,
+            "anatomical_tract": "Inferior_Fronto_Occipital_Fasciculus"
+          },
+          {
+            "source": "Broca_Area",
+            "target": "Superior_Temporal_Gyrus",
+            "pathway": "Broca -> STG",
+            "attention": 0.1742704063653946,
+            "gate": 0.8015264272689819,
+            "anatomical_tract": null
+          }
+        ],
+        "layers": [
+          {
+            "layer": 1,
+            "attention_type": "dynamic (GATv2)",
+            "heads": 4,
+            "head_dim": 16,
+            "in_dim": 19,
+            "out_dim": 64,
+            "edge_gate": true,
+            "attention_shape": [
+              1,
+              4,
+              5,
+              5
+            ],
+            "gate_range": [
+              0.8020008206367493,
+              0.8534366488456726
+            ]
+          },
+          {
+            "layer": 2,
+            "attention_type": "dynamic (GATv2)",
+            "heads": 4,
+            "head_dim": 64,
+            "in_dim": 64,
+            "out_dim": 64,
+            "edge_gate": true,
+            "attention_shape": [
+              1,
+              4,
+              5,
+              5
+            ],
+            "gate_range": [
+              0.7976624965667725,
+              0.8184154033660889
+            ]
+          }
+        ],
+        "pooling_weights": null,
+        "roi_order": [
+          "Broca_Area",
+          "Wernicke_Area",
+          "Insula",
+          "Inferior_Frontal_Gyrus",
+          "Superior_Temporal_Gyrus"
+        ],
+        "notes": []
+      },
+      "neuropropx": {
+        "regional_vulnerability": {
+          "Broca_Area": 0.991974413394928,
+          "Wernicke_Area": 0.06996036320924759,
+          "Insula": 0.7037085294723511,
+          "Inferior_Frontal_Gyrus": 0.9898948073387146,
+          "Superior_Temporal_Gyrus": 0.38894692063331604
+        },
+        "vulnerability_ranking": [
+          {
+            "rank": 1,
+            "roi": "Broca_Area",
+            "roi_short": "Broca",
+            "vulnerability": 0.991974413394928
+          },
+          {
+            "rank": 2,
+            "roi": "Inferior_Frontal_Gyrus",
+            "roi_short": "IFG",
+            "vulnerability": 0.9898948073387146
+          },
+          {
+            "rank": 3,
+            "roi": "Insula",
+            "roi_short": "Insula",
+            "vulnerability": 0.7037085294723511
+          },
+          {
+            "rank": 4,
+            "roi": "Superior_Temporal_Gyrus",
+            "roi_short": "STG",
+            "vulnerability": 0.38894692063331604
+          },
+          {
+            "rank": 5,
+            "roi": "Wernicke_Area",
+            "roi_short": "Wernicke",
+            "vulnerability": 0.06996036320924759
+          }
+        ],
+        "propagation_matrix": [
+          [
+            0.7582809925079346,
+            0.6438444256782532,
+            0.7248693108558655,
+            0.7563731670379639,
+            0.6720715165138245
+          ],
+          [
+            0.6515055298805237,
+            0.5516781806945801,
+            0.6148371696472168,
+            0.6421974897384644,
+            0.5885655283927917
+          ],
+          [
+            0.7222728133201599,
+            0.6190798282623291,
+            0.7054974436759949,
+            0.7133000493049622,
+            0.6469403505325317
+          ],
+          [
+            0.7568463683128357,
+            0.6351251602172852,
+            0.7245696187019348,
+            0.7586184144020081,
+            0.6785836219787598
+          ],
+          [
+            0.6774119734764099,
+            0.5898728966712952,
+            0.6548360586166382,
+            0.679328978061676,
+            0.6333997845649719
+          ]
+        ],
+        "adaptive_adjacency": [
+          [
+            0.30333060026168823,
+            0.119148850440979,
+            0.2416245937347412,
+            0.28423380851745605,
+            0.05166211724281311
+          ],
+          [
+            0.19199202954769135,
+            0.2748129963874817,
+            0.16353876888751984,
+            0.1119219958782196,
+            0.25773417949676514
+          ],
+          [
+            0.216952383518219,
+            0.19554677605628967,
+            0.3407420516014099,
+            0.12975624203681946,
+            0.11700250208377838
+          ],
+          [
+            0.28973862528800964,
+            0.04530097916722298,
+            0.2407016158103943,
+            0.3108682632446289,
+            0.1133904904127121
+          ],
+          [
+            0.1043427363038063,
+            0.26696833968162537,
+            0.189200758934021,
+            0.123731330037117,
+            0.31575679779052734
+          ]
+        ],
+        "prior_adjacency": [
+          [
+            0.2857142984867096,
+            0.24285714328289032,
+            0.2142857164144516,
+            0.2571428418159485,
+            0.0
+          ],
+          [
+            0.26153847575187683,
+            0.3076923191547394,
+            0.1846153885126114,
+            0.0,
+            0.2461538463830948
+          ],
+          [
+            0.2978723347187042,
+            0.27659574151039124,
+            0.42553192377090454,
+            0.0,
+            0.0
+          ],
+          [
+            0.30645161867141724,
+            0.0,
+            0.20967741310596466,
+            0.3225806653499603,
+            0.16129033267498016
+          ],
+          [
+            0.0,
+            0.3673469126224518,
+            0.22448979318141937,
+            0.0,
+            0.40816324949264526
+          ]
+        ],
+        "attention_adjacency": [
+          [
+            0.24301248788833618,
+            0.04640277102589607,
+            0.4086911380290985,
+            0.23956796526908875,
+            0.06232567876577377
+          ],
+          [
+            0.24617350101470947,
+            0.13465189933776855,
+            0.1605425328016281,
+            0.2561100721359253,
+            0.20252195000648499
+          ],
+          [
+            0.24746263027191162,
+            0.15968920290470123,
+            0.2012365162372589,
+            0.23225226998329163,
+            0.15935933589935303
+          ],
+          [
+            0.23400886356830597,
+            0.062443941831588745,
+            0.3736020028591156,
+            0.2578641474246979,
+            0.0720810517668724
+          ],
+          [
+            0.2284948229789734,
+            0.13879083096981049,
+            0.17573072016239166,
+            0.2651014029979706,
+            0.19188222289085388
+          ]
+        ],
+        "alpha": 0.3319053053855896,
+        "beta": {
+          "beta1_source_vulnerability": 0.5012543201446533,
+          "beta2_target_vulnerability": 0.4985736906528473,
+          "beta3_adaptive_adjacency": 0.4980437457561493,
+          "beta4_topology": -0.0013426708756014705,
+          "bias": 0.0016660596011206508
+        },
+        "top_pathways": [
+          {
+            "source": "Inferior_Frontal_Gyrus",
+            "target": "Broca_Area",
+            "source_short": "IFG",
+            "target_short": "Broca",
+            "propagation_score": 0.7568463683128357
+          },
+          {
+            "source": "Broca_Area",
+            "target": "Inferior_Frontal_Gyrus",
+            "source_short": "Broca",
+            "target_short": "IFG",
+            "propagation_score": 0.7563731670379639
+          },
+          {
+            "source": "Broca_Area",
+            "target": "Insula",
+            "source_short": "Broca",
+            "target_short": "Insula",
+            "propagation_score": 0.7248693108558655
+          },
+          {
+            "source": "Inferior_Frontal_Gyrus",
+            "target": "Insula",
+            "source_short": "IFG",
+            "target_short": "Insula",
+            "propagation_score": 0.7245696187019348
+          },
+          {
+            "source": "Insula",
+            "target": "Broca_Area",
+            "source_short": "Insula",
+            "target_short": "Broca",
+            "propagation_score": 0.7222728133201599
+          }
+        ],
+        "srve_trace": {
+          "roi": "Broca_Area",
+          "features": {
+            "voxel_count": -5.0,
+            "brain_volume_mm3": -5.0,
+            "gm_volume_mm3": 1.7606227397918701,
+            "mean_intensity": -1.7819814682006836,
+            "std_intensity": -5.0,
+            "skewness": -2.273824453353882,
+            "kurtosis": 5.0,
+            "entropy": -0.5289969444274902,
+            "surface_area_vox": -5.0,
+            "cortical_thickness_mm": -3.2573413848876953,
+            "gm_fraction": 3.8397676944732666,
+            "normalized_volume": 0.0,
+            "surface_to_volume_ratio": 3.4569919109344482,
+            "atrophy_index": 0.0
+          },
+          "weights": {
+            "voxel_count": 0.08170391619205475,
+            "brain_volume_mm3": 0.02614547498524189,
+            "gm_volume_mm3": 0.056762561202049255,
+            "mean_intensity": 0.06095673143863678,
+            "std_intensity": -0.29116567969322205,
+            "skewness": -0.05348429083824158,
+            "kurtosis": 0.5827852487564087,
+            "entropy": -0.1693967580795288,
+            "surface_area_vox": 0.11719395220279694,
+            "cortical_thickness_mm": 0.06362108886241913,
+            "gm_fraction": 0.13720788061618805,
+            "normalized_volume": 0.21422232687473297,
+            "surface_to_volume_ratio": 0.30454161763191223,
+            "atrophy_index": -0.4495306611061096
+          },
+          "contributions": {
+            "voxel_count": -0.40851956605911255,
+            "brain_volume_mm3": -0.1307273805141449,
+            "gm_volume_mm3": 0.09993745386600494,
+            "mean_intensity": -0.10862376540899277,
+            "std_intensity": 1.4558284282684326,
+            "skewness": 0.12161388993263245,
+            "kurtosis": 2.913926124572754,
+            "entropy": 0.08961036801338196,
+            "surface_area_vox": -0.5859697461128235,
+            "cortical_thickness_mm": -0.20723560452461243,
+            "gm_fraction": 0.5268464088439941,
+            "normalized_volume": 0.0,
+            "surface_to_volume_ratio": 1.0527979135513306,
+            "atrophy_index": -0.0
+          },
+          "bias": -0.0024198407772928476,
+          "logit": 4.8170647621154785,
+          "regional_vulnerability": 0.991974413394928,
+          "formula": "RV_i = sigmoid(w_v^T xhat_i + b_v)",
+          "reconstruction_check": 4.8170647621154785
+        },
+        "roi_order": [
+          "Broca_Area",
+          "Wernicke_Area",
+          "Insula",
+          "Inferior_Frontal_Gyrus",
+          "Superior_Temporal_Gyrus"
+        ],
+        "disclaimer": "Regional vulnerability and propagation scores are model-derived quantities that describe how informative each speech-related region and inter-regional pathway is for the current CN/MCI/AD discrimination. They are not biological probabilities of future degeneration and not measurements of disease spread."
+      },
+      "attribution": null
+    },
+    "stage_propensity_detail": {
+      "reference_stage": "CN",
+      "stage_alignment": {
+        "CN": 0.35372689366340637,
+        "MCI": 0.22099840641021729,
+        "AD": 0.42527469992637634
+      },
+      "advanced_stage_alignment": 0.5357738733291626,
+      "ad_associated_propensity": 0.4844902455806732,
+      "ad_axis_projection": 0.4108631908893585,
+      "stage_transition_propensity": 0.646273136138916,
+      "transition_target_stage": "MCI",
+      "transition_note": "Propensity of the current representation toward the MCI-associated representation.",
+      "definitions": {
+        "advanced_stage_alignment": "Expected ordinal position under the stage-alignment distribution: 0 = fully CN-aligned, 1 = fully AD-aligned.",
+        "ad_associated_propensity": "d_CN / (d_CN + d_AD): distance to the CN prototype relative to distance to the AD prototype. 0 = on the CN prototype, 1 = on the AD prototype. Answers 'how far toward the AD representation', which is a different question from the classifier's P(AD).",
+        "ad_axis_projection": "Diagnostic only: the scalar projection onto the CN-to-AD axis. Sensitive to a common-mode offset of the representation cloud, so it is not the reported propensity.",
+        "stage_transition_propensity": "Alignment mass at stages strictly more advanced than the reference stage, normalised against the reference stage."
+      },
+      "disclaimer": "Stage-transition propensity is a model-derived measure of how closely the subject's current structural representation aligns with a more advanced disease-stage representation. It is derived from a single cross-sectional scan. It is not a clinically validated conversion probability, not a prediction of future diagnosis, and not a biological estimate of disease onset."
+    },
+    "reference_stage": null,
+    "is_synthetic": false
+  },
+  {
+    "subject_id": "002_S_0413_I14437",
+    "current_stage": "CN",
+    "class_probabilities": {
+      "CN": 0.5758578777313232,
+      "MCI": 0.15557542443275452,
+      "AD": 0.26856669783592224
+    },
+    "confidence": {
+      "top_probability": 0.5758578777313232,
+      "margin": 0.307291179895401,
+      "entropy": 0.9603530764579773,
+      "normalized_entropy": 0.8741510416038132,
+      "note": "Confidence indicators are derived from softmax outputs and are not calibrated probabilities of correctness. A low-entropy prediction indicates that the model separated the classes confidently in its own representation, not that the classification is verified."
+    },
+    "ad_associated_propensity": 0.47342735528945923,
+    "stage_transition_propensity": 0.6986539959907532,
+    "regional_vulnerability": {
+      "Broca_Area": 0.9354751706123352,
+      "Wernicke_Area": 0.027187347412109375,
+      "Insula": 0.03272337093949318,
+      "Inferior_Frontal_Gyrus": 0.9566883444786072,
+      "Superior_Temporal_Gyrus": 0.222334623336792
+    },
+    "roi_ranking": [
+      {
+        "rank": 1,
+        "roi": "Inferior_Frontal_Gyrus",
+        "roi_short": "IFG",
+        "score": 0.6359163669792931,
+        "vulnerability_normalized": 1.0,
+        "attention_normalized": 0.15047152295168364
+      },
+      {
+        "rank": 2,
+        "roi": "Broca_Area",
+        "roi_short": "Broca",
+        "score": 0.5583873657965969,
+        "vulnerability_normalized": 0.9771778901440443,
+        "attention_normalized": 0.0
+      },
+      {
+        "rank": 3,
+        "roi": "Superior_Temporal_Gyrus",
+        "roi_short": "STG",
+        "score": 0.4777637922820786,
+        "vulnerability_normalized": 0.20994843097593957,
+        "attention_normalized": 0.8348509406902639
+      },
+      {
+        "rank": 4,
+        "roi": "Wernicke_Area",
+        "roi_short": "Wernicke",
+        "score": 0.4285714285714286,
+        "vulnerability_normalized": 0.0,
+        "attention_normalized": 1.0
+      },
+      {
+        "rank": 5,
+        "roi": "Insula",
+        "roi_short": "Insula",
+        "score": 0.41038615275180024,
+        "vulnerability_normalized": 0.005955909186601711,
+        "attention_normalized": 0.9496264775053982
+      }
+    ],
+    "important_edges": [
+      {
+        "source": "Superior_Temporal_Gyrus",
+        "target": "Wernicke_Area",
+        "pathway": "STG -> Wernicke",
+        "attention": 0.17925100028514862,
+        "gate": 0.8028244376182556,
+        "anatomical_tract": "Intra_STG_Fibres"
+      },
+      {
+        "source": "Broca_Area",
+        "target": "Insula",
+        "pathway": "Broca -> Insula",
+        "attention": 0.17780962586402893,
+        "gate": 0.8048217296600342,
+        "anatomical_tract": "Short_Arcuate_Fibres"
+      },
+      {
+        "source": "Broca_Area",
+        "target": "Wernicke_Area",
+        "pathway": "Broca -> Wernicke",
+        "attention": 0.17715227603912354,
+        "gate": 0.8058679103851318,
+        "anatomical_tract": "Superior_Longitudinal_Fasciculus"
+      },
+      {
+        "source": "Insula",
+        "target": "Wernicke_Area",
+        "pathway": "Insula -> Wernicke",
+        "attention": 0.17624105513095856,
+        "gate": 0.7973549365997314,
+        "anatomical_tract": "Extreme_Capsule_System"
+      },
+      {
+        "source": "Inferior_Frontal_Gyrus",
+        "target": "Insula",
+        "pathway": "IFG -> Insula",
+        "attention": 0.17555740475654602,
+        "gate": 0.8047639727592468,
+        "anatomical_tract": "Inferior_Fronto_Occipital_Fasciculus"
+      }
+    ],
+    "explanations": {
+      "graph": {
+        "node_importance": {
+          "Broca_Area": 0.6831580400466919,
+          "Wernicke_Area": 0.8868468403816223,
+          "Insula": 0.8765863180160522,
+          "Inferior_Frontal_Gyrus": 0.7138074040412903,
+          "Superior_Temporal_Gyrus": 0.8532078266143799
+        },
+        "edge_attention": [
+          [
+            0.13548851013183594,
+            0.17715227603912354,
+            0.17780962586402893,
+            0.14596575498580933,
+            0.17118990421295166
+          ],
+          [
+            0.135311558842659,
+            0.17991915345191956,
+            0.1739095151424408,
+            0.1378554403781891,
+            0.1715417057275772
+          ],
+          [
+            0.13902224600315094,
+            0.17624105513095856,
+            0.17440250515937805,
+            0.14115069806575775,
+            0.1677553653717041
+          ],
+          [
+            0.13909800350666046,
+            0.17428335547447205,
+            0.17555740475654602,
+            0.1478487104177475,
+            0.1709134876728058
+          ],
+          [
+            0.13423779606819153,
+            0.17925100028514862,
+            0.17490732669830322,
+            0.14098680019378662,
+            0.1718073934316635
+          ]
+        ],
+        "edge_gate": [
+          [
+            0.816055178642273,
+            0.8058679103851318,
+            0.8048217296600342,
+            0.8152289986610413,
+            0.7993395924568176
+          ],
+          [
+            0.8063704967498779,
+            0.7986335754394531,
+            0.7937418222427368,
+            0.7971825003623962,
+            0.7982994914054871
+          ],
+          [
+            0.8076808452606201,
+            0.7973549365997314,
+            0.8028645515441895,
+            0.797206461429596,
+            0.7892115116119385
+          ],
+          [
+            0.816943347454071,
+            0.7973563075065613,
+            0.8047639727592468,
+            0.8177064657211304,
+            0.8054344058036804
+          ],
+          [
+            0.799068033695221,
+            0.8028244376182556,
+            0.7974329590797424,
+            0.7994286417961121,
+            0.806477963924408
+          ]
+        ],
+        "top_edges": [
+          {
+            "source": "Superior_Temporal_Gyrus",
+            "target": "Wernicke_Area",
+            "pathway": "STG -> Wernicke",
+            "attention": 0.17925100028514862,
+            "gate": 0.8028244376182556,
+            "anatomical_tract": "Intra_STG_Fibres"
+          },
+          {
+            "source": "Broca_Area",
+            "target": "Insula",
+            "pathway": "Broca -> Insula",
+            "attention": 0.17780962586402893,
+            "gate": 0.8048217296600342,
+            "anatomical_tract": "Short_Arcuate_Fibres"
+          },
+          {
+            "source": "Broca_Area",
+            "target": "Wernicke_Area",
+            "pathway": "Broca -> Wernicke",
+            "attention": 0.17715227603912354,
+            "gate": 0.8058679103851318,
+            "anatomical_tract": "Superior_Longitudinal_Fasciculus"
+          },
+          {
+            "source": "Insula",
+            "target": "Wernicke_Area",
+            "pathway": "Insula -> Wernicke",
+            "attention": 0.17624105513095856,
+            "gate": 0.7973549365997314,
+            "anatomical_tract": "Extreme_Capsule_System"
+          },
+          {
+            "source": "Inferior_Frontal_Gyrus",
+            "target": "Insula",
+            "pathway": "IFG -> Insula",
+            "attention": 0.17555740475654602,
+            "gate": 0.8047639727592468,
+            "anatomical_tract": "Inferior_Fronto_Occipital_Fasciculus"
+          }
+        ],
+        "layers": [
+          {
+            "layer": 1,
+            "attention_type": "dynamic (GATv2)",
+            "heads": 4,
+            "head_dim": 16,
+            "in_dim": 19,
+            "out_dim": 64,
+            "edge_gate": true,
+            "attention_shape": [
+              1,
+              4,
+              5,
+              5
+            ],
+            "gate_range": [
+              0.8071893453598022,
+              0.850851833820343
+            ]
+          },
+          {
+            "layer": 2,
+            "attention_type": "dynamic (GATv2)",
+            "heads": 4,
+            "head_dim": 64,
+            "in_dim": 64,
+            "out_dim": 64,
+            "edge_gate": true,
+            "attention_shape": [
+              1,
+              4,
+              5,
+              5
+            ],
+            "gate_range": [
+              0.7892115116119385,
+              0.8177064657211304
+            ]
+          }
+        ],
+        "pooling_weights": null,
+        "roi_order": [
+          "Broca_Area",
+          "Wernicke_Area",
+          "Insula",
+          "Inferior_Frontal_Gyrus",
+          "Superior_Temporal_Gyrus"
+        ],
+        "notes": []
+      },
+      "neuropropx": {
+        "regional_vulnerability": {
+          "Broca_Area": 0.9354751706123352,
+          "Wernicke_Area": 0.027187347412109375,
+          "Insula": 0.03272337093949318,
+          "Inferior_Frontal_Gyrus": 0.9566883444786072,
+          "Superior_Temporal_Gyrus": 0.222334623336792
+        },
+        "vulnerability_ranking": [
+          {
+            "rank": 1,
+            "roi": "Inferior_Frontal_Gyrus",
+            "roi_short": "IFG",
+            "vulnerability": 0.9566883444786072
+          },
+          {
+            "rank": 2,
+            "roi": "Broca_Area",
+            "roi_short": "Broca",
+            "vulnerability": 0.9354751706123352
+          },
+          {
+            "rank": 3,
+            "roi": "Superior_Temporal_Gyrus",
+            "roi_short": "STG",
+            "vulnerability": 0.222334623336792
+          },
+          {
+            "rank": 4,
+            "roi": "Insula",
+            "roi_short": "Insula",
+            "vulnerability": 0.03272337093949318
+          },
+          {
+            "rank": 5,
+            "roi": "Wernicke_Area",
+            "roi_short": "Wernicke",
+            "vulnerability": 0.027187347412109375
+          }
+        ],
+        "propagation_matrix": [
+          [
+            0.7493398785591125,
+            0.6351798176765442,
+            0.6382302045822144,
+            0.7485430240631104,
+            0.6504868865013123
+          ],
+          [
+            0.635906994342804,
+            0.5379706025123596,
+            0.5374270081520081,
+            0.6317852139472961,
+            0.562968909740448
+          ],
+          [
+            0.6400415301322937,
+            0.5362222194671631,
+            0.5479068160057068,
+            0.634003758430481,
+            0.5509347915649414
+          ],
+          [
+            0.7467412948608398,
+            0.6302490830421448,
+            0.6449149250984192,
+            0.7507632374763489,
+            0.6611562967300415
+          ],
+          [
+            0.6507393717765808,
+            0.5629767179489136,
+            0.5627801418304443,
+            0.6556098461151123,
+            0.5915111899375916
+          ]
+        ],
+        "adaptive_adjacency": [
+          [
+            0.319805383682251,
+            0.1434939205646515,
+            0.16492855548858643,
+            0.28978997468948364,
+            0.08198210597038269
+          ],
+          [
+            0.15482266247272491,
+            0.2498202919960022,
+            0.24038535356521606,
+            0.09765702486038208,
+            0.25731462240219116
+          ],
+          [
+            0.18519479036331177,
+            0.23012907803058624,
+            0.3196021020412445,
+            0.11125792562961578,
+            0.1538160741329193
+          ],
+          [
+            0.27077239751815796,
+            0.0795411765575409,
+            0.20194704830646515,
+            0.2921937108039856,
+            0.1555456519126892
+          ],
+          [
+            0.08822076767683029,
+            0.25636184215545654,
+            0.2497132420539856,
+            0.10988374799489975,
+            0.29582032561302185
+          ]
+        ],
+        "prior_adjacency": [
+          [
+            0.2857142984867096,
+            0.24285714328289032,
+            0.2142857164144516,
+            0.2571428418159485,
+            0.0
+          ],
+          [
+            0.26153847575187683,
+            0.3076923191547394,
+            0.1846153885126114,
+            0.0,
+            0.2461538463830948
+          ],
+          [
+            0.2978723347187042,
+            0.27659574151039124,
+            0.42553192377090454,
+            0.0,
+            0.0
+          ],
+          [
+            0.30645161867141724,
+            0.0,
+            0.20967741310596466,
+            0.3225806653499603,
+            0.16129033267498016
+          ],
+          [
+            0.0,
+            0.3673469126224518,
+            0.22448979318141937,
+            0.0,
+            0.40816324949264526
+          ]
+        ],
+        "attention_adjacency": [
+          [
+            0.3394148647785187,
+            0.0880182757973671,
+            0.16224810481071472,
+            0.3153468668460846,
+            0.09497180581092834
+          ],
+          [
+            0.11803880333900452,
+            0.15635192394256592,
+            0.2874113917350769,
+            0.16735991835594177,
+            0.2708379328250885
+          ],
+          [
+            0.1598070114850998,
+            0.17158079147338867,
+            0.25585824251174927,
+            0.20023620128631592,
+            0.21251778304576874
+          ],
+          [
+            0.247892364859581,
+            0.11072664707899094,
+            0.25745195150375366,
+            0.2634405791759491,
+            0.12048838287591934
+          ],
+          [
+            0.1478881537914276,
+            0.17160062491893768,
+            0.29426804184913635,
+            0.16471344232559204,
+            0.22152967751026154
+          ]
+        ],
+        "alpha": 0.3319053053855896,
+        "beta": {
+          "beta1_source_vulnerability": 0.5012543201446533,
+          "beta2_target_vulnerability": 0.4985736906528473,
+          "beta3_adaptive_adjacency": 0.4980437457561493,
+          "beta4_topology": -0.0013426708756014705,
+          "bias": 0.0016660596011206508
+        },
+        "top_pathways": [
+          {
+            "source": "Broca_Area",
+            "target": "Inferior_Frontal_Gyrus",
+            "source_short": "Broca",
+            "target_short": "IFG",
+            "propagation_score": 0.7485430240631104
+          },
+          {
+            "source": "Inferior_Frontal_Gyrus",
+            "target": "Broca_Area",
+            "source_short": "IFG",
+            "target_short": "Broca",
+            "propagation_score": 0.7467412948608398
+          },
+          {
+            "source": "Inferior_Frontal_Gyrus",
+            "target": "Superior_Temporal_Gyrus",
+            "source_short": "IFG",
+            "target_short": "STG",
+            "propagation_score": 0.6611562967300415
+          },
+          {
+            "source": "Superior_Temporal_Gyrus",
+            "target": "Inferior_Frontal_Gyrus",
+            "source_short": "STG",
+            "target_short": "IFG",
+            "propagation_score": 0.6556098461151123
+          },
+          {
+            "source": "Superior_Temporal_Gyrus",
+            "target": "Broca_Area",
+            "source_short": "STG",
+            "target_short": "Broca",
+            "propagation_score": 0.6507393717765808
+          }
+        ],
+        "srve_trace": {
+          "roi": "Inferior_Frontal_Gyrus",
+          "features": {
+            "voxel_count": 0.5487457513809204,
+            "brain_volume_mm3": 0.5487457513809204,
+            "gm_volume_mm3": 3.3547966480255127,
+            "mean_intensity": 5.0,
+            "std_intensity": 5.0,
+            "skewness": -5.0,
+            "kurtosis": 5.0,
+            "entropy": -5.0,
+            "surface_area_vox": -3.041811227798462,
+            "cortical_thickness_mm": 1.1207077503204346,
+            "gm_fraction": 4.205685615539551,
+            "normalized_volume": 0.0,
+            "surface_to_volume_ratio": -1.0814263820648193,
+            "atrophy_index": 0.0
+          },
+          "weights": {
+            "voxel_count": 0.08170391619205475,
+            "brain_volume_mm3": 0.02614547498524189,
+            "gm_volume_mm3": 0.056762561202049255,
+            "mean_intensity": 0.06095673143863678,
+            "std_intensity": -0.29116567969322205,
+            "skewness": -0.05348429083824158,
+            "kurtosis": 0.5827852487564087,
+            "entropy": -0.1693967580795288,
+            "surface_area_vox": 0.11719395220279694,
+            "cortical_thickness_mm": 0.06362108886241913,
+            "gm_fraction": 0.13720788061618805,
+            "normalized_volume": 0.21422232687473297,
+            "surface_to_volume_ratio": 0.30454161763191223,
+            "atrophy_index": -0.4495306611061096
+          },
+          "contributions": {
+            "voxel_count": 0.0448346771299839,
+            "brain_volume_mm3": 0.014347217977046967,
+            "gm_volume_mm3": 0.19042685627937317,
+            "mean_intensity": 0.3047836422920227,
+            "std_intensity": -1.4558284282684326,
+            "skewness": 0.2674214541912079,
+            "kurtosis": 2.913926124572754,
+            "entropy": 0.846983790397644,
+            "surface_area_vox": -0.3564818799495697,
+            "cortical_thickness_mm": 0.07130064815282822,
+            "gm_fraction": 0.5770531892776489,
+            "normalized_volume": 0.0,
+            "surface_to_volume_ratio": -0.32933932542800903,
+            "atrophy_index": -0.0
+          },
+          "bias": 0.005628375336527824,
+          "logit": 3.0950565338134766,
+          "regional_vulnerability": 0.9566883444786072,
+          "formula": "RV_i = sigmoid(w_v^T xhat_i + b_v)",
+          "reconstruction_check": 3.0950565338134766
+        },
+        "roi_order": [
+          "Broca_Area",
+          "Wernicke_Area",
+          "Insula",
+          "Inferior_Frontal_Gyrus",
+          "Superior_Temporal_Gyrus"
+        ],
+        "disclaimer": "Regional vulnerability and propagation scores are model-derived quantities that describe how informative each speech-related region and inter-regional pathway is for the current CN/MCI/AD discrimination. They are not biological probabilities of future degeneration and not measurements of disease spread."
+      },
+      "attribution": null
+    },
+    "stage_propensity_detail": {
+      "reference_stage": "CN",
+      "stage_alignment": {
+        "CN": 0.3013460636138916,
+        "MCI": 0.38284704089164734,
+        "AD": 0.31580695509910583
+      },
+      "advanced_stage_alignment": 0.5072304606437683,
+      "ad_associated_propensity": 0.47342735528945923,
+      "ad_axis_projection": 0.3544873595237732,
+      "stage_transition_propensity": 0.6986539959907532,
+      "transition_target_stage": "MCI",
+      "transition_note": "Propensity of the current representation toward the MCI-associated representation.",
+      "definitions": {
+        "advanced_stage_alignment": "Expected ordinal position under the stage-alignment distribution: 0 = fully CN-aligned, 1 = fully AD-aligned.",
+        "ad_associated_propensity": "d_CN / (d_CN + d_AD): distance to the CN prototype relative to distance to the AD prototype. 0 = on the CN prototype, 1 = on the AD prototype. Answers 'how far toward the AD representation', which is a different question from the classifier's P(AD).",
+        "ad_axis_projection": "Diagnostic only: the scalar projection onto the CN-to-AD axis. Sensitive to a common-mode offset of the representation cloud, so it is not the reported propensity.",
+        "stage_transition_propensity": "Alignment mass at stages strictly more advanced than the reference stage, normalised against the reference stage."
+      },
+      "disclaimer": "Stage-transition propensity is a model-derived measure of how closely the subject's current structural representation aligns with a more advanced disease-stage representation. It is derived from a single cross-sectional scan. It is not a clinically validated conversion probability, not a prediction of future diagnosis, and not a biological estimate of disease onset."
+    },
+    "reference_stage": null,
+    "is_synthetic": false
+  }
+]

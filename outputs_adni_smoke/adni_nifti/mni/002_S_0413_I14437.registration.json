@@ -1,0 +1,5 @@
+{
+  "final_metric": -0.0,
+  "method": "SimpleITK rigid (Euler3D, moments-initialised) -> affine, Mattes mutual information, regular-step gradient descent, 3-level multi-resolution pyramid",
+  "template": "MNI152 (nilearn, 2mm)"
+}

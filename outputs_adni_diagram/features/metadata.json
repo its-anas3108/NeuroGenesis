@@ -1,0 +1,46 @@
+[
+  {
+    "patient_id": "002_S_0295_I13722",
+    "filepath": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_smoke\\adni_nifti\\mni\\002_S_0295_I13722.nii.gz",
+    "shape": [
+      99,
+      117,
+      95
+    ],
+    "voxel_dims_mm": [
+      2.0,
+      2.0,
+      2.0
+    ],
+    "voxel_vol_mm3": 8.0,
+    "dtype": "float32",
+    "min_intensity": 0.0,
+    "max_intensity": 15061.19140625,
+    "mean_intensity": 1034.6785888671875,
+    "std_intensity": 1653.9365234375,
+    "total_voxels": 1100385,
+    "non_zero_voxels": 818048
+  },
+  {
+    "patient_id": "002_S_0413_I14437",
+    "filepath": "C:\\Users\\avisy\\Downloads\\NeuroGenesis\\outputs_adni_smoke\\adni_nifti\\mni\\002_S_0413_I14437.nii.gz",
+    "shape": [
+      99,
+      117,
+      95
+    ],
+    "voxel_dims_mm": [
+      2.0,
+      2.0,
+      2.0
+    ],
+    "voxel_vol_mm3": 8.0,
+    "dtype": "float32",
+    "min_intensity": 0.0,
+    "max_intensity": 9632.8994140625,
+    "mean_intensity": 34.09746170043945,
+    "std_intensity": 294.4770202636719,
+    "total_voxels": 1100385,
+    "non_zero_voxels": 86249
+  }
+]

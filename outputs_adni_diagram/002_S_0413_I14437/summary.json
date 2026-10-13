@@ -1,0 +1,37 @@
+{
+  "subject_id": "002_S_0413_I14437",
+  "timestamp": "2026-09-17T17:42:09.650265",
+  "clinical_metadata": {
+    "age": null,
+    "gender": null,
+    "cdr": null,
+    "mmse": null,
+    "education": null,
+    "ses": null
+  },
+  "mri_metadata": {
+    "shape": [
+      99,
+      117,
+      95
+    ],
+    "voxel_dims_mm": [
+      2.0,
+      2.0,
+      2.0
+    ],
+    "intensity_range": [
+      0.0,
+      9632.8994140625
+    ]
+  },
+  "qc_passed": true,
+  "qc_score": 65.0,
+  "roi_voxel_counts": {
+    "Broca_Area": 4553,
+    "Wernicke_Area": 5200,
+    "Insula": 4379,
+    "Inferior_Frontal_Gyrus": 5881,
+    "Superior_Temporal_Gyrus": 6983
+  }
+}

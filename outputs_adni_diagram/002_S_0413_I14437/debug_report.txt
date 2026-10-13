@@ -1,0 +1,60 @@
+============================================================
+ NeuroGenesis Phase 1 — Subject Debug Report: 002_S_0413_I14437
+============================================================
+Timestamp           : 2026-09-17T17:42:09.656819
+Subject ID          : 002_S_0413_I14437
+
+--- 1. MRI LOAD & REGISTRATION METADATA ---
+MRI Filepath        : C:\Users\avisy\Downloads\NeuroGenesis\outputs_adni_smoke\adni_nifti\mni\002_S_0413_I14437.nii.gz
+MRI Dimensions      : [99, 117, 95]
+Voxel Dimensions    : [2.0, 2.0, 2.0] mm
+Intensity Range     : [0.0, 9632.8994140625]
+Clinical Age        : None
+Clinical Gender     : None
+Clinical CDR        : None
+Clinical MMSE       : None
+Resampled Shape     : (128, 128, 128)
+Resampled Affine    :
+[[   1.546875    0.         -0.        -98.      ]
+ [   0.          1.828125   -0.       -134.      ]
+ [   0.          0.          1.484375  -72.      ]
+ [   0.          0.          0.          1.      ]]
+Registration Status : Harvard-Oxford Atlas resampled to subject MRI space successfully.
+
+--- 2. QUALITY CONTROL REPORT ---
+QC Score            : 65.00 / 100
+QC Passed           : True
+SNR (dB)            : 253.91
+Flags               : ['Motion artifacts suspected (score=0.0)']
+
+--- 3. ROI EXTRACTION & VOXEL COUNTS ---
+  Broca_Area                   │ Voxels=  4553 │ BoundingBox=([24, 77, 43], [104, 93, 70])
+  Wernicke_Area                │ Voxels=  5200 │ BoundingBox=([18, 50, 38], [109, 70, 63])
+  Insula                       │ Voxels=  4379 │ BoundingBox=([35, 59, 36], [93, 88, 62])
+  Inferior_Frontal_Gyrus       │ Voxels=  5881 │ BoundingBox=([24, 77, 43], [104, 93, 70])
+  Superior_Temporal_Gyrus      │ Voxels=  6983 │ BoundingBox=([18, 50, 34], [109, 77, 63])
+
+--- 4. ROI TENSOR STATISTICS ---
+  Broca_Area                   │ Shape=(48, 48, 48) │ Min=0.00 │ Max=1.00 │ Mean=0.61 │ Std=0.36 │ NonZeroVoxels=9522
+  Wernicke_Area                │ Shape=(48, 48, 48) │ Min=0.00 │ Max=1.00 │ Mean=0.60 │ Std=0.33 │ NonZeroVoxels=8755
+  Insula                       │ Shape=(48, 48, 48) │ Min=0.00 │ Max=1.00 │ Mean=0.55 │ Std=0.34 │ NonZeroVoxels=8609
+  Inferior_Frontal_Gyrus       │ Shape=(48, 48, 48) │ Min=0.00 │ Max=1.00 │ Mean=0.62 │ Std=0.35 │ NonZeroVoxels=12118
+  Superior_Temporal_Gyrus      │ Shape=(48, 48, 48) │ Min=0.00 │ Max=1.00 │ Mean=0.61 │ Std=0.32 │ NonZeroVoxels=8199
+
+--- 5. FEATURE EXTRACTION METRICS ---
+  Broca_Area                   │ Voxels=8575 │ BrainVol=35994.7 mm3 │ GMVol=29219.7 mm3 │ MeanInt=0.67 │ StdInt=0.31 │ SurfaceArea=4943.5 vox2
+  Wernicke_Area                │ Voxels=8130 │ BrainVol=34126.8 mm3 │ GMVol=26890.1 mm3 │ MeanInt=0.64 │ StdInt=0.30 │ SurfaceArea=4508.5 vox2
+  Insula                       │ Voxels=7826 │ BrainVol=32850.7 mm3 │ GMVol=24564.6 mm3 │ MeanInt=0.60 │ StdInt=0.31 │ SurfaceArea=4908.5 vox2
+  Inferior_Frontal_Gyrus       │ Voxels=11178 │ BrainVol=46921.2 mm3 │ GMVol=38219.5 mm3 │ MeanInt=0.67 │ StdInt=0.31 │ SurfaceArea=5861.0 vox2
+  Superior_Temporal_Gyrus      │ Voxels=7692 │ BrainVol=32288.2 mm3 │ GMVol=26520.7 mm3 │ MeanInt=0.65 │ StdInt=0.29 │ SurfaceArea=5257.9 vox2
+
+--- 6. GRAPH NODE ATTRIBUTES ---
+Nodes: ['Broca_Area', 'Wernicke_Area', 'Insula', 'Inferior_Frontal_Gyrus', 'Superior_Temporal_Gyrus']
+Edges: 13
+  Node [Broca_Area]: {'label': 'Broca\n(IFG BA44/45)', 'function': 'Speech production, phonological encoding', 'hemisphere': 'Left', 'brodmann': '44, 45', 'color': '#388bfd', 'feat_patient_id': '002_S_0413_I14437', 'feat_roi_name': 'Broca_Area', 'feat_voxel_count': 8575, 'feat_brain_volume_mm3': 35994.7257, 'feat_gm_volume_mm3': 29219.7418, 'feat_mean_intensity': 0.672039, 'feat_max_intensity': 0.999755, 'feat_min_intensity': 0.050099, 'feat_std_intensity': 0.312457, 'feat_skewness': -0.670964, 'feat_kurtosis': -0.965001, 'feat_entropy': 3.800192, 'feat_surface_area_vox': 4943.4575, 'feat_cortical_thickness_mm': 7.281, 'feat_fractal_dimension': nan}
+  Node [Wernicke_Area]: {'label': 'Wernicke\n(pSTG BA22)', 'function': 'Speech comprehension, auditory word recognition', 'hemisphere': 'Left', 'brodmann': '22', 'color': '#3fb950', 'feat_patient_id': '002_S_0413_I14437', 'feat_roi_name': 'Wernicke_Area', 'feat_voxel_count': 8130, 'feat_brain_volume_mm3': 34126.7778, 'feat_gm_volume_mm3': 26890.054, 'feat_mean_intensity': 0.639848, 'feat_max_intensity': 0.999635, 'feat_min_intensity': 0.050357, 'feat_std_intensity': 0.304904, 'feat_skewness': -0.539758, 'feat_kurtosis': -1.144548, 'feat_entropy': 3.959863, 'feat_surface_area_vox': 4508.4521, 'feat_cortical_thickness_mm': 7.57, 'feat_fractal_dimension': nan}
+  Node [Insula]: {'label': 'Insula\n(Insular Cortex)', 'function': 'Articulatory planning, phonological awareness', 'hemisphere': 'Bilateral', 'brodmann': '13, 14', 'color': '#e3b341', 'feat_patient_id': '002_S_0413_I14437', 'feat_roi_name': 'Insula', 'feat_voxel_count': 7826, 'feat_brain_volume_mm3': 32850.6966, 'feat_gm_volume_mm3': 24564.5638, 'feat_mean_intensity': 0.601915, 'feat_max_intensity': 0.999202, 'feat_min_intensity': 0.050053, 'feat_std_intensity': 0.312319, 'feat_skewness': -0.359217, 'feat_kurtosis': -1.357039, 'feat_entropy': 3.993374, 'feat_surface_area_vox': 4908.458, 'feat_cortical_thickness_mm': 6.693, 'feat_fractal_dimension': nan}
+  Node [Inferior_Frontal_Gyrus]: {'label': 'IFG\n(Frontal Operculum)', 'function': 'Syntactic processing, working memory for language', 'hemisphere': 'Left', 'brodmann': '44, 45, 47', 'color': '#ff7b72', 'feat_patient_id': '002_S_0413_I14437', 'feat_roi_name': 'Inferior_Frontal_Gyrus', 'feat_voxel_count': 11178, 'feat_brain_volume_mm3': 46921.1713, 'feat_gm_volume_mm3': 38219.4726, 'feat_mean_intensity': 0.671919, 'feat_max_intensity': 0.999755, 'feat_min_intensity': 0.050099, 'feat_std_intensity': 0.311092, 'feat_skewness': -0.668215, 'feat_kurtosis': -0.962392, 'feat_entropy': 3.815675, 'feat_surface_area_vox': 5861.0361, 'feat_cortical_thickness_mm': 8.006, 'feat_fractal_dimension': nan}
+  Node [Superior_Temporal_Gyrus]: {'label': 'STG\n(Planum Temporale)', 'function': 'Auditory-verbal processing, spectrotemporal analysis', 'hemisphere': 'Bilateral', 'brodmann': '22, 41, 42', 'color': '#d2a8ff', 'feat_patient_id': '002_S_0413_I14437', 'feat_roi_name': 'Superior_Temporal_Gyrus', 'feat_voxel_count': 7692, 'feat_brain_volume_mm3': 32288.2134, 'feat_gm_volume_mm3': 26520.662, 'feat_mean_intensity': 0.651848, 'feat_max_intensity': 0.999651, 'feat_min_intensity': 0.050034, 'feat_std_intensity': 0.29279, 'feat_skewness': -0.559909, 'feat_kurtosis': -1.023355, 'feat_entropy': 3.974103, 'feat_surface_area_vox': 5257.8799, 'feat_cortical_thickness_mm': 6.141, 'feat_fractal_dimension': nan}
+
+============================================================

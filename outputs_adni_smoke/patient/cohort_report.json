@@ -1,0 +1,23 @@
+{
+  "dataset_source": "ADNI",
+  "oasis1_root": null,
+  "volume_kind": null,
+  "is_synthetic": false,
+  "metadata_csv": null,
+  "mri_dir": "C:\\Users\\avisy\\Downloads\\Dataset_t",
+  "n_metadata_rows": 0,
+  "n_labeled_sessions": 0,
+  "n_labeled_subjects": 0,
+  "n_mri_files_found": 2,
+  "n_sessions_with_mri": 2,
+  "n_mri_without_label": 0,
+  "stage_counts": {},
+  "stage_counts_with_mri": {},
+  "is_processable": true,
+  "can_train": false,
+  "label_report": null,
+  "warnings": [
+    "ROI localization on ADNI relies on an automated SimpleITK rigid+affine registration of each volume to the MNI152 template (Mattes mutual information, no manual quality check of the registration result). This is research-grade, not clinically validated \u2014 unlike OASIS-1's T88 volumes, which ship pre-registered to Talairach-88 space by the dataset provider.",
+    "No CN/MCI/AD or CDR diagnostic labels exist for this cohort. Every session is stage='UNLABELED'. This dataset supports preprocessing and inference-only report generation against an already-trained checkpoint \u2014 never training, evaluation or ablation."
+  ]
+}

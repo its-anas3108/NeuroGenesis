@@ -1,0 +1,3 @@
+session_id,subject_id,stage,label,mri_path,has_mri
+002_S_0295_I13722,002_S_0295,UNLABELED,,outputs_adni_smoke/adni_nifti/mni/002_S_0295_I13722.nii.gz,True
+002_S_0413_I14437,002_S_0413,UNLABELED,,outputs_adni_smoke/adni_nifti/mni/002_S_0413_I14437.nii.gz,True

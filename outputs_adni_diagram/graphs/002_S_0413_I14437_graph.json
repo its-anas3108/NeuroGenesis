@@ -1,0 +1,204 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {
+    "patient_id": "002_S_0413_I14437"
+  },
+  "nodes": [
+    {
+      "label": "Broca\n(IFG BA44/45)",
+      "function": "Speech production, phonological encoding",
+      "hemisphere": "Left",
+      "brodmann": "44, 45",
+      "color": "#388bfd",
+      "feat_patient_id": "002_S_0413_I14437",
+      "feat_roi_name": "Broca_Area",
+      "feat_voxel_count": 8575,
+      "feat_brain_volume_mm3": 35994.7257,
+      "feat_gm_volume_mm3": 29219.7418,
+      "feat_mean_intensity": 0.672039,
+      "feat_max_intensity": 0.999755,
+      "feat_min_intensity": 0.050099,
+      "feat_std_intensity": 0.312457,
+      "feat_skewness": -0.670964,
+      "feat_kurtosis": -0.965001,
+      "feat_entropy": 3.800192,
+      "feat_surface_area_vox": 4943.4575,
+      "feat_cortical_thickness_mm": 7.281,
+      "feat_fractal_dimension": NaN,
+      "id": "Broca_Area"
+    },
+    {
+      "label": "Wernicke\n(pSTG BA22)",
+      "function": "Speech comprehension, auditory word recognition",
+      "hemisphere": "Left",
+      "brodmann": "22",
+      "color": "#3fb950",
+      "feat_patient_id": "002_S_0413_I14437",
+      "feat_roi_name": "Wernicke_Area",
+      "feat_voxel_count": 8130,
+      "feat_brain_volume_mm3": 34126.7778,
+      "feat_gm_volume_mm3": 26890.054,
+      "feat_mean_intensity": 0.639848,
+      "feat_max_intensity": 0.999635,
+      "feat_min_intensity": 0.050357,
+      "feat_std_intensity": 0.304904,
+      "feat_skewness": -0.539758,
+      "feat_kurtosis": -1.144548,
+      "feat_entropy": 3.959863,
+      "feat_surface_area_vox": 4508.4521,
+      "feat_cortical_thickness_mm": 7.57,
+      "feat_fractal_dimension": NaN,
+      "id": "Wernicke_Area"
+    },
+    {
+      "label": "Insula\n(Insular Cortex)",
+      "function": "Articulatory planning, phonological awareness",
+      "hemisphere": "Bilateral",
+      "brodmann": "13, 14",
+      "color": "#e3b341",
+      "feat_patient_id": "002_S_0413_I14437",
+      "feat_roi_name": "Insula",
+      "feat_voxel_count": 7826,
+      "feat_brain_volume_mm3": 32850.6966,
+      "feat_gm_volume_mm3": 24564.5638,
+      "feat_mean_intensity": 0.601915,
+      "feat_max_intensity": 0.999202,
+      "feat_min_intensity": 0.050053,
+      "feat_std_intensity": 0.312319,
+      "feat_skewness": -0.359217,
+      "feat_kurtosis": -1.357039,
+      "feat_entropy": 3.993374,
+      "feat_surface_area_vox": 4908.458,
+      "feat_cortical_thickness_mm": 6.693,
+      "feat_fractal_dimension": NaN,
+      "id": "Insula"
+    },
+    {
+      "label": "IFG\n(Frontal Operculum)",
+      "function": "Syntactic processing, working memory for language",
+      "hemisphere": "Left",
+      "brodmann": "44, 45, 47",
+      "color": "#ff7b72",
+      "feat_patient_id": "002_S_0413_I14437",
+      "feat_roi_name": "Inferior_Frontal_Gyrus",
+      "feat_voxel_count": 11178,
+      "feat_brain_volume_mm3": 46921.1713,
+      "feat_gm_volume_mm3": 38219.4726,
+      "feat_mean_intensity": 0.671919,
+      "feat_max_intensity": 0.999755,
+      "feat_min_intensity": 0.050099,
+      "feat_std_intensity": 0.311092,
+      "feat_skewness": -0.668215,
+      "feat_kurtosis": -0.962392,
+      "feat_entropy": 3.815675,
+      "feat_surface_area_vox": 5861.0361,
+      "feat_cortical_thickness_mm": 8.006,
+      "feat_fractal_dimension": NaN,
+      "id": "Inferior_Frontal_Gyrus"
+    },
+    {
+      "label": "STG\n(Planum Temporale)",
+      "function": "Auditory-verbal processing, spectrotemporal analysis",
+      "hemisphere": "Bilateral",
+      "brodmann": "22, 41, 42",
+      "color": "#d2a8ff",
+      "feat_patient_id": "002_S_0413_I14437",
+      "feat_roi_name": "Superior_Temporal_Gyrus",
+      "feat_voxel_count": 7692,
+      "feat_brain_volume_mm3": 32288.2134,
+      "feat_gm_volume_mm3": 26520.662,
+      "feat_mean_intensity": 0.651848,
+      "feat_max_intensity": 0.999651,
+      "feat_min_intensity": 0.050034,
+      "feat_std_intensity": 0.29279,
+      "feat_skewness": -0.559909,
+      "feat_kurtosis": -1.023355,
+      "feat_entropy": 3.974103,
+      "feat_surface_area_vox": 5257.8799,
+      "feat_cortical_thickness_mm": 6.141,
+      "feat_fractal_dimension": NaN,
+      "id": "Superior_Temporal_Gyrus"
+    }
+  ],
+  "links": [
+    {
+      "weight": 0.85,
+      "tract": "Superior_Longitudinal_Fasciculus",
+      "source": "Broca_Area",
+      "target": "Wernicke_Area"
+    },
+    {
+      "weight": 0.75,
+      "tract": "Short_Arcuate_Fibres",
+      "source": "Broca_Area",
+      "target": "Insula"
+    },
+    {
+      "weight": 0.9,
+      "tract": "Within_IFG_Fibres",
+      "source": "Broca_Area",
+      "target": "Inferior_Frontal_Gyrus"
+    },
+    {
+      "weight": 0.85,
+      "tract": "Superior_Longitudinal_Fasciculus",
+      "source": "Wernicke_Area",
+      "target": "Broca_Area"
+    },
+    {
+      "weight": 0.6,
+      "tract": "Extreme_Capsule_System",
+      "source": "Wernicke_Area",
+      "target": "Insula"
+    },
+    {
+      "weight": 0.8,
+      "tract": "Intra_STG_Fibres",
+      "source": "Wernicke_Area",
+      "target": "Superior_Temporal_Gyrus"
+    },
+    {
+      "weight": 0.7,
+      "tract": "Short_Arcuate_Fibres",
+      "source": "Insula",
+      "target": "Broca_Area"
+    },
+    {
+      "weight": 0.65,
+      "tract": "Extreme_Capsule_System",
+      "source": "Insula",
+      "target": "Wernicke_Area"
+    },
+    {
+      "weight": 0.95,
+      "tract": "Within_IFG_Fibres",
+      "source": "Inferior_Frontal_Gyrus",
+      "target": "Broca_Area"
+    },
+    {
+      "weight": 0.65,
+      "tract": "Inferior_Fronto_Occipital_Fasciculus",
+      "source": "Inferior_Frontal_Gyrus",
+      "target": "Insula"
+    },
+    {
+      "weight": 0.5,
+      "tract": "Inferior_Fronto_Occipital_Fasciculus",
+      "source": "Inferior_Frontal_Gyrus",
+      "target": "Superior_Temporal_Gyrus"
+    },
+    {
+      "weight": 0.9,
+      "tract": "Intra_STG_Fibres",
+      "source": "Superior_Temporal_Gyrus",
+      "target": "Wernicke_Area"
+    },
+    {
+      "weight": 0.55,
+      "tract": "Extreme_Capsule_System",
+      "source": "Superior_Temporal_Gyrus",
+      "target": "Insula"
+    }
+  ]
+}
